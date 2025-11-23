@@ -81,7 +81,7 @@ def main():
 
     if os.path.exists(config.BACKGROUND_IMAGE_PATH) is False or os.path.exists(config.FONT_PATH) is False:
         print("\n--- ACTION REQUIRED! ---")
-        print("Missing essential files. Please ensure the following files exist in the script's directory:")
+        print("Missing essential files. Please ensure the following files exist in the utils folder directory:")
         print(f"- Background: '{os.path.basename(config.BACKGROUND_IMAGE_PATH)}' (1920x1080 image)")
         print(f"- Font: '{os.path.basename(config.FONT_PATH)}' (.ttf or .otf font file)")
         print("--------------------------")
