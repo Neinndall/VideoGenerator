@@ -24,6 +24,10 @@ FFPROBE_EXE = os.path.join(FFMPEG_BIN_DIR, "ffprobe.exe")
 # Supported languages: "EN" (English), "TR" (Turkish)
 SELECTED_LANGUAGE = "EN"
 
+# --- AUDIO SILENCE ---
+# Default silence duration between audio tracks in seconds.
+SILENCE_DURATION = 0.0
+
 # Cache for skins data
 SKINS_CACHE_PATH = os.path.join(CACHE_DIR, "skins_data.json")
 

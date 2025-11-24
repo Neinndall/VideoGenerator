@@ -58,6 +58,33 @@ def select_language_interactively(translations):
     print("-" * 20)
     return selected_lang
 
+def select_silence_duration_interactively():
+    """Asks the user to select the silence duration between audio tracks."""
+    print("Please select silence duration between concatenated audio tracks:")
+    
+    silence_options = {
+        "1": 0.0,
+        "2": 1.0,
+        "3": 2.0,
+        "4": 3.0,
+    }
+    
+    for key, value in silence_options.items():
+        label = "None" if value == 0.0 else f"{value}s"
+        print(f"  {key}. {label}")
+        
+    choice = input(f"Enter number (1-{len(silence_options)}): ")
+    
+    if choice in silence_options:
+        duration = silence_options[choice]
+        print(f"Silence duration set to {duration}s.")
+    else:
+        duration = config.SILENCE_DURATION
+        print(f"Invalid choice. Defaulting to {duration}s.")
+        
+    print("-" * 20)
+    return duration
+
 def main():
     if "-h" in sys.argv or "--help" in sys.argv:
         print_help()
@@ -66,8 +93,9 @@ def main():
     # Load translations once
     translations = translation.load_translations(config.UTILS_DIR)
 
-    # Set language at the beginning
+    # Set language and silence duration at the beginning
     selected_language = select_language_interactively(translations)
+    silence_duration = select_silence_duration_interactively()
 
 
     print("Starting automated image and video generator...")
@@ -165,7 +193,7 @@ def main():
                         else:
                             print(f"  - Creating video...")
                             
-                        if video_generator.create_video(image_output_path, audio_files_in_folder, video_output_path):
+                        if video_generator.create_video(image_output_path, audio_files_in_folder, video_output_path, silence_duration):
                             total_videos_generated += 1
                             print(f"  ✓ Video created: {video_output_filename}")
                         else:

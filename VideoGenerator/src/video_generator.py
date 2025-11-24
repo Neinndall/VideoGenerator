@@ -14,7 +14,7 @@ def get_audio_duration(audio_path):
         print(f"Error getting duration for {audio_path}: {e}")
         return None
 
-def create_video(image_path, audio_file_paths, output_video_path):
+def create_video(image_path, audio_file_paths, output_video_path, silence_duration=0.0):
     if os.path.exists(image_path) is False:
         print(f"Error: Image not found: {image_path}")
         return False
@@ -25,13 +25,26 @@ def create_video(image_path, audio_file_paths, output_video_path):
     temp_audio_path = None
     final_audio_input = None
     concat_list_path = None
+    silent_audio_path = None
 
     try:
         if len(audio_file_paths) > 1:
+            # Create a silent audio file if needed
+            if silence_duration > 0:
+                silent_audio_path = os.path.join(config.CACHE_DIR, "silent_audio.wav")
+                silence_cmd = [
+                    config.FFMPEG_EXE, "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=mono",
+                    "-t", str(silence_duration), "-c:a", "pcm_s16le", "-y", silent_audio_path
+                ]
+                subprocess.run(silence_cmd, capture_output=True, check=True, text=True)
+
             concat_list_path = os.path.join(config.CACHE_DIR, "concat_list.txt")
             with open(concat_list_path, "w", encoding="utf-8") as f:
-                for audio_path in audio_file_paths:
+                for i, audio_path in enumerate(audio_file_paths):
                     f.write(f"file '{audio_path}'\n")
+                    # Add silence after each file except the last one
+                    if silent_audio_path and i < len(audio_file_paths) - 1:
+                        f.write(f"file '{silent_audio_path}'\n")
 
             temp_audio_path = os.path.join(config.CACHE_DIR, "temp_audio.wav")
             concat_cmd = [
@@ -71,3 +84,5 @@ def create_video(image_path, audio_file_paths, output_video_path):
             os.remove(concat_list_path)
         if temp_audio_path and os.path.exists(temp_audio_path):
             os.remove(temp_audio_path)
+        if silent_audio_path and os.path.exists(silent_audio_path):
+            os.remove(silent_audio_path)
