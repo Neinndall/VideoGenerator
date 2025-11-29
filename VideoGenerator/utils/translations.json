@@ -8,6 +8,7 @@
         "Open Item Shop": "Open Item Shop",
         "Movement in River": "Movement in River",
         "Buy Item ({item_name})": "Buy Item ({item_name})",
+        "Use Item ({item_name})": "Use Item ({item_name})",
         "Kill {0}": "Kill {0}",
         "Kill {0} vs {1}": "Kill {0} vs {1}",
         "Assist {0}": "Assist {0}",
@@ -47,7 +48,8 @@
         "Kinkou": "Kinkou",
         "Shurima": "Shurima",
         "Winterwonder": "Winterwonder",
-        "Coven": "Coven"
+        "Coven": "Coven",
+        "Attack {monster}": "Attack {monster}"
     },
     "TR": {
         "Penta Kill": "Penta Kill",
@@ -58,6 +60,7 @@
         "Open Item Shop": "Marketi Aç",
         "Movement in River": "Nehirde Hareket",
         "Buy Item ({item_name})": "Eşya Al ({item_name})",
+        "Use Item ({item_name})": "Eşya Kullan ({item_name})",
         "Kill {0}": "Skor {0}",
         "Kill {0} vs {1}": "Skor {0} vs {1}",
         "Assist {0}": "Asist {0}",
@@ -97,6 +100,7 @@
         "Kinkou": "Kinkou",
         "Shurima": "Shurima",
         "Winterwonder": "Kış Mucizesi",
-        "Coven": "Coven"
+        "Coven": "Coven",
+        "Attack {monster}": "{monster} Saldırısı"
     }
 }

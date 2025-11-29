@@ -70,8 +70,28 @@ def parse_folder_name(folder_name, translations, selected_language):
         match = re.search(r'BuyItem(2D|3D)(.*)', folder_name)
         if match:
             item_name = match.group(2)
-            return _get_text("Buy Item ({item_name})", item_name=item_name), item_name
+            return _get_text("Buy Item ({item_name})", item_name=item_name), item_name, "item"
+    
+    if "UseItem2D" in folder_name or "UseItem3D" in folder_name:
+        match = re.search(r'UseItem(2D|3D)(.*)', folder_name)
+        if match:
+            item_name = match.group(2)
+            return _get_text("Use Item ({item_name})", item_name=item_name), item_name, "item"
 
+    # Handle Attack2D monster interactions
+    if "Attack2D" in folder_name:
+        attack_match = re.search(r'Attack2D([A-Za-z]+)', folder_name)
+        if attack_match:
+            monster_name_raw = attack_match.group(1)
+            # Format monster name for consistency (e.g., BlueSentinel -> Blue_Sentinel)
+            # This regex inserts '_' before every uppercase letter that is not the first character of the string.
+            monster_name_formatted = re.sub(r'(?<!^)(?=[A-Z])', r'_', monster_name_raw)
+            
+            # Create a display-friendly version of the monster name
+            display_monster_name = monster_name_formatted.replace("_", " ")
+
+            return _get_text("Attack {monster}", monster=display_monster_name), monster_name_formatted, "monster"
+    
     skin_matches = re.findall(r'(\w+)Skin(\d+)', name_part)
     if skin_matches:
         processed_champions = []
@@ -112,29 +132,29 @@ def parse_folder_name(folder_name, translations, selected_language):
             display_text = _get_text("First Movement (Ally: {0})", processed_champions[0]) if len(processed_champions) == 1 else _get_text("First Movement (Ally: {0})", ', '.join(processed_champions))
         else:
             display_text = _get_text("Interaction with {0}", processed_champions[0]) if len(processed_champions) == 1 else _get_text("Interaction: {0} vs {1}", processed_champions[0], processed_champions[1])
-        return display_text, last_actual_champion_name
+        return display_text, last_actual_champion_name, "champion"
 
     if "MoveFirstAlly" in name_part:
         target_name = name_part.replace("MoveFirstAlly", "")
-        return _get_text("First Movement (Ally: {0})", target_name), target_name
+        return _get_text("First Movement (Ally: {0})", target_name), target_name, "generic"
 
     if name_part.startswith("SpellPRevive"):
         target_name = name_part.replace("SpellPRevive", "")
         if target_name:
             if target_name in translations["EN"]:
                 display_name = _get_text(target_name)
-                return _get_text("Revive {0}", display_name), target_name
+                return _get_text("Revive {0}", display_name), target_name, "generic"
             else:
-                return _get_text("Revive {0}", target_name), target_name
+                return _get_text("Revive {0}", target_name), target_name, "generic"
         else:
-            return _get_text("Revive"), "General"
+            return _get_text("Revive"), "General", "generic"
 
     if name_part.startswith("Kill"):
         target_name = name_part[4:]
         if target_name == "General":
-            return _get_text("Kill in General"), "General"
+            return _get_text("Kill in General"), "General", "generic"
         else:
-            return _get_text("Kill {0}", target_name), target_name
+            return _get_text("Kill {0}", target_name), target_name, "generic"
 
     interaction_map = {
         "FirstEncounter": "First Encounter with {0}",
@@ -159,11 +179,11 @@ def parse_folder_name(folder_name, translations, selected_language):
             base_text_key = specific_text_map[key]
             target_suffix = name_part[len(key):]
             if target_suffix == "General":
-                return _get_text(base_text_key) if key in ["Recall", "Respawn"] else _get_text(base_text_key) + " in General", "General"
+                return _get_text(base_text_key) if key in ["Recall", "Respawn"] else _get_text(base_text_key) + " in General", "General", "generic"
             elif target_suffix == "Rare":
-                return _get_text(base_text_key) + " Rare", "Rare"
+                return _get_text(base_text_key) + " Rare", "Rare", "generic"
             else:
-                return _get_text(base_text_key) + f" {target_suffix}", target_suffix
+                return _get_text(base_text_key) + f" {target_suffix}", target_suffix, "generic"
 
     for key in sorted(interaction_map.keys(), key=len, reverse=True):
         if name_part.startswith(key):
@@ -173,33 +193,33 @@ def parse_folder_name(folder_name, translations, selected_language):
 
             if target_name == "General":
                 if "{0}" in interaction_text_key:
-                    return _get_text("First Encounter in General"), target_name
+                    return _get_text("First Encounter in General"), target_name, "generic"
                 else:
-                    return _get_text(interaction_text_key), target_name
+                    return _get_text(interaction_text_key), target_name, "generic"
 
             if "{0}" in interaction_text_key:
                 if target_name in translations["EN"]:
                     display_name = _get_text(target_name)
                     result_text = _get_text(interaction_text_key, display_name)
                     icon_target = target_name
-                    return result_text, icon_target
+                    return result_text, icon_target, "champion"
                 
                 for category in config.CHAMPIONS_BY_CATEGORY.keys():
                     if target_name.startswith(category):
                         result_text = _get_text(interaction_text_key, target_name)
                         icon_target = category
-                        return result_text, icon_target
+                        return result_text, icon_target, "champion"
 
                 result_text = _get_text(interaction_text_key, target_name)
-                return result_text, target_name
+                return result_text, target_name, "champion"
             else:
-                return _get_text(interaction_text_key), target_name
+                return _get_text(interaction_text_key), target_name, "generic"
 
     if name_part.startswith("Assist"):
         target_name = name_part.replace("Assist", "")
-        return _get_text("Assist {0}", target_name), target_name if target_name else ("Assist", "General")
+        return _get_text("Assist {0}", target_name), target_name if target_name else "General", "champion"
 
     parsed_text = re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1', name_part).strip()
     words = parsed_text.split()
     target_for_icon = words[-1] if words else name_part
-    return parsed_text, target_for_icon
+    return parsed_text, target_for_icon, "generic"
