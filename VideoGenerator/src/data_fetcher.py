@@ -73,3 +73,82 @@ def get_all_item_icon_filenames():
         return []
     pattern = re.compile(r'<a href="([^"]+\.png)"')
     return pattern.findall(html_content)
+
+
+
+def get_monster_wiki_content():
+    """Fetches the HTML content of the monster wiki page directly from the web."""
+    print("Fetching monster wiki page from the web...")
+    try:
+        response = requests.get(config.MONSTER_WIKI_URL, headers={'User-Agent': 'My-Agent/1.0'})
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException as e:
+        print(f"Error downloading monster wiki page: {e}")
+        return ""
+
+def get_monster_icon_url(monster_name_formatted):
+    """
+    Scrapes the League of Legends wiki for the icon URL of a given monster.
+    Expects monster_name_formatted to be like "Baron_Nashor" or "Blue_Sentinel".
+    """
+    html_content = get_monster_wiki_content()
+    if not html_content:
+        return None
+
+    # Base search names, starting with the formatted name
+    current_potential_search_names = [monster_name_formatted.replace(" ", "_")]
+    
+    # Specific overrides or additions based on the formatted name
+    if monster_name_formatted == "Elemental_Dragon":
+        # If it's a generic elemental dragon, try a list of common drakes
+        current_potential_search_names.extend([
+            "Infernal_Drake", "Mountain_Drake", "Ocean_Drake", 
+            "Cloud_Drake", "Hextech_Drake", "Chemtech_Drake", 
+            "Elder_Dragon" # Include Elder as a possible fallback if specific drakes don't work
+        ])
+    elif "Dragon" in monster_name_formatted:
+        # For other dragon-related terms (e.g., Elder_Dragon, if it comes in formatted differently)
+        current_potential_search_names.append("Elder_Dragon") 
+    elif "Baron" in monster_name_formatted:
+        current_potential_search_names.append("Baron_Nashor")
+    elif "Blue_Sentinel" in monster_name_formatted:
+        current_potential_search_names.append("Blue_Buff")
+    elif "Red_Brambleback" in monster_name_formatted:
+        current_potential_search_names.append("Red_Buff")
+
+    # Remove duplicates and maintain order preference (more specific or user-requested first)
+    unique_search_names = []
+    for name in current_potential_search_names:
+        if name not in unique_search_names:
+            unique_search_names.append(name)
+    potential_search_names = unique_search_names
+
+    for p_name in potential_search_names:
+        # Regex to find a srcset attribute whose value contains "p_name" and "Square.png"
+        # It specifically targets the "/en-us/images/thumb/...Square.png/..." pattern
+        srcset_pattern = re.compile(
+            r'srcset="(/en-us/images/thumb/[^"]*' + re.escape(p_name) + r'Square\.png/[^"\s]+)\s\dx"',
+            re.IGNORECASE
+        )
+        match = srcset_pattern.search(html_content)
+        
+        if match:
+            relative_url = match.group(1)
+            full_url = f"{config.MONSTER_WIKI_BASE_URL}{relative_url}"
+            return full_url
+    
+    # Fallback: if no srcset match, try a simpler src attribute search for the main image
+    for p_name in potential_search_names:
+        src_pattern = re.compile(
+            r'src="(/en-us/images/[^"]*' + re.escape(p_name) + r'Square\.png)"',
+            re.IGNORECASE
+        )
+        match = src_pattern.search(html_content)
+        if match:
+            relative_url = match.group(1)
+            full_url = f"{config.MONSTER_WIKI_BASE_URL}{relative_url}"
+            return full_url
+
+    print(f"Could not find icon URL for monster: {monster_name_formatted}")
+    return None
