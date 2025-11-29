@@ -35,7 +35,7 @@ SILENCE_DURATION = 0.0
 
 # Cache for skins data
 SKINS_CACHE_PATH = os.path.join(CACHE_DIR, "skins_data.json")
-MONSTER_WIKI_CACHE_PATH = os.path.join(CACHE_DIR, "monster_wiki.html")
+
 
 # Dictionary of champions by region/type
 CHAMPIONS_BY_CATEGORY = {

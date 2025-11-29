@@ -116,6 +116,8 @@ def get_monster_icon_url(monster_name_formatted):
         current_potential_search_names.append("Blue_Buff")
     elif "Red_Brambleback" in monster_name_formatted:
         current_potential_search_names.append("Red_Buff")
+    elif "Murkwolf" in monster_name_formatted:
+        current_potential_search_names.append("Greater_Murk_Wolf")
 
     # Remove duplicates and maintain order preference (more specific or user-requested first)
     unique_search_names = []

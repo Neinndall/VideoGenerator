@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+import random
 from src import config
 from src import (
     data_fetcher,
@@ -166,6 +167,12 @@ def main():
                     # Pass the selected language to the parsing function
                     display_text, target_for_icon, icon_type = name_parser.parse_folder_name(folder, translations, selected_language)
                     
+                    # If the target is a category (like "Void", "Noxus"), pick a random champion from it.
+                    icon_lookup_name = target_for_icon
+                    if target_for_icon in config.CHAMPIONS_BY_CATEGORY:
+                        icon_lookup_name = random.choice(config.CHAMPIONS_BY_CATEGORY[target_for_icon])
+                        print(f"  - Category '{target_for_icon}' detected, randomly selected champion: {icon_lookup_name}")
+
                     icon_path = None
                     if icon_type == "item":
                         icon_path = icon_manager.get_item_icon(target_for_icon)
@@ -173,7 +180,8 @@ def main():
                         icon_path = icon_manager.get_monster_icon(target_for_icon)
                     elif icon_type == "champion":
                         # lol_version is needed for champion icons
-                        icon_path = icon_manager.get_champion_icon(target_for_icon, lol_version, config.ICON_CACHE_DIR)
+                        # Use the icon_lookup_name which could be a random champion
+                        icon_path = icon_manager.get_champion_icon(icon_lookup_name, lol_version, config.ICON_CACHE_DIR)
                     # For "generic" icon_type, icon_path remains None
 
                     interaction_data = {
