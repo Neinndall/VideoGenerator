@@ -6,11 +6,13 @@ from src import icon_manager
 
 def create_image(interaction_data, lol_version):
     display_text = interaction_data["display_text"]
+    target_for_icon = interaction_data["target_for_icon"]
     original_folder = interaction_data["original_folder"]
-    icon_path = interaction_data.get("icon_path")
-    icon_type = interaction_data.get("icon_type")
-    output_dir = interaction_data["output_dir"]
     
+    icon_lookup_name = target_for_icon
+    if target_for_icon in config.CHAMPIONS_BY_CATEGORY:
+        icon_lookup_name = random.choice(config.CHAMPIONS_BY_CATEGORY[target_for_icon])
+
     try:
         background = Image.open(config.BACKGROUND_IMAGE_PATH).convert("RGBA").resize((1920, 1080))
     except FileNotFoundError:
@@ -19,6 +21,15 @@ def create_image(interaction_data, lol_version):
         return None
 
     icon_image = None
+    icon_path = None
+
+    is_buy_item_event = "BuyItem" in original_folder
+
+    if is_buy_item_event:
+        icon_path = icon_manager.get_item_icon(target_for_icon)
+    elif target_for_icon not in ["Penta", "FirstBlood", "Turret", "General", "Rare", "NoIcon"]:
+        icon_path = icon_manager.get_champion_icon(icon_lookup_name, lol_version, config.ICON_CACHE_DIR)
+
     if icon_path:
         try:
             border_size = 2
@@ -33,11 +44,12 @@ def create_image(interaction_data, lol_version):
             bordered_icon.paste(icon_resized, paste_position, icon_resized)
             icon_image = bordered_icon
         except Exception as e:
-            print(f"Error loading or applying border to icon from path '{icon_path}': {e}")
-            icon_image = None # Ensure icon_image is None if there's an error
-    
-    if icon_image is None and icon_path is not None: # If icon_path was provided but image failed to load
-         print(f"WARNING: Could not load icon from path '{icon_path}'.")
+            print(f"Error loading or applying border to icon: {e}")
+    else: # If icon_path is None at this point, then no icon was successfully retrieved
+        if target_for_icon not in ["Penta", "FirstBlood", "Turret", "General", "Rare", "NoIcon"]:
+            # Avoid duplicate warnings for item events, as get_item_icon already warns
+            if not is_buy_item_event:
+                print(f"WARNING: Could not get icon for {target_for_icon}")
 
     draw = ImageDraw.Draw(background)
     try:
@@ -60,6 +72,6 @@ def create_image(interaction_data, lol_version):
         background.paste(icon_image, (icon_x, icon_y), icon_image)
 
     output_filename = f"{original_folder}.png"
-    output_path = os.path.join(output_dir, output_filename)
+    output_path = os.path.join(config.OUTPUT_IMAGES_DIR, output_filename)
     background.save(output_path)
     return output_path

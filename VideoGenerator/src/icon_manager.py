@@ -97,27 +97,3 @@ def print_cache_stats():
         for icon in sorted(cached_icons):
             print(f"  - {icon}")
     print("--------------------------")
-
-def get_monster_icon(monster_name_formatted):
-    """
-    Gets a monster's icon, using cache if it exists.
-    Expected monster_name_formatted to be like "Baron_Nashor" or "Blue_Sentinel".
-    """
-    icon_filename = f"{monster_name_formatted}.png"
-    icon_path = os.path.join(config.MONSTER_ICON_CACHE_DIR, icon_filename)
-
-    if os.path.exists(icon_path):
-        print(f"Using monster icon from cache: {icon_filename}")
-        return icon_path
-
-    print(f"Attempting to find and download monster icon for: {monster_name_formatted}")
-    monster_icon_url = data_fetcher.get_monster_icon_url(monster_name_formatted)
-
-    if monster_icon_url:
-        print(f"Downloading new monster icon: {icon_filename} from {monster_icon_url}")
-        os.makedirs(config.MONSTER_ICON_CACHE_DIR, exist_ok=True)
-        downloaded_path = data_fetcher.download_icon(monster_icon_url, icon_path)
-        return downloaded_path
-    else:
-        print(f"Could not find a valid icon URL for monster: {monster_name_formatted}")
-        return None

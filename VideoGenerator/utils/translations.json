@@ -48,8 +48,7 @@
         "Kinkou": "Kinkou",
         "Shurima": "Shurima",
         "Winterwonder": "Winterwonder",
-        "Coven": "Coven",
-        "Attack {monster}": "Attack {monster}"
+        "Coven": "Coven"
     },
     "TR": {
         "Penta Kill": "Penta Kill",
@@ -100,7 +99,6 @@
         "Kinkou": "Kinkou",
         "Shurima": "Shurima",
         "Winterwonder": "Kış Mucizesi",
-        "Coven": "Coven",
-        "Attack {monster}": "{monster} Saldırısı"
+        "Coven": "Coven"
     }
 }

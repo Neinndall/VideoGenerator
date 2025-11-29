@@ -1,7 +1,6 @@
 import os
 import sys
 import traceback
-import random
 from src import config
 from src import (
     data_fetcher,
@@ -104,7 +103,6 @@ def main():
     os.makedirs(config.OUTPUT_VIDEOS_DIR, exist_ok=True)
     os.makedirs(config.ICON_CACHE_DIR, exist_ok=True)
     os.makedirs(config.ITEM_ICON_CACHE_DIR, exist_ok=True)
-    os.makedirs(config.MONSTER_ICON_CACHE_DIR, exist_ok=True)
 
 
     icon_manager.print_cache_stats()
@@ -144,8 +142,6 @@ def main():
         audio_folder_name = os.path.basename(audio_dir)
         specific_video_output_dir = os.path.join(config.OUTPUT_VIDEOS_DIR, audio_folder_name)
         os.makedirs(specific_video_output_dir, exist_ok=True)
-        specific_image_output_dir = os.path.join(config.OUTPUT_IMAGES_DIR, audio_folder_name)
-        os.makedirs(specific_image_output_dir, exist_ok=True)
 
         if not os.path.isdir(audio_dir):
             print(f"Error: Audio directory '{audio_dir}' does not exist. Skipping...")
@@ -158,39 +154,18 @@ def main():
             print(f"\n- Processing event: {folder}")
             try:
                 expected_image_filename = f"{folder}.png"
-                image_output_path = os.path.join(specific_image_output_dir, expected_image_filename)
+                image_output_path = os.path.join(config.OUTPUT_IMAGES_DIR, expected_image_filename)
 
                 if os.path.exists(image_output_path):
                     print(f"  ✓ Image already exists: '{expected_image_filename}'. Skipping creation.")
                 else:
                     print("  - Creating image...")
                     # Pass the selected language to the parsing function
-                    display_text, target_for_icon, icon_type = name_parser.parse_folder_name(folder, translations, selected_language)
-                    
-                    # If the target is a category (like "Void", "Noxus"), pick a random champion from it.
-                    icon_lookup_name = target_for_icon
-                    if target_for_icon in config.CHAMPIONS_BY_CATEGORY:
-                        icon_lookup_name = random.choice(config.CHAMPIONS_BY_CATEGORY[target_for_icon])
-                        print(f"  - Category '{target_for_icon}' detected, randomly selected champion: {icon_lookup_name}")
-
-                    icon_path = None
-                    if icon_type == "item":
-                        icon_path = icon_manager.get_item_icon(target_for_icon)
-                    elif icon_type == "monster":
-                        icon_path = icon_manager.get_monster_icon(target_for_icon)
-                    elif icon_type == "champion":
-                        # lol_version is needed for champion icons
-                        # Use the icon_lookup_name which could be a random champion
-                        icon_path = icon_manager.get_champion_icon(icon_lookup_name, lol_version, config.ICON_CACHE_DIR)
-                    # For "generic" icon_type, icon_path remains None
-
+                    display_text, target_for_icon = name_parser.parse_folder_name(folder, translations, selected_language)
                     interaction_data = {
                         "original_folder": folder,
                         "display_text": display_text,
-                        "target_for_icon": target_for_icon, # Keep for potential debug/logging if needed
-                        "icon_path": icon_path,
-                        "icon_type": icon_type,
-                        "output_dir": specific_image_output_dir
+                        "target_for_icon": target_for_icon,
                     }
                     
                     created_path = image_generator.create_image(interaction_data, lol_version)

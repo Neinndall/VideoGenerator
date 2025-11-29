@@ -9,12 +9,7 @@ OUTPUT_VIDEOS_DIR = os.path.join(OUTPUT_BASE_DIR, "output_videos")
 CACHE_DIR = os.path.join(UTILS_DIR, "cache")
 ICON_CACHE_DIR = os.path.join(CACHE_DIR, "icon_cache")
 ITEM_ICON_CACHE_DIR = os.path.join(CACHE_DIR, "item_cache")
-MONSTER_ICON_CACHE_DIR = os.path.join(CACHE_DIR, "monsters_cache")
 AUDIO_DIR = os.path.join(BASE_DIR, "darius_skin67_vo_audio_mx")
-
-# URL for monster data
-MONSTER_WIKI_BASE_URL = "https://wiki.leagueoflegends.com"
-MONSTER_WIKI_URL = "https://wiki.leagueoflegends.com/en-us/Monster"
 
 # Files you MUST provide in the same folder as the script
 BACKGROUND_IMAGE_PATH = os.path.join(UTILS_DIR, "background.png")
@@ -35,7 +30,6 @@ SILENCE_DURATION = 0.0
 
 # Cache for skins data
 SKINS_CACHE_PATH = os.path.join(CACHE_DIR, "skins_data.json")
-
 
 # Dictionary of champions by region/type
 CHAMPIONS_BY_CATEGORY = {
