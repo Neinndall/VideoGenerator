@@ -169,8 +169,9 @@ def main():
                     
                     # If the target is a category (like "Void", "Noxus"), pick a random champion from it.
                     icon_lookup_name = target_for_icon
-                    if target_for_icon in config.CHAMPIONS_BY_CATEGORY:
-                        icon_lookup_name = random.choice(config.CHAMPIONS_BY_CATEGORY[target_for_icon])
+                    all_categories = {**config.CHAMPIONS_BY_REGIONS, **config.CHAMPIONS_BY_SKINS}
+                    if target_for_icon in all_categories:
+                        icon_lookup_name = random.choice(all_categories[target_for_icon])
                         print(f"  - Category '{target_for_icon}' detected, randomly selected champion: {icon_lookup_name}")
 
                     icon_path = None

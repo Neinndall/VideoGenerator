@@ -204,7 +204,8 @@ def parse_folder_name(folder_name, translations, selected_language):
                     icon_target = target_name
                     return result_text, icon_target, "champion"
                 
-                for category in config.CHAMPIONS_BY_CATEGORY.keys():
+                all_categories = {**config.CHAMPIONS_BY_REGIONS, **config.CHAMPIONS_BY_SKINS}
+                for category in all_categories.keys():
                     if target_name.startswith(category):
                         result_text = _get_text(interaction_text_key, target_name)
                         icon_target = category
