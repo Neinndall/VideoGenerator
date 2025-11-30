@@ -152,9 +152,17 @@ def main():
             continue
             
         folders = [d for d in os.listdir(audio_dir) if os.path.isdir(os.path.join(audio_dir, d))]
-        print(f"Found {len(folders)} event folders in '{audio_folder_name}'")
         
-        for folder in folders:
+        # Filter out folders containing "cast3D" or "cast2D"
+        initial_folder_count = len(folders)
+        filtered_folders = [f for f in folders if "cast3D" not in f and "cast2D" not in f]
+        skipped_folder_count = initial_folder_count - len(filtered_folders)
+
+        print(f"Found {len(folders)} event folders in '{audio_folder_name}'")
+        if skipped_folder_count > 0:
+            print(f"  (Skipped {skipped_folder_count} folders containing 'cast3D' or 'cast2D')")
+        
+        for folder in filtered_folders:
             print(f"\n- Processing event: {folder}")
             try:
                 expected_image_filename = f"{folder}.png"
