@@ -152,9 +152,17 @@ def main():
             continue
             
         folders = [d for d in os.listdir(audio_dir) if os.path.isdir(os.path.join(audio_dir, d))]
-        print(f"Found {len(folders)} event folders in '{audio_folder_name}'")
         
-        for folder in folders:
+        # Filter out folders containing "cast3D" or "cast2D"
+        initial_folder_count = len(folders)
+        filtered_folders = [f for f in folders if "cast3D" not in f and "cast2D" not in f]
+        skipped_folder_count = initial_folder_count - len(filtered_folders)
+
+        print(f"Found {len(folders)} event folders in '{audio_folder_name}'")
+        if skipped_folder_count > 0:
+            print(f"  (Skipped {skipped_folder_count} folders containing 'cast3D' or 'cast2D')")
+        
+        for folder in filtered_folders:
             print(f"\n- Processing event: {folder}")
             try:
                 expected_image_filename = f"{folder}.png"
@@ -166,11 +174,13 @@ def main():
                     print("  - Creating image...")
                     # Pass the selected language to the parsing function
                     display_text, target_for_icon, icon_type = name_parser.parse_folder_name(folder, translations, selected_language)
+                    print(f"  Folder Processed: {folder} --> Parsed Text: {display_text}")
                     
                     # If the target is a category (like "Void", "Noxus"), pick a random champion from it.
                     icon_lookup_name = target_for_icon
-                    if target_for_icon in config.CHAMPIONS_BY_CATEGORY:
-                        icon_lookup_name = random.choice(config.CHAMPIONS_BY_CATEGORY[target_for_icon])
+                    all_categories = {**config.CHAMPIONS_BY_REGIONS, **config.CHAMPIONS_BY_SKINS}
+                    if target_for_icon in all_categories:
+                        icon_lookup_name = random.choice(all_categories[target_for_icon])
                         print(f"  - Category '{target_for_icon}' detected, randomly selected champion: {icon_lookup_name}")
 
                     icon_path = None
@@ -249,3 +259,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -38,18 +38,24 @@ SKINS_CACHE_PATH = os.path.join(CACHE_DIR, "skins_data.json")
 
 
 # Dictionary of champions by region/type
-CHAMPIONS_BY_CATEGORY = {
+CHAMPIONS_BY_REGIONS = {
+    "Bandle City": ["Corki", "Lulu", "Yuumi", "Veigar"],
+    "Bilgewater": ["Fizz", "Gangplank", "Graves", "Nautilus"],
+    "Demacia": ["Fiora", "Galio", "Garen", "Lux", "Poppy", "Lucian"],
+    "Ixtal": ["Malphite", "Milio", "Neeko", "Nidalee", "Qiyana", "Rengar"],
     "Darkin": ["Aatrox", "Kayn", "Varus", "Naafiri"],
     "Noxus": ["Darius", "Draven", "Katarina", "Swain", "Talon", "Vladimir", "Sion", "Kled", "Samira", "Rell", "Briar", "LeBlanc", "Cassiopeia", "Riven"],
     "Ionia": ["Ahri", "Akali", "Irelia", "Jhin", "Karma", "Kayn", "Kennen", "Lee Sin", "Lillia", "Master Yi", "Rakan", "Sett", "Shen", "Syndra", "Varus", "Wukong", "Xayah", "Yasuo", "Yone", "Zed"],
     "Vastaya": ["Ahri", "Nami", "Neeko", "Rakan", "Rengar", "Wukong", "Xayah"],
-    "SpiritBlossom": ["Ahri", "Aphelios", "Cassiopeia", "Darius", "Evelynn", "Kindred", "Lillia", "Master Yi", "Riven", "Sett", "Soraka", "Syndra", "Teemo", "Thresh", "Tristana", "Vayne", "Yasuo", "Yone", "Yorick", "Ashe", "Bard", "Irelia", "Ivern", "Karma", "Lux", "Morgana", "Nidalee", "Varus", "Zed", "Zyra", "Sona", "Volibear"],
-    "Demacia": ["Fiora", "Galio", "Garen", "Jarvan IV", "Kayle", "Lucian", "Lux", "Morgana", "Poppy", "Quinn", "Shyvana", "Sona", "Sylas", "Vayne", "Xin Zhao"],
     "Demon": ["Fiddlesticks", "Evelynn", "Nocturne", "Shaco", "Tahm Kench", "Swain", "Yone", "Annie"],
     "Ascended": ["Azir", "Pantheon"],
     "Void": ["VelKoz", "RekSai", "Kassadin", "Kaisa"],
     "Kinkou": ["Shen", "Akali", "Kennen"],
     "Shurima": ["Akshan", "Amumu", "Sivir", "Renekton", "Taliyah", "Nasus", "Rammus", "kSante"],
+}
+
+CHAMPIONS_BY_SKINS = {
+    "Spirit Blossom": ["Ahri", "Aphelios", "Cassiopeia", "Darius", "Evelynn", "Kindred", "Lillia", "Master Yi", "Riven", "Sett", "Soraka", "Syndra", "Teemo", "Thresh", "Tristana", "Vayne", "Yasuo", "Yone", "Yorick", "Ashe", "Bard", "Irelia", "Ivern", "Karma", "Lux", "Morgana", "Nidalee", "Varus", "Zed", "Zyra", "Sona", "Volibear"],
     "Winterwonder": ["Lulu", "Karma", "Neeko", "Master Yi", "Annie"],
     "Coven": ["Nilah", "Elise", "Akali", "Syndra", "Nami"]
 }
