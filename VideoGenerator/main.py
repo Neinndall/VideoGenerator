@@ -166,6 +166,7 @@ def main():
                     print("  - Creating image...")
                     # Pass the selected language to the parsing function
                     display_text, target_for_icon, icon_type = name_parser.parse_folder_name(folder, translations, selected_language)
+                    print(f"  Folder Processed: {folder} --> Parsed Text: {display_text}")
                     
                     # If the target is a category (like "Void", "Noxus"), pick a random champion from it.
                     icon_lookup_name = target_for_icon
@@ -250,3 +251,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

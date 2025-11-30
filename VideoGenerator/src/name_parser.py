@@ -52,19 +52,19 @@ def parse_folder_name(folder_name, translations, selected_language):
     name_part = name_part.replace("3D", "").replace("2D", "")
 
     if "Kill3DPenta" in folder_name:
-        return _get_text("Penta Kill"), "Penta"
+        return _get_text("Penta Kill"), "Penta", "generic"
     if "Kill3DFirst" in folder_name:
-        return _get_text("First Blood"), "FirstBlood"
+        return _get_text("First Blood"), "FirstBlood", "generic"
     if "Kill3DTurret" in folder_name:
-        return _get_text("Turret Takedown"), "Turret"
+        return _get_text("Turret Takedown"), "Turret", "generic"
     if "Kill3DAheadAllyTeam" in folder_name:
-        return _get_text("Kill (Ally Team Ahead)"), "General"
+        return _get_text("Kill (Ally Team Ahead)"), "General", "generic"
     if "Kill3DBehindAllyTeam" in folder_name:
-        return _get_text("Kill (Ally Team Behind)"), "General"
+        return _get_text("Kill (Ally Team Behind)"), "General", "generic"
     if "Shop2DOpen" in folder_name or "Shop3DOpen" in folder_name:
-        return _get_text("Open Item Shop"), "NoIcon"
+        return _get_text("Open Item Shop"), "NoIcon", "generic"
     if "Move2DRiver" in folder_name or "Move3DRiver" in folder_name:
-        return _get_text("Movement in River"), "NoIcon"
+        return _get_text("Movement in River"), "NoIcon", "generic"
 
     if "BuyItem2D" in folder_name or "BuyItem3D" in folder_name:
         match = re.search(r'BuyItem(2D|3D)(.*)', folder_name)
