@@ -16,12 +16,28 @@ def load_translations(utils_dir):
         return {"EN": {"Penta Kill": "Penta Kill"}, "TR": {"Penta Kill": "Penta Kill"}}
 
 def get_text(translations, selected_language, key, *args, **kwargs):
-    """Gets translated text for a given key."""
+    """Gets translated and formatted text safely."""
     try:
         base_text = translations[selected_language][key]
-        return base_text.format(*args, **kwargs)
     except KeyError:
-        # Fallback to English if a key is missing in the selected language
         print(f"Warning: Translation key '{key}' not found for '{selected_language}'. Falling back to English.")
-        base_text = translations["EN"].get(key, key)
-        return base_text.format(*args, **kwargs)
+        try:
+            # Attempt to fall back to English
+            base_text = translations["EN"][key]
+        except KeyError:
+            # If it's not in English either, use the key itself as the text
+            base_text = key
+            
+    # Only attempt to format the string if there are arguments to format it with
+    if args or kwargs:
+        try:
+            return base_text.format(*args, **kwargs)
+        except (IndexError, KeyError):
+            # This can happen if the base_text (e.g., from a bad key) has placeholders
+            # but the number of args doesn't match. Return the raw text as a safe fallback.
+            print(f"Warning: Formatting error for key '{key}' or its fallback. Returning raw text.")
+            return base_text
+    
+    # If no args were provided, return the unformatted text.
+    # This is safe for checks that don't intend to format.
+    return base_text
