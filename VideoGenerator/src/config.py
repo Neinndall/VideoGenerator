@@ -10,14 +10,11 @@ CACHE_DIR = os.path.join(UTILS_DIR, "cache")
 ICON_CACHE_DIR = os.path.join(CACHE_DIR, "icon_cache")
 ITEM_ICON_CACHE_DIR = os.path.join(CACHE_DIR, "item_cache")
 MONSTER_ICON_CACHE_DIR = os.path.join(CACHE_DIR, "monsters_cache")
-AUDIO_DIR = os.path.join(BASE_DIR, "darius_skin67_vo_audio_mx")
 
 # URL for monster data
 MONSTER_WIKI_BASE_URL = "https://wiki.leagueoflegends.com"
 MONSTER_WIKI_URL = "https://wiki.leagueoflegends.com/en-us/Monster"
 
-# Files you MUST provide in the same folder as the script
-BACKGROUND_IMAGE_PATH = os.path.join(UTILS_DIR, "background.png")
 FONT_PATH = os.path.join(UTILS_DIR, "font.ttf")
 
 # Path to the FFmpeg bin folder inside your working directory
