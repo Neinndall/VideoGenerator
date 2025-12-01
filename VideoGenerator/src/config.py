@@ -33,7 +33,6 @@ SILENCE_DURATION = 0.0
 # Cache for skins data
 SKINS_CACHE_PATH = os.path.join(CACHE_DIR, "skins_data.json")
 
-
 # Dictionary of champions by region/type
 CHAMPIONS_BY_REGIONS = {
     "Bandle City": ["Corki", "Lulu", "Yuumi", "Veigar"],
@@ -54,5 +53,9 @@ CHAMPIONS_BY_REGIONS = {
 CHAMPIONS_BY_SKINS = {
     "Spirit Blossom": ["Ahri", "Aphelios", "Cassiopeia", "Darius", "Evelynn", "Kindred", "Lillia", "Master Yi", "Riven", "Sett", "Soraka", "Syndra", "Teemo", "Thresh", "Tristana", "Vayne", "Yasuo", "Yone", "Yorick", "Ashe", "Bard", "Irelia", "Ivern", "Karma", "Lux", "Morgana", "Nidalee", "Varus", "Zed", "Zyra", "Sona", "Volibear"],
     "Winterwonder": ["Lulu", "Karma", "Neeko", "Master Yi", "Annie"],
-    "Coven": ["Nilah", "Elise", "Akali", "Syndra", "Nami"]
+    "Coven": ["Nilah", "Elise", "Akali", "Syndra", "Nami"],
+    "Dragonmancer": ["Aurelion Sol", "Lee Sin", "Ashe", "Brand", "Sett", "Yasuo", "Thresh", "Kai'Sa", "Karma", "Volibear", "Vayne", "Fiora", "Kassadin", "Rakan"],
+    "Firecracker": ["Jinx", "Vayne", "Sejuani", "Xin Zhao", "Diana", "Sett", "Teemo", "Tristana", "Annie", "Kog'Maw", "Corki"],
+    "Primal Ambush": ["Talon", "Vi", "Sivir", "Riven"],
+    "Porcelain": ["Amumu", "Aurelion Sol", "Darius", "Ezreal", "Graves", "Irelia", "Kindred", "Lissandra", "Lux", "Miss Fortune", "Morgana"]
 }
