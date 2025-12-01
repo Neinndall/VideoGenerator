@@ -3,9 +3,11 @@ This module contains the event handlers for parsing folder names.
 Each handler is responsible for a specific type of event folder structure.
 """
 import re
+import random
 from abc import ABC, abstractmethod
 from . import translation
 from . import data_fetcher
+from . import config
 
 class EventHandler(ABC):
     """
@@ -211,12 +213,36 @@ class MappedInteractionHandler(EventHandler):
         target_suffix = name_part[len(self._found_key):]
 
         # This handler uses the translation keys directly from the map
-        if "{" in self._get_text(translations, selected_language, base_text_key): # Check if the text has a placeholder
+        raw_translation = translations.get(selected_language, {}).get(base_text_key, "")
+        if "{" in raw_translation: # Check if the text has a placeholder
             target_name = target_suffix or "General"
             if target_name == "General":
                 if "first_encounter" in base_text_key:
                      return self._get_text(translations, selected_language, "event_first_encounter_general"), "General", "generic"
                 return self._get_text(translations, selected_language, base_text_key, "General"), "General", "generic"
+            
+            # Clean up the target name to check for skin themes
+            # Convert camel case to spaced words for matching against config.CHAMPIONS_BY_SKINS
+            cleaned_target_name = re.sub(r'(?<!^)(?=[A-Z])', ' ', target_suffix).strip()
+            
+            # Handle special case for 'AppearanceDragon'
+            if target_suffix == 'AppearanceDragon':
+                champions = config.CHAMPIONS_BY_SKINS["Dragonmancer"]
+                icon_target = random.choice(champions) if champions else "Aurelion Sol"
+                display_name = "Appearance Dragon"
+                result_text = self._get_text(translations, selected_language, base_text_key, display_name)
+                return result_text, icon_target, "champion"
+            
+            # Check if the cleaned name corresponds to a skin theme
+            if cleaned_target_name in config.CHAMPIONS_BY_SKINS:
+                champions = config.CHAMPIONS_BY_SKINS[cleaned_target_name]
+                icon_target = random.choice(champions) if champions else "General"
+                
+                skin_theme_translation_key = f"skin_theme_{cleaned_target_name.lower().replace(' ', '_')}"
+                display_name = self._get_text(translations, selected_language, skin_theme_translation_key)
+                
+                result_text = self._get_text(translations, selected_language, base_text_key, display_name)
+                return result_text, icon_target, "champion"
             
             if target_name in translations.get(selected_language, {}):
                 display_name = self._get_text(translations, selected_language, target_name)
