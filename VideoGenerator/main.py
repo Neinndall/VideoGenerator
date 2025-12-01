@@ -23,12 +23,12 @@ def print_help():
     python main.py
 
     Instructions:
-    1. Place the folder with the audio files in the same directory as this script.
-    2. Make sure the 'background.png' file is in the same directory (1920x1080).
-    3. Make sure the 'font.ttf' file is in the same directory.
-    4. The script automatically detects the audio folder and processes its contents.
-    5. Output images are saved in the 'output_images' folder.
-    6. Output videos are saved in the 'output_videos' folder.
+    1. Place your audio folders (e.g., 'champion_vo_audio') in the same directory as this script.
+    2. Place at least one background image (.png format) inside the 'utils' folder.
+    3. Ensure the 'font.ttf' file is inside the 'utils' folder.
+    4. The script automatically detects audio folders and processes their contents.
+    5. Output images are saved in 'output/output_images/'.
+    6. Output videos are saved in 'output/output_videos/'.
 
     Arguments:
     -h, --help: Show this help message.
@@ -42,6 +42,7 @@ def select_language_interactively(translations):
     lang_map = {}
     
     for i, code in enumerate(lang_codes):
+        # A simple way to get full language names. Can be expanded.
         full_name = "English" if code == "EN" else "Turkish" if code == "TR" else code
         print(f"  {i+1}. {full_name}")
         lang_map[str(i+1)] = code
@@ -109,10 +110,10 @@ def main():
 
     icon_manager.print_cache_stats()
 
-    if os.path.exists(config.BACKGROUND_IMAGE_PATH) is False or os.path.exists(config.FONT_PATH) is False:
+    # Check for the font file, as it's still essential.
+    if not os.path.exists(config.FONT_PATH):
         print("\n--- ACTION REQUIRED! ---")
-        print("Missing essential files. Please ensure the following files exist in the utils folder directory:")
-        print(f"- Background: '{os.path.basename(config.BACKGROUND_IMAGE_PATH)}' (1920x1080 image)")
+        print("Missing essential files. Please ensure the following file exists in the utils folder directory:")
         print(f"- Font: '{os.path.basename(config.FONT_PATH)}' (.ttf or .otf font file)")
         print("--------------------------")
         return
@@ -128,9 +129,13 @@ def main():
         print("Could not get LoL version, but will try to use existing cache.")
 
 
-    audio_directories = utils.detect_audio_directories()
+    audio_directories = utils.detect_audio_directories(config.BASE_DIR)
     if not audio_directories:
+        print("\n--- ACTION REQUIRED! ---")
         print("No audio folders found to process.")
+        print("Please place your audio folders (e.g., a folder named 'champion_vo_audio_en')")
+        print(f"inside the main project directory: '{config.BASE_DIR}'")
+        print("--------------------------")
         return
 
     total_images_generated = 0

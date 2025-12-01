@@ -9,33 +9,33 @@ from . import event_handlers as handlers
 # --- Data for Handlers ---
 
 SIMPLE_KEYWORD_MAP = {
-    "Kill3DPenta": ("Penta Kill", "Penta", "generic"),
-    "Kill3DFirst": ("First Blood", "FirstBlood", "generic"),
-    "Kill3DTurret": ("Turret Takedown", "Turret", "generic"),
-    "Kill3DAheadAllyTeam": ("Kill (Ally Team Ahead)", "General", "generic"),
-    "Kill3DBehindAllyTeam": ("Kill (Ally Team Behind)", "General", "generic"),
-    "Shop2DOpen": ("Open Item Shop", "NoIcon", "generic"),
-    "Shop3DOpen": ("Open Item Shop", "NoIcon", "generic"),
-    "Move2DRiver": ("Movement in River", "NoIcon", "generic"),
-    "Move3DRiver": ("Movement in River", "NoIcon", "generic"),
+    "Kill3DPenta": ("event_penta_kill", "Penta", "generic"),
+    "Kill3DFirst": ("event_first_blood", "FirstBlood", "generic"),
+    "Kill3DTurret": ("event_turret_takedown", "Turret", "generic"),
+    "Kill3DAheadAllyTeam": ("event_kill_ally_ahead", "General", "generic"),
+    "Kill3DBehindAllyTeam": ("event_kill_ally_behind", "General", "generic"),
+    "Shop2DOpen": ("event_open_shop", "NoIcon", "generic"),
+    "Shop3DOpen": ("event_open_shop", "NoIcon", "generic"),
+    "Move2DRiver": ("event_move_river", "NoIcon", "generic"),
+    "Move3DRiver": ("event_move_river", "NoIcon", "generic"),
 }
 
 INTERACTION_MAP = {
-    "FirstEncounter": "First Encounter with {0}",
-    "SecondEncounter": "Second Encounter with {0}",
-    "MoveFirst": "First Movement",
-    "MoveLong": "Long Movement",
-    "MoveStandard": "Standard Movement",
+    "FirstEncounter": "interaction_first_encounter_one",
+    "SecondEncounter": "interaction_second_encounter_one",
+    "MoveFirst": "event_move_first",
+    "MoveLong": "event_move_long",
+    "MoveStandard": "event_move_standard",
 }
 
 SPECIFIC_TEXT_MAP = {
-    "JokeTauntResponse": "Respond to Jokes/Taunts",
-    "TauntResponse": "Respond to Taunt",
-    "JokeResponse": "Respond to Joke",
-    "Taunt": "Taunt",
-    "Joke": "Joke",
-    "Respawn": "Respawn",
-    "Recall": "Recall",
+    "JokeTauntResponse": "event_response_joke_taunt",
+    "TauntResponse": "event_response_taunt",
+    "JokeResponse": "event_response_joke",
+    "Taunt": "event_taunt",
+    "Joke": "event_joke",
+    "Respawn": "event_respawn",
+    "Recall": "event_recall",
 }
 
 # --- Handler Instantiation ---
@@ -50,7 +50,7 @@ EVENT_HANDLERS = [
     handlers.MappedInteractionHandler(SPECIFIC_TEXT_MAP),
     handlers.MappedInteractionHandler(INTERACTION_MAP),
     handlers.PrefixedEventHandler("Kill", "Kill {0}", "generic"),
-    handlers.PrefixedEventHandler("Assist", "Assist {0}", "champion"),
+    handlers.PrefixedEventHandler("Assist", "interaction_assist_one", "champion"),
     handlers.PrefixedEventHandler("MoveFirstAlly", "First Movement (Ally: {0})", "generic"),
     handlers.PrefixedEventHandler("SpellPRevive", "Revive {0}", "generic"),
     handlers.DefaultHandler() # This should always be last

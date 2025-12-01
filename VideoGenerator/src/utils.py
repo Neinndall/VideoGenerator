@@ -3,29 +3,32 @@ import re
 import subprocess
 from . import config
 
-def detect_audio_directories():
-    """Automatically detects ALL audio folders based on the naming pattern."""
+def detect_audio_directories(base_path):
+    """
+    Automatically detects all audio folders in the given base path based on the naming pattern.
+    """
     detected_dirs = []
-    possible_patterns = [r".*vo_audio.*"]
+    # This pattern is used to identify audio directories, e.g., "champion_vo_audio_en"
+    pattern = r".*vo_audio.*"
     
-    for item in os.listdir(config.BASE_DIR):
-        if os.path.isdir(os.path.join(config.BASE_DIR, item)):
-            for pattern in possible_patterns:
-                if re.match(pattern, item):
-                    print(f"Audio folder detected: {item}")
-                    detected_dirs.append(os.path.join(config.BASE_DIR, item))
-                    break
-    
-    if not detected_dirs:
-        default_audio_dir = os.path.join(config.BASE_DIR, "darius_skin67_vo_audio_mx")
-        if os.path.exists(default_audio_dir):
-            print(f"No audio folders detected automatically. Using default: {os.path.basename(default_audio_dir)}")
-            detected_dirs.append(default_audio_dir)
+    try:
+        for item in os.listdir(base_path):
+            item_path = os.path.join(base_path, item)
+            if os.path.isdir(item_path) and re.match(pattern, item, re.IGNORECASE):
+                print(f"Audio folder detected: {item}")
+                detected_dirs.append(item_path)
+    except FileNotFoundError:
+        # This can happen if the base_path itself doesn't exist.
+        # The main script should handle this, but we return an empty list for safety.
+        print(f"Warning: The directory '{base_path}' was not found.")
+        return []
             
     return detected_dirs
 
 def check_ffmpeg_installed():
+    """Checks if ffmpeg and ffprobe executables are available."""
     try:
+        # Use capture_output=True to prevent ffmpeg version info from printing to console
         subprocess.run([config.FFMPEG_EXE, "-version"], capture_output=True, check=True)
         subprocess.run([config.FFPROBE_EXE, "-version"], capture_output=True, check=True)
         return True

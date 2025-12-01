@@ -10,14 +10,11 @@ CACHE_DIR = os.path.join(UTILS_DIR, "cache")
 ICON_CACHE_DIR = os.path.join(CACHE_DIR, "icon_cache")
 ITEM_ICON_CACHE_DIR = os.path.join(CACHE_DIR, "item_cache")
 MONSTER_ICON_CACHE_DIR = os.path.join(CACHE_DIR, "monsters_cache")
-AUDIO_DIR = os.path.join(BASE_DIR, "darius_skin67_vo_audio_mx")
 
 # URL for monster data
 MONSTER_WIKI_BASE_URL = "https://wiki.leagueoflegends.com"
 MONSTER_WIKI_URL = "https://wiki.leagueoflegends.com/en-us/Monster"
 
-# Files you MUST provide in the same folder as the script
-BACKGROUND_IMAGE_PATH = os.path.join(UTILS_DIR, "background.png")
 FONT_PATH = os.path.join(UTILS_DIR, "font.ttf")
 
 # Path to the FFmpeg bin folder inside your working directory
@@ -35,7 +32,6 @@ SILENCE_DURATION = 0.0
 
 # Cache for skins data
 SKINS_CACHE_PATH = os.path.join(CACHE_DIR, "skins_data.json")
-
 
 # Dictionary of champions by region/type
 CHAMPIONS_BY_REGIONS = {
@@ -57,5 +53,9 @@ CHAMPIONS_BY_REGIONS = {
 CHAMPIONS_BY_SKINS = {
     "Spirit Blossom": ["Ahri", "Aphelios", "Cassiopeia", "Darius", "Evelynn", "Kindred", "Lillia", "Master Yi", "Riven", "Sett", "Soraka", "Syndra", "Teemo", "Thresh", "Tristana", "Vayne", "Yasuo", "Yone", "Yorick", "Ashe", "Bard", "Irelia", "Ivern", "Karma", "Lux", "Morgana", "Nidalee", "Varus", "Zed", "Zyra", "Sona", "Volibear"],
     "Winterwonder": ["Lulu", "Karma", "Neeko", "Master Yi", "Annie"],
-    "Coven": ["Nilah", "Elise", "Akali", "Syndra", "Nami"]
+    "Coven": ["Nilah", "Elise", "Akali", "Syndra", "Nami"],
+    "Dragonmancer": ["Aurelion Sol", "Lee Sin", "Ashe", "Brand", "Sett", "Yasuo", "Thresh", "Kai'Sa", "Karma", "Volibear", "Vayne", "Fiora", "Kassadin", "Rakan"],
+    "Firecracker": ["Jinx", "Vayne", "Sejuani", "Xin Zhao", "Diana", "Sett", "Teemo", "Tristana", "Annie", "Kog'Maw", "Corki"],
+    "Primal Ambush": ["Talon", "Vi", "Sivir", "Riven"],
+    "Porcelain": ["Amumu", "Aurelion Sol", "Darius", "Ezreal", "Graves", "Irelia", "Kindred", "Lissandra", "Lux", "Miss Fortune", "Morgana"]
 }
