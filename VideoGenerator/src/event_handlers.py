@@ -78,7 +78,7 @@ class MonsterAttackHandler(EventHandler):
     Handles events related to attacking monsters.
     """
     def can_handle(self, name_part, folder_name):
-        return "Attack2D" in folder_name
+        return "Attack2D" in folder_name and "General" not in folder_name
 
     def parse(self, name_part, folder_name, translations, selected_language):
         attack_match = re.search(r'Attack2D([A-Za-z]+)', folder_name)
@@ -188,6 +188,53 @@ class SkinInteractionHandler(EventHandler):
         
         return display_text, last_actual_champion_name, "champion"
 
+class GroupInteractionHandler(EventHandler):
+    """
+    Handles interactions based on champion classes or special groups (e.g., Kill3DAssassin, Respawn2DFirstNemesis).
+    """
+    def can_handle(self, name_part, folder_name):
+        # Check against all keys in CHAMPIONS_BY_CLASS
+        for group_name in config.CHAMPIONS_BY_CLASS:
+            if name_part.endswith(group_name):
+                return True
+        return False
+
+    def parse(self, name_part, folder_name, translations, selected_language):
+        matched_group = None
+        for group_name in config.CHAMPIONS_BY_CLASS:
+            if name_part.endswith(group_name):
+                matched_group = group_name
+                break
+        
+        if not matched_group:
+            return None, None, None
+
+        # Determine the action prefix (e.g., "Kill", "Respawn", "FirstEncounter")
+        action_prefix = name_part[:-len(matched_group)]
+        
+        # Get a random representative champion for the icon
+        champions = config.CHAMPIONS_BY_CLASS[matched_group]
+        icon_target = random.choice(champions) if champions else "General"
+        
+        # Get the translated name of the group
+        group_translation_key = f"class_{matched_group.lower()}"
+        display_group_name = self._get_text(translations, selected_language, group_translation_key)
+        
+        # Determine the display text based on the action (standard groups)
+        if "Kill" in action_prefix:
+            display_text = self._get_text(translations, selected_language, "interaction_kill_class", class_name=display_group_name)
+            return display_text, icon_target, "champion"
+        elif "Respawn" in action_prefix:
+            display_text = self._get_text(translations, selected_language, "interaction_respawn_class", class_name=display_group_name)
+            return display_text, "General", "generic"
+        elif "FirstEncounter" in action_prefix:
+            display_text = self._get_text(translations, selected_language, "interaction_first_encounter_class", class_name=display_group_name)
+            return display_text, icon_target, "champion"
+        else:
+            # Fallback for other potential actions
+            display_text = f"{action_prefix} {display_group_name}"
+            return display_text, "General", "generic"
+
 class MappedInteractionHandler(EventHandler):
     """
     Handles interactions based on a predefined map of keywords.
@@ -253,14 +300,11 @@ class MappedInteractionHandler(EventHandler):
                 return result_text, target_name, "champion"
         else:
             if target_suffix == "General":
-                final_text = self._get_text(translations, selected_language, base_text_key) + " in General"
+                final_text = self._get_text(translations, selected_language, base_text_key) + self._get_text(translations, selected_language, "suffix_in_general")
                 return final_text, "General", self.icon_type
-            elif target_suffix == "Rare":
-                final_text = self._get_text(translations, selected_language, base_text_key) + " Rare"
-                return final_text, "Rare", self.icon_type
             else:
                 final_text = self._get_text(translations, selected_language, base_text_key)
-                if target_suffix:
+                if target_suffix and target_suffix != "Rare":
                     final_text += f" {target_suffix}"
                 return final_text, target_suffix or "General", self.icon_type
 

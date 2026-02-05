@@ -43,7 +43,7 @@ def select_language_interactively(translations):
     
     for i, code in enumerate(lang_codes):
         # A simple way to get full language names. Can be expanded.
-        full_name = "English" if code == "EN" else "Turkish" if code == "TR" else code
+        full_name = "English" if code == "EN" else "Turkish" if code == "TR" else "Spanish" if code == "ES" else code
         print(f"  {i+1}. {full_name}")
         lang_map[str(i+1)] = code
         
@@ -134,7 +134,7 @@ def main():
         print("\n--- ACTION REQUIRED! ---")
         print("No audio folders found to process.")
         print("Please place your audio folders (e.g., a folder named 'champion_vo_audio_en')")
-        print(f"inside the main project directory: '{config.BASE_DIR}'")
+        print(f"inside the 'audios/' directory: '{os.path.join(config.BASE_DIR, 'audios')}'")
         print("--------------------------")
         return
 

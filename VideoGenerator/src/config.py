@@ -57,5 +57,16 @@ CHAMPIONS_BY_SKINS = {
     "Dragonmancer": ["Aurelion Sol", "Lee Sin", "Ashe", "Brand", "Sett", "Yasuo", "Thresh", "Kai'Sa", "Karma", "Volibear", "Vayne", "Fiora", "Kassadin", "Rakan"],
     "Firecracker": ["Jinx", "Vayne", "Sejuani", "Xin Zhao", "Diana", "Sett", "Teemo", "Tristana", "Annie", "Kog'Maw", "Corki"],
     "Primal Ambush": ["Talon", "Vi", "Sivir", "Riven"],
-    "Porcelain": ["Amumu", "Aurelion Sol", "Darius", "Ezreal", "Graves", "Irelia", "Kindred", "Lissandra", "Lux", "Miss Fortune", "Morgana"]
+    "Porcelain": ["Amumu", "Aurelion Sol", "Darius", "Ezreal", "Graves", "Irelia", "Kindred", "Lissandra", "Lux", "Miss Fortune", "Morgana"],
+    "Petalsof Spring": ["Lillia", "Ahri", "Yasuo", "Yone", "Teemo"],
+    "Lunar Revel": ["Lux", "Nasus", "Warwick", "Jinx", "Vayne", "Sylas"]
+}
+
+CHAMPIONS_BY_CLASS = {
+    "Assassin": ["Zed", "Akali", "Katarina", "Talon", "Pyke"],
+    "Enchanter": ["Lulu", "Janna", "Soraka", "Nami", "Sona"],
+    "Fighter": ["Darius", "Garen", "Sett", "Lee Sin", "Riven"],
+    "Mage": ["Lux", "Ahri", "Veigar", "Syndra", "Orianna"],
+    "Marksmen": ["Ashe", "Caitlyn", "Jinx", "Ezreal", "Jhin"],
+    "Tank": ["Malphite", "Ornn", "Sion", "Leona", "Braum"]
 }

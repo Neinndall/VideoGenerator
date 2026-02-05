@@ -23,17 +23,21 @@ SIMPLE_KEYWORD_MAP = {
 INTERACTION_MAP = {
     "FirstEncounter": "interaction_first_encounter_one",
     "SecondEncounter": "interaction_second_encounter_one",
+    "MoveFirstAlly": "interaction_move_first_ally",
+    "MoveLongAllSwords": "event_move_long_all_swords",
     "MoveFirst": "event_move_first",
     "MoveLong": "event_move_long",
     "MoveStandard": "event_move_standard",
 }
 
 SPECIFIC_TEXT_MAP = {
+    "JokeGeneralEnd": "event_joke_end",
     "JokeTauntResponse": "event_response_joke_taunt",
     "TauntResponse": "event_response_taunt",
     "JokeResponse": "event_response_joke",
     "Taunt": "event_taunt",
     "Joke": "event_joke",
+    "Attack": "event_attack",
     "Respawn": "event_respawn",
     "Recall": "event_recall",
 }
@@ -47,12 +51,12 @@ EVENT_HANDLERS = [
     handlers.ItemEventHandler(),
     handlers.SkinInteractionHandler(),
     handlers.MonsterAttackHandler(),
+    handlers.GroupInteractionHandler(),
     handlers.MappedInteractionHandler(SPECIFIC_TEXT_MAP),
     handlers.MappedInteractionHandler(INTERACTION_MAP),
-    handlers.PrefixedEventHandler("Kill", "Kill {0}", "generic"),
+    handlers.PrefixedEventHandler("Kill", "interaction_kill_one", "champion"),
     handlers.PrefixedEventHandler("Assist", "interaction_assist_one", "champion"),
-    handlers.PrefixedEventHandler("MoveFirstAlly", "First Movement (Ally: {0})", "generic"),
-    handlers.PrefixedEventHandler("SpellPRevive", "Revive {0}", "generic"),
+    handlers.PrefixedEventHandler("SpellPRevive", "event_revive_target", "champion"),
     handlers.DefaultHandler() # This should always be last
 ]
 
