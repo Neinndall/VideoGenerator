@@ -1,0 +1,110 @@
+<UserControl x:Class="VideoGenerator.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:VideoGenerator.Converters">
+    
+    <UserControl.Resources>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+    </UserControl.Resources>
+
+    <Grid Margin="32,8,32,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" 
+                   Text="Control Panel" 
+                   Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
+                   Margin="0,24,0,32" 
+                   FontWeight="Bold"/>
+
+        <materialDesign:Card Grid.Row="1" Style="{StaticResource ModernCard}">
+            <StackPanel>
+                <TextBlock Text="Media Directory" 
+                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                           FontWeight="Bold"
+                           Margin="0,0,0,16"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding DashboardModel.AudioPath}"
+                             materialDesign:HintAssist.Hint="Audio files path" 
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}" 
+                             Margin="0,0,12,0"/>
+                    <Button Grid.Column="1" 
+                            Content="BROWSE" 
+                            Click="SelectFolder_Click"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Padding="24,0"
+                            BorderThickness="1.5"/>
+                </Grid>
+            </StackPanel>
+        </materialDesign:Card>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <materialDesign:Card Grid.Column="0" Style="{StaticResource ModernCard}" Margin="0,0,10,20">
+                <StackPanel>
+                    <TextBlock Text="Output Language" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" FontWeight="Bold" Margin="0,0,0,16"/>
+                    <ComboBox ItemsSource="{Binding DashboardModel.AvailableLanguages}" 
+                              SelectedItem="{Binding DashboardModel.SelectedLanguage}"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <materialDesign:Card Grid.Column="1" Style="{StaticResource ModernCard}" Margin="10,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="HUD Typography" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" FontWeight="Bold" Margin="0,0,0,16"/>
+                    <ComboBox ItemsSource="{Binding DashboardModel.FontNames}" 
+                              SelectedItem="{Binding DashboardModel.SelectedFontName}"
+                              Style="{StaticResource ModernComboBox}"/>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+
+        <materialDesign:Card Grid.Row="3" Style="{StaticResource ModernCard}">
+            <StackPanel>
+                <DockPanel LastChildFill="True" Margin="0,0,0,16">
+                    <TextBlock Text="Silence Between Tracks" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding DashboardModel.SilenceDuration, StringFormat={}{0:F1}s}" 
+                               HorizontalAlignment="Right"
+                               Foreground="{StaticResource AccentBrush}"
+                               FontWeight="Bold"/>
+                </DockPanel>
+                <Slider Minimum="0" Maximum="5" 
+                        Value="{Binding DashboardModel.SilenceDuration}"
+                        Style="{StaticResource ModernSlider}"/>
+            </StackPanel>
+        </materialDesign:Card>
+
+        <StackPanel Grid.Row="4" Margin="0,12,0,24">
+            <Button Content="GENERATE VIDEOS" 
+                    Click="Generate_Click"
+                    IsEnabled="{Binding DashboardModel.IsProcessing, Converter={StaticResource InverseBooleanConverter}}"
+                    Style="{StaticResource ModernActionButton}"/>
+            
+            <materialDesign:Card Style="{StaticResource ModernCard}" Margin="0,24,0,0">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <TextBlock Text="ACTIVITY LOGS" FontWeight="Bold" Opacity="0.5" VerticalAlignment="Center"/>
+                        <materialDesign:PackIcon Kind="Console" HorizontalAlignment="Right" Opacity="0.5" Width="18" Height="18"/>
+                    </Grid>
+                    <ListBox x:Name="LogsListBox" 
+                             ItemsSource="{Binding LogService.Logs}" 
+                             Style="{StaticResource ModernLogConsole}"/>
+                </StackPanel>
+            </materialDesign:Card>
+        </StackPanel>
+    </Grid>
+</UserControl>
