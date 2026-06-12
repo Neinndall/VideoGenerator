@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:converters="clr-namespace:VideoGenerator.Converters"
+        xmlns:converters="clr-namespace:VideoGenerator.Views.Converters"
         xmlns:local="clr-namespace:VideoGenerator.Views"
         mc:Ignorable="d"
         Title="VideoGenerator" 
@@ -12,7 +12,7 @@
         Width="1250"
         Icon="Resources/logo.ico"
         Background="{StaticResource PrimaryBackgroundBrush}"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.Foreground="{StaticResource TextPrimaryBrush}"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
@@ -25,13 +25,11 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Floating Sidebar -->
-        <materialDesign:Card Grid.Column="0" 
-                             UniformCornerRadius="24"
-                             Background="{StaticResource SecondaryBackgroundBrush}"
-                             BorderBrush="{StaticResource BorderBrush}"
-                             BorderThickness="1"
-                             Margin="8">
+        <!-- Modern Sidebar -->
+        <Border Grid.Column="0" 
+                Style="{StaticResource ModernContainer}"
+                Margin="8"
+                Padding="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -39,110 +37,110 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
+                <!-- Sidebar Header -->
                 <StackPanel Grid.Row="0" Margin="24,40,24,32">
-                    <materialDesign:PackIcon Kind="VideoOutline" 
-                                             Width="56" 
-                                             Height="56" 
-                                             Foreground="{StaticResource AccentBrush}"
-                                             HorizontalAlignment="Center"
-                                             Margin="0,0,0,16"/>
-                    <TextBlock Text="VideoGenerator" 
-                               Style="{StaticResource MaterialDesignHeadline5TextBlock}" 
+                    <Border Width="64" Height="64" 
+                            Background="#1A8B5CF6" 
+                            CornerRadius="16"
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,16">
+                        <materialDesign:PackIcon Kind="VideoOutline" 
+                                                 Width="32" 
+                                                 Height="32" 
+                                                 Foreground="{StaticResource AccentBrush}"
+                                                 VerticalAlignment="Center"
+                                                 HorizontalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="VIDEO GENERATOR" 
+                               FontSize="18"
+                               FontWeight="ExtraBold"
+                               HorizontalAlignment="Center"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{Binding AppVersion}" 
+                               FontSize="10"
+                               FontWeight="Bold"
                                HorizontalAlignment="Center" 
-                               FontWeight="Bold"/>
-                    <TextBlock Text="v2.0.0.0" 
-                               Style="{StaticResource MaterialDesignCaptionTextBlock}" 
-                               HorizontalAlignment="Center" 
-                               Opacity="0.3"
-                               FontFamily="Consolas"
+                               Opacity="0.5"
+                               Foreground="{StaticResource TextSecondaryBrush}"
                                Margin="0,4,0,0"/>
                 </StackPanel>
 
+                <!-- Navigation -->
                 <StackPanel Grid.Row="1" Margin="12,0">
                     <ListBox x:Name="NavListBox" 
-                             Style="{StaticResource ModernNavigationListBox}"
+                             Style="{StaticResource VirtualizedListBoxStyle}"
+                             ItemContainerStyle="{StaticResource ModernNavItem}"
                              SelectionChanged="NavListBox_SelectionChanged">
-                        <ListBoxItem IsSelected="True" Tag="Dashboard"
-                                     Margin="0,2" Height="48" Cursor="Hand">
-                            <StackPanel Orientation="Horizontal" Margin="8,0">
-                                <materialDesign:PackIcon Kind="ViewDashboard" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                        <ListBoxItem IsSelected="True" Tag="Dashboard">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ViewDashboardOutline" Margin="0,0,16,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Dashboard" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem Tag="Background"
-                                     Margin="0,2" Height="48" Cursor="Hand">
-                            <StackPanel Orientation="Horizontal" Margin="8,0">
-                                <materialDesign:PackIcon Kind="ImageEdit" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                        <ListBoxItem Tag="Background">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ImageEditOutline" Margin="0,0,16,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Background Design" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem Tag="EventRules"
-                                     Margin="0,2" Height="48" Cursor="Hand">
-                            <StackPanel Orientation="Horizontal" Margin="8,0">
+                        <ListBoxItem Tag="EventRules">
+                            <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Cogs" Margin="0,0,16,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Event Mapping" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem Tag="Translations"
-                                     Margin="0,2" Height="48" Cursor="Hand">
-                            <StackPanel Orientation="Horizontal" Margin="8,0">
+                        <ListBoxItem Tag="Translations">
+                            <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Translate" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Dictionary &amp; Events" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <TextBlock Text="Dictionary" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem Tag="Settings"
-                                     Margin="0,2" Height="48" Cursor="Hand">
-                            <StackPanel Orientation="Horizontal" Margin="8,0">
-                                <materialDesign:PackIcon Kind="Settings" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                        <ListBoxItem Tag="Settings">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="SettingsOutline" Margin="0,0,16,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Settings" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem Tag="History"
-                                     Margin="0,2" Height="48" Cursor="Hand">
-                            <StackPanel Orientation="Horizontal" Margin="8,0">
-                                <materialDesign:PackIcon Kind="FileDocument" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="History" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </ListBoxItem>
                     </ListBox>
                 </StackPanel>
 
+                <!-- Status Info Footer -->
                 <Border Grid.Row="2" 
                         Margin="16,24" 
                         Padding="16" 
-                        Background="{StaticResource SurfaceBrush}" 
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="16">
+                        Style="{StaticResource HUDBorder}">
                     <StackPanel>
-                        <TextBlock Text="SYSTEM STATUS" 
-                                   Style="{StaticResource MaterialDesignCaptionTextBlock}" 
-                                   FontWeight="Bold" 
+                        <TextBlock Text="ENGINE STATUS" 
                                    FontSize="10"
-                                   Margin="0,0,0,12"
-                                   Opacity="0.5"/>
-                        <ProgressBar Value="0" 
-                                     IsIndeterminate="False" 
-                                     Height="6" 
-                                     Margin="0,4"
-                                     materialDesign:TransitionAssist.DisableTransitions="True"
-                                     Foreground="{StaticResource AccentBrush}"
-                                     Background="{StaticResource PrimaryBackgroundBrush}"/>
-                        <TextBlock Margin="0,8,0,0"
-                                   Text="System Ready"
-                                   FontSize="10"
-                                   FontFamily="Consolas"
-                                   HorizontalAlignment="Center"
+                                   FontWeight="Black"
+                                   Margin="0,0,0,8"
                                    Opacity="0.4"
-                                   Style="{StaticResource MaterialDesignCaptionTextBlock}"/>
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <Grid>
+                            <ProgressBar Value="100" 
+                                         Height="4" 
+                                         Foreground="{StaticResource AccentBrush}"
+                                         Background="{StaticResource PrimaryBackgroundBrush}"/>
+                        </Grid>
+                        <TextBlock Margin="0,8,0,0"
+                                   Text="STABLE - READY"
+                                   FontSize="9"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{StaticResource SuccessBrush}"/>
                     </StackPanel>
                 </Border>
             </Grid>
-        </materialDesign:Card>
+        </Border>
 
         <!-- Main Content Area -->
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-            <ContentControl x:Name="ContentArea" />
-        </ScrollViewer>
+        <Border Grid.Column="1" 
+                Margin="8"
+                Background="{StaticResource PrimaryBackgroundBrush}"
+                CornerRadius="24">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+                <ContentControl x:Name="ContentArea" />
+            </ScrollViewer>
+        </Border>
     </Grid>
 </Window>

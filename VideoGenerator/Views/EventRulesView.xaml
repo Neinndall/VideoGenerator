@@ -8,117 +8,159 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="32,8,32,8">
+    <Grid Margin="48,32,48,24">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" 
-                   Text="Mapping &amp; Lore Engine" 
-                   Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
-                   Margin="0,24,0,16" 
-                   FontWeight="Bold"/>
-                   
-        <TextBlock Grid.Row="1" 
-                   Text="Configure how the application interprets events and lore-based groupings like regions and skinlines." 
-                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
-                   Opacity="0.7"
-                   Margin="0,0,0,24" />
+        <!-- HEADER -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,48">
+            <TextBlock Text="MAPPING &amp; LORE ENGINE" 
+                       FontSize="28" 
+                       FontWeight="Black" 
+                       Foreground="{StaticResource TextPrimaryBrush}" 
+                       />
+            <TextBlock Text="Orchestrate logic behaviors, thematic groupings, and champion identity mapping." 
+                       FontSize="14" 
+                       FontWeight="Medium" 
+                       Foreground="{StaticResource TextSecondaryBrush}" 
+                       Opacity="0.6" 
+                       Margin="0,6,0,0"/>
+        </StackPanel>
 
-        <TabControl Grid.Row="2" Style="{StaticResource MaterialDesignNavigationRailTabControl}">
-            <!-- TAB 1: EVENT RULES -->
-            <TabItem Header="EVENT RULES">
-                <Grid Margin="0,24,0,0">
+        <!-- MAIN CONTENT AREA -->
+        <TabControl Grid.Row="1" 
+                    Style="{StaticResource LoreEngineTabControl}">
+            
+            <!-- SECTION 1: EVENT RULES -->
+            <TabItem Style="{StaticResource LoreEngineTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Cogs" Margin="0,0,10,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                        <TextBlock Text="EVENT RULES" VerticalAlignment="Center" FontSize="12" FontWeight="Black"/>
+                    </StackPanel>
+                </TabItem.Header>
+
+                <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="350"/>
+                        <ColumnDefinition Width="300"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <materialDesign:Card Grid.Column="0" Style="{StaticResource ModernCard}" Margin="0,0,16,0" VerticalAlignment="Top">
+                    <Border Grid.Column="0" Style="{StaticResource ModernContainer}" Margin="0,0,24,0" VerticalAlignment="Top">
                         <StackPanel>
-                            <TextBlock Text="Create New Rule" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" FontWeight="Bold" Margin="0,0,0,16"/>
-                            <TextBox x:Name="KeywordBox" materialDesign:HintAssist.Hint="Folder Keyword (e.g. Dance)" Style="{StaticResource MaterialDesignOutlinedTextBox}" Margin="0,0,0,16"/>
-                            <TextBox x:Name="TranslationKeyBox" materialDesign:HintAssist.Hint="Dictionary Key (e.g. event_dance)" Style="{StaticResource MaterialDesignOutlinedTextBox}" Margin="0,0,0,16"/>
-                            <ComboBox x:Name="IconTypeBox" materialDesign:HintAssist.Hint="Icon Category" Style="{StaticResource ModernComboBox}" Margin="0,0,0,16">
-                                <sys:String>generic</sys:String>
-                                <sys:String>champion</sys:String>
-                                <sys:String>item</sys:String>
-                                <sys:String>monster</sys:String>
-                            </ComboBox>
-                            <ComboBox x:Name="RuleTypeBox" materialDesign:HintAssist.Hint="Logic Behavior" Style="{StaticResource ModernComboBox}" Margin="0,0,0,24">
-                                <sys:String>Simple</sys:String>
-                                <sys:String>Target</sys:String>
-                                <sys:String>Interaction</sys:String>
-                            </ComboBox>
-                            <Button Content="ADD RULE" Click="AddRule_Click" Style="{StaticResource ModernActionButton}"/>
+                            <TextBlock Text="NEW BEHAVIOR" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,24"/>
+                            
+                            <TextBox x:Name="KeywordBox" materialDesign:HintAssist.Hint="Folder Keyword" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
+                            <TextBox x:Name="TranslationKeyBox" materialDesign:HintAssist.Hint="Dict Key" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
+                            
+                            <Grid Margin="0,0,0,24">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox x:Name="IconTypeBox" Grid.Column="0" materialDesign:HintAssist.Hint="Category" Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,12,0">
+                                    <sys:String>generic</sys:String>
+                                    <sys:String>champion</sys:String>
+                                    <sys:String>item</sys:String>
+                                    <sys:String>monster</sys:String>
+                                </ComboBox>
+                                <ComboBox x:Name="RuleTypeBox" Grid.Column="1" materialDesign:HintAssist.Hint="Behavior" Style="{StaticResource ModernComboBoxStyle}">
+                                    <sys:String>Simple</sys:String>
+                                    <sys:String>Target</sys:String>
+                                    <sys:String>Interaction</sys:String>
+                                </ComboBox>
+                            </Grid>
+                            
+                            <Button Content="REGISTER RULE" Click="AddRule_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                         </StackPanel>
-                    </materialDesign:Card>
+                    </Border>
 
-                    <materialDesign:Card Grid.Column="1" Style="{StaticResource ModernCard}" Padding="0">
+                    <Border Grid.Column="1" Style="{StaticResource ModernContainer}" Padding="0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,10">
+                            
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="DatabaseOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="RULES REPOSITORY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="1" Background="{StaticResource SecondaryBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,12">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1.2*"/>
                                         <ColumnDefinition Width="1.8*"/>
                                         <ColumnDefinition Width="1*"/>
-                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="80"/>
                                         <ColumnDefinition Width="50"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="KEYWORD" FontWeight="Bold" Opacity="0.4" FontSize="11"/>
-                                    <TextBlock Grid.Column="1" Text="DICTIONARY KEY" FontWeight="Bold" Opacity="0.4" FontSize="11"/>
-                                    <TextBlock Grid.Column="2" Text="ICON" FontWeight="Bold" Opacity="0.4" FontSize="11"/>
-                                    <TextBlock Grid.Column="3" Text="TYPE" FontWeight="Bold" Opacity="0.4" FontSize="11"  HorizontalAlignment="Center"/>
+                                    <TextBlock Text="KEYWORD" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
+                                    <TextBlock Grid.Column="1" Text="DICT KEY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
+                                    <TextBlock Grid.Column="2" Text="ICON" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
+                                    <TextBlock Grid.Column="3" Text="TYPE" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                 </Grid>
                             </Border>
-                            <ItemsControl Grid.Row="1" ItemsSource="{Binding RuleManager.Rules}">
-                                <ItemsControl.ItemTemplate>
+
+                            <ListBox Grid.Row="2" 
+                                     ItemsSource="{Binding RuleManager.Rules}"
+                                     Style="{StaticResource NonSelectableListBoxStyle}">
+                                <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,14">
+                                        <Border Padding="24,12">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1.2*"/>
                                                     <ColumnDefinition Width="1.8*"/>
                                                     <ColumnDefinition Width="1*"/>
-                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="80"/>
                                                     <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding Keyword}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="White"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding TranslationKey}" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" Opacity="0.9"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding IconType}" VerticalAlignment="Center" Opacity="0.6" FontFamily="Consolas"/>
-                                                <TextBlock Grid.Column="3" Text="{Binding Type}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" Opacity="0.8" Foreground="{StaticResource PrimaryGradientBrush}"/>
-                                                <Button Grid.Column="4" Click="DeleteRule_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="#FF5252" Width="30" Height="30" Opacity="0.7">
+                                                <TextBlock Text="{Binding Keyword}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding TranslationKey}" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding IconType}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" FontFamily="Consolas" FontSize="11"/>
+                                                <Border Grid.Column="3" Style="{StaticResource HUDBorder}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Type}" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                </Border>
+                                                <Button Grid.Column="4" Click="DeleteRule_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="30" Height="30" Opacity="0.7">
                                                     <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                                 </Button>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </Grid>
-                    </materialDesign:Card>
+                    </Border>
                 </Grid>
             </TabItem>
 
-            <!-- TAB 2: THEMATIC GROUPS -->
-            <TabItem Header="THEMATIC GROUPS">
-                <Grid Margin="0,24,0,0">
+            <!-- SECTION 2: THEMATIC GROUPS -->
+            <TabItem Style="{StaticResource LoreEngineTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ViewGridOutline" Margin="0,0,10,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                        <TextBlock Text="GROUPS" VerticalAlignment="Center" FontSize="12" FontWeight="Black"/>
+                    </StackPanel>
+                </TabItem.Header>
+
+                <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="350"/>
+                        <ColumnDefinition Width="300"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <materialDesign:Card Grid.Column="0" Style="{StaticResource ModernCard}" Margin="0,0,16,0" VerticalAlignment="Top">
+                    <Border Grid.Column="0" Style="{StaticResource ModernContainer}" Margin="0,0,24,0" VerticalAlignment="Top">
                         <StackPanel>
-                            <TextBlock Text="Create New Group" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" FontWeight="Bold" Margin="0,0,0,16"/>
-                            <TextBox x:Name="GroupNameBox" materialDesign:HintAssist.Hint="Group Name (e.g. Yordle)" Style="{StaticResource MaterialDesignOutlinedTextBox}" Margin="0,0,0,16"/>
-                            <ComboBox x:Name="GroupCategoryBox" materialDesign:HintAssist.Hint="Category" Style="{StaticResource ModernComboBox}" Margin="0,0,0,16">
+                            <TextBlock Text="NEW THEMATIC GROUP" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,24"/>
+                            <TextBox x:Name="GroupNameBox" materialDesign:HintAssist.Hint="Group Name" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
+                            <ComboBox x:Name="GroupCategoryBox" materialDesign:HintAssist.Hint="Category" Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,0,20">
                                 <sys:String>Region</sys:String>
                                 <sys:String>Skinline</sys:String>
                                 <sys:String>Class</sys:String>
@@ -126,18 +168,27 @@
                                 <sys:String>Faction</sys:String>
                                 <sys:String>Custom</sys:String>
                             </ComboBox>
-                            <TextBox x:Name="ChampionsBox" materialDesign:HintAssist.Hint="Champions (Comma separated)" Style="{StaticResource MaterialDesignOutlinedTextBox}" AcceptsReturn="True" Height="100" VerticalContentAlignment="Top" Padding="12" Margin="0,0,0,24"/>
-                            <Button Content="ADD GROUP" Click="AddGroup_Click" Style="{StaticResource ModernActionButton}"/>
+                            <TextBox x:Name="ChampionsBox" materialDesign:HintAssist.Hint="Champs (Comma separated)" Style="{StaticResource ModernTextBox}" AcceptsReturn="True" Height="140" VerticalContentAlignment="Top" Padding="12" Margin="0,0,0,24"/>
+                            <Button Content="ADD GROUP" Click="AddGroup_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                         </StackPanel>
-                    </materialDesign:Card>
+                    </Border>
 
-                    <materialDesign:Card Grid.Column="1" Style="{StaticResource ModernCard}" Padding="0">
+                    <Border Grid.Column="1" Style="{StaticResource ModernContainer}" Padding="0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,10">
+
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Group" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="THEMES REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="1" Background="{StaticResource SecondaryBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,12">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="150"/>
@@ -145,15 +196,18 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="50"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="GROUP NAME" FontWeight="Bold" Opacity="0.4" FontSize="11"/>
-                                    <TextBlock Grid.Column="1" Text="CATEGORY" FontWeight="Bold" Opacity="0.4" FontSize="11"/>
-                                    <TextBlock Grid.Column="2" Text="CHAMPIONS" FontWeight="Bold" Opacity="0.4" FontSize="11"/>
+                                    <TextBlock Text="NAME" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
+                                    <TextBlock Grid.Column="1" Text="CATEGORY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
+                                    <TextBlock Grid.Column="2" Text="CHAMPIONS" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
                                 </Grid>
                             </Border>
-                            <ItemsControl Grid.Row="1" ItemsSource="{Binding GroupManager.Groups}">
-                                <ItemsControl.ItemTemplate>
+
+                            <ListBox Grid.Row="2" 
+                                     ItemsSource="{Binding GroupManager.Groups}"
+                                     Style="{StaticResource NonSelectableListBoxStyle}">
+                                <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,14">
+                                        <Border Padding="24,12">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="150"/>
@@ -162,55 +216,78 @@
                                                     <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="White"/>
-                                                    <Border Background="#3300E676" HorizontalAlignment="Left" CornerRadius="4" Padding="4,0" Margin="0,2,0,0" Visibility="{Binding IsOfficial, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <TextBlock Text="OFFICIAL" FontSize="8" Foreground="#00E676" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <Border Style="{StaticResource AccentTagBorder}" HorizontalAlignment="Left" Margin="0,4,0,0" Visibility="{Binding IsOfficial, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <TextBlock Text="OFFICIAL" FontSize="8" Foreground="{StaticResource SuccessBrush}" FontWeight="Black"/>
                                                     </Border>
                                                 </StackPanel>
-                                                <TextBlock Grid.Column="1" Text="{Binding Category}" VerticalAlignment="Center" Opacity="0.6" FontSize="11"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding ChampionsRaw}" VerticalAlignment="Center" TextWrapping="Wrap" Opacity="0.8" FontSize="11" FontFamily="Consolas"/>
-                                                <Button Grid.Column="3" Click="DeleteGroup_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="#FF5252" Width="30" Height="30" Opacity="0.7">
+                                                <TextBlock Grid.Column="1" Text="{Binding Category}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding ChampionsRaw}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" FontFamily="Consolas"/>
+                                                <Button Grid.Column="3" Click="DeleteGroup_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="30" Height="30" Opacity="0.7">
                                                     <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                                 </Button>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </Grid>
-                    </materialDesign:Card>
+                    </Border>
                 </Grid>
             </TabItem>
 
-            <!-- TAB 3: CHAMPION ALIASES -->
-            <TabItem Header="CHAMPION ALIASES">
-                <Grid Margin="0,24,0,0">
+            <!-- SECTION 3: CHAMPION ALIASES -->
+            <TabItem Style="{StaticResource LoreEngineTabItem}">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="AccountConvert" Margin="0,0,10,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                        <TextBlock Text="ALIASES" VerticalAlignment="Center" FontSize="12" FontWeight="Black"/>
+                    </StackPanel>
+                </TabItem.Header>
+
+                <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="350"/>
+                        <ColumnDefinition Width="300"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <materialDesign:Card Grid.Column="0" Style="{StaticResource ModernCard}" Margin="0,0,16,0" VerticalAlignment="Top">
+                    <Border Grid.Column="0" Style="{StaticResource ModernContainer}" Margin="0,0,24,0" VerticalAlignment="Top">
                         <StackPanel>
-                            <TextBlock Text="Create New Alias" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" FontWeight="Bold" Margin="0,0,0,16"/>
-                            <TextBox x:Name="AliasDisplayBox" materialDesign:HintAssist.Hint="Display Name (e.g. Wukong)" Style="{StaticResource MaterialDesignOutlinedTextBox}" Margin="0,0,0,16"/>
-                            <TextBox x:Name="AliasInternalBox" materialDesign:HintAssist.Hint="Riot Internal Name (e.g. MonkeyKing)" Style="{StaticResource MaterialDesignOutlinedTextBox}" Margin="0,0,0,24"/>
-                            <Button Content="ADD ALIAS" Click="AddAlias_Click" Style="{StaticResource ModernActionButton}"/>
+                            <TextBlock Text="NEW IDENTITY ALIAS" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,24"/>
+                            <TextBox x:Name="AliasDisplayBox" materialDesign:HintAssist.Hint="Display Name" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
+                            <TextBox x:Name="AliasInternalBox" materialDesign:HintAssist.Hint="Int System Name" Style="{StaticResource ModernTextBox}" Margin="0,0,0,24"/>
                             
-                            <Border Background="#33FFB300" Margin="0,24,0,0" Padding="12" CornerRadius="8">
-                                <TextBlock Text="Tip: Internal names are used for DDragon and Community Dragon URLs. Use 'MonkeyKing' for Wukong, 'Leblanc' for LeBlanc, etc." 
-                                           TextWrapping="Wrap" FontSize="11" Foreground="#FFB300" Opacity="0.9"/>
+                            <Button Content="ADD MAPPING" Click="AddAlias_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" Margin="0,0,0,24" FontWeight="Black"/>
+                            
+                            <Border Background="#0D3B82F6" BorderBrush="#303B82F6" BorderThickness="1" Padding="20" CornerRadius="12">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <materialDesign:PackIcon Kind="Information" Foreground="{StaticResource InfoBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBlock Text="SYSTEM NOTE" FontSize="10" FontWeight="Black" Foreground="{StaticResource InfoBrush}" />
+                                    </StackPanel>
+                                    <TextBlock Text="Internal names must match Riot's file system (e.g. MonkeyKing for Wukong)." 
+                                               TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.8" LineHeight="16"/>
+                                </StackPanel>
                             </Border>
                         </StackPanel>
-                    </materialDesign:Card>
+                    </Border>
 
-                    <materialDesign:Card Grid.Column="1" Style="{StaticResource ModernCard}" Padding="0">
+                    <Border Grid.Column="1" Style="{StaticResource ModernContainer}" Padding="0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,10">
+
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="AccountBoxMultiple" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="ALIASES REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="1" Background="{StaticResource SecondaryBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,12">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1.2*"/>
@@ -218,14 +295,17 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="50"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="DISPLAY NAME" FontWeight="Bold" Opacity="0.4" FontSize="11"/>
-                                    <TextBlock Grid.Column="1" Text="INTERNAL NAME" FontWeight="Bold" Opacity="0.4" FontSize="11"/>
+                                    <TextBlock Text="DISPLAY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
+                                    <TextBlock Grid.Column="1" Text="INT NAME" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
                                 </Grid>
                             </Border>
-                            <ItemsControl Grid.Row="1" ItemsSource="{Binding AliasManager.Aliases}">
-                                <ItemsControl.ItemTemplate>
+
+                            <ListBox Grid.Row="2" 
+                                     ItemsSource="{Binding AliasManager.Aliases}"
+                                     Style="{StaticResource NonSelectableListBoxStyle}">
+                                <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,14">
+                                        <Border Padding="24,12">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1.2*"/>
@@ -234,22 +314,22 @@
                                                     <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Foreground="White"/>
-                                                    <Border Background="#3300E676" HorizontalAlignment="Left" CornerRadius="4" Padding="4,0" Margin="0,2,0,0" Visibility="{Binding IsOfficial, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <TextBlock Text="OFFICIAL" FontSize="8" Foreground="#00E676" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <Border Style="{StaticResource AccentTagBorder}" HorizontalAlignment="Left" Margin="0,4,0,0" Visibility="{Binding IsOfficial, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <TextBlock Text="OFFICIAL" FontSize="8" Foreground="{StaticResource SuccessBrush}" FontWeight="Black"/>
                                                     </Border>
                                                 </StackPanel>
-                                                <TextBlock Grid.Column="1" Text="{Binding InternalName}" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontFamily="Consolas"/>
-                                                <Button Grid.Column="3" Click="DeleteAlias_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="#FF5252" Width="30" Height="30" Opacity="0.7">
+                                                <TextBlock Grid.Column="1" Text="{Binding InternalName}" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" FontFamily="Consolas" FontSize="11"/>
+                                                <Button Grid.Column="3" Click="DeleteAlias_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="30" Height="30" Opacity="0.7">
                                                     <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                                 </Button>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </Grid>
-                    </materialDesign:Card>
+                    </Border>
                 </Grid>
             </TabItem>
         </TabControl>

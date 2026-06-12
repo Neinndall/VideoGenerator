@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using VideoGenerator.Services;
+using VideoGenerator.Utils;
 
 namespace VideoGenerator.Views
 {
@@ -13,13 +14,15 @@ namespace VideoGenerator.Views
         private readonly LogService _logService;
         private readonly Dictionary<string, UserControl> _viewCache = new();
 
+        public string AppVersion => AssemblyVersion.Version;
+
         public MainWindow(IServiceProvider serviceProvider, LogService logService)
         {
             InitializeComponent();
             _serviceProvider = serviceProvider;
             _logService = logService;
-
-            _logService.LogInfo("MainWindow initialized.");
+            
+            DataContext = this;
             
             // Load initial view
             NavigateTo("Dashboard");

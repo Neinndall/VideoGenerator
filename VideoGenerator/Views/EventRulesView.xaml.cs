@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using VideoGenerator.Models;
 using VideoGenerator.Views.Models;
@@ -52,6 +53,13 @@ namespace VideoGenerator.Views
                 return;
             }
 
+            // Duplicate Prevention
+            if (_ruleManager.Rules.Any(r => r.Keyword.Equals(keyword, StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageBox.Show($"A rule with the keyword '{keyword}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
             _ruleManager.Rules.Insert(0, new EventRule
             {
                 Keyword = keyword,
@@ -89,6 +97,13 @@ namespace VideoGenerator.Views
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(champions))
             {
                 MessageBox.Show("Group Name and Champions are required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Duplicate Prevention
+            if (_groupManager.Groups.Any(g => g.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageBox.Show($"A thematic group named '{name}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -133,6 +148,13 @@ namespace VideoGenerator.Views
             if (string.IsNullOrEmpty(display) || string.IsNullOrEmpty(internalName))
             {
                 MessageBox.Show("Both Display Name and Internal Name are required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Duplicate Prevention
+            if (_aliasManager.Aliases.Any(a => a.InternalName.Equals(internalName, StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageBox.Show($"An alias with the Internal Name '{internalName}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 

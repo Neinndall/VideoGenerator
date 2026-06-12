@@ -13,7 +13,15 @@
                 
                 <!-- Custom Theme -->
                 <ResourceDictionary Source="Theme/Colors.xaml" />
-                <ResourceDictionary Source="Theme/Styles.xaml" />
+                <ResourceDictionary Source="Theme/ModernBorders.xaml" />
+                <ResourceDictionary Source="Theme/RichTextBoxStyles.xaml" />
+                <ResourceDictionary Source="Theme/Animations.xaml" />
+                <ResourceDictionary Source="Theme/LoreTabStyles.xaml" />
+                <ResourceDictionary Source="Theme/InputStyles.xaml" />
+                <ResourceDictionary Source="Theme/ListStyles.xaml" />
+                <ResourceDictionary Source="Theme/ButtonStyles.xaml" />
+                <ResourceDictionary Source="Theme/NavigationStyles.xaml" />
+                <ResourceDictionary Source="Theme/SliderStyles.xaml" />
                 <ResourceDictionary Source="Theme/Converters.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
