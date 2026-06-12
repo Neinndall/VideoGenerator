@@ -33,11 +33,11 @@
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#268B5CF6"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#0DFFFFFF"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#338B5CF6"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#268B5CF6"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </Trigger>
                                     <MultiTrigger>
@@ -45,8 +45,8 @@
                                             <Condition Property="IsSelected" Value="True"/>
                                             <Condition Property="IsMouseOver" Value="True"/>
                                         </MultiTrigger.Conditions>
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#4D8B5CF6"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#338B5CF6"/>
+                                        <Setter Property="Foreground" Value="White"/>
                                     </MultiTrigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
@@ -59,6 +59,7 @@
 
     <!-- Style for Lists where Selection is NOT functional -->
     <Style x:Key="NonSelectableListBoxStyle" TargetType="ListBox" BasedOn="{StaticResource VirtualizedListBoxStyle}">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="ListBoxItem">
@@ -66,6 +67,7 @@
                     <Setter Property="BorderThickness" Value="0"/>
                     <Setter Property="Padding" Value="0"/>
                     <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListBoxItem">

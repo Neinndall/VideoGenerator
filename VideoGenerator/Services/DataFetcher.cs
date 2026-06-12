@@ -19,7 +19,9 @@ namespace VideoGenerator.Services
         public DataFetcher()
         {
             _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            _httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8");
+            _httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
         }
 
         public async Task<string> GetLatestLolVersionAsync()
@@ -91,14 +93,21 @@ namespace VideoGenerator.Services
             }
         }
 
-        public async Task<string> DownloadIconAsync(string url, string category)
+        public async Task<string> DownloadIconAsync(string url, string category, string customFileName = null)
         {
             try
             {
                 string categoryDir = Path.Combine(AppConfig.IconCacheDir, category);
                 Directory.CreateDirectory(categoryDir);
                 
-                string fileName = Path.GetFileName(new Uri(url).LocalPath);
+                string fileName = customFileName ?? Path.GetFileName(new Uri(url).LocalPath);
+                // Strip query parameters if customFileName wasn't provided
+                if (customFileName == null)
+                {
+                    int queryIdx = fileName.IndexOf('?');
+                    if (queryIdx >= 0) fileName = fileName.Substring(0, queryIdx);
+                }
+                
                 string filePath = Path.Combine(categoryDir, fileName);
 
                 if (File.Exists(filePath)) return filePath;
@@ -130,36 +139,79 @@ namespace VideoGenerator.Services
             }
         }
 
+        public string GetFandomImageUrl(string filename)
+        {
+            string cleanName = filename.Replace(" ", "_");
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] inputBytes = System.Text.Encoding.UTF8.GetBytes(cleanName);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+                
+                var sb = new System.Text.StringBuilder();
+                for (int i = 0; i < 2; i++)
+                {
+                    sb.Append(hashBytes[i].ToString("x2"));
+                }
+                string hex = sb.ToString();
+                char a = hex[0];
+                string ab = hex.Substring(0, 2);
+                
+                return $"https://static.wikia.nocookie.net/leagueoflegends/images/{a}/{ab}/{cleanName}";
+            }
+        }
+
         public async Task<string> GetMonsterIconUrlAsync(string monsterNameFormatted)
         {
-            try
-            {
-                var html = await _httpClient.GetStringAsync(AppConfig.MonsterWikiUrl);
-                
-                List<string> searchNames = new List<string> { monsterNameFormatted.Replace(" ", "_") };
-                
-                if (monsterNameFormatted.Contains("Dragon")) searchNames.Add("Elder_Dragon");
-                if (monsterNameFormatted.Contains("Baron")) searchNames.Add("Baron_Nashor");
-                if (monsterNameFormatted.Contains("Sentinel")) searchNames.Add("Blue_Buff");
-                if (monsterNameFormatted.Contains("Brambleback")) searchNames.Add("Red_Buff");
+            // Replaced HTML scraping with direct, robust Fandom CDN URL generation via MD5 hashing
+            string searchName = monsterNameFormatted.Replace(" ", "_");
+            
+            if (monsterNameFormatted.Contains("Cloud", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Cloud_Drake";
+            else if (monsterNameFormatted.Contains("Hextech", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Hextech_Drake";
+            else if (monsterNameFormatted.Contains("Infernal", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Infernal_Drake";
+            else if (monsterNameFormatted.Contains("Mountain", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Mountain_Drake";
+            else if (monsterNameFormatted.Contains("Ocean", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Ocean_Drake";
+            else if (monsterNameFormatted.Contains("Chemtech", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Chemtech_Drake";
+            else if (monsterNameFormatted.Contains("Elder", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Elder_Dragon";
+            else if (monsterNameFormatted.Contains("Dragon", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Dragon";
+            else if (monsterNameFormatted.Contains("Baron", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Baron_Nashor";
+            else if (monsterNameFormatted.Contains("Herald", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Rift_Herald";
+            else if (monsterNameFormatted.Contains("Sentinel", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Blue", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Blue_Sentinel";
+            else if (monsterNameFormatted.Contains("Brambleback", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Red", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Red_Brambleback";
+            else if (monsterNameFormatted.Contains("Voidgrub", StringComparison.OrdinalIgnoreCase))
+                searchName = "Voidgrub";
+            else if (monsterNameFormatted.Contains("Scuttle", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Crab", StringComparison.OrdinalIgnoreCase))
+                searchName = "Rift_Scuttler";
+            else if (monsterNameFormatted.Contains("Krug", StringComparison.OrdinalIgnoreCase))
+                searchName = "Ancient_Krug";
+            else if (monsterNameFormatted.Contains("Wolf", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Wolves", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Murkwolf", StringComparison.OrdinalIgnoreCase))
+                searchName = "Greater_Murkwolf";
+            else if (monsterNameFormatted.Contains("Raptor", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Raptors", StringComparison.OrdinalIgnoreCase))
+                searchName = "Crimson_Raptor";
+            else if (monsterNameFormatted.Contains("Gromp", StringComparison.OrdinalIgnoreCase))
+                searchName = "Gromp";
+            else if (monsterNameFormatted.Contains("Vilemaw", StringComparison.OrdinalIgnoreCase))
+                searchName = "Vilemaw";
 
-                foreach (var pName in searchNames.Distinct())
-                {
-                    var srcsetMatch = Regex.Match(html, $@"srcset=""([^""]*{Regex.Escape(pName)}Square\.png/[^""\s]+)\s\dx""", RegexOptions.IgnoreCase);
-                    if (srcsetMatch.Success)
-                    {
-                        return "https://wiki.leagueoflegends.com" + srcsetMatch.Groups[1].Value;
-                    }
-                    
-                    var srcMatch = Regex.Match(html, $@"src=""([^""]*{Regex.Escape(pName)}Square\.png)""", RegexOptions.IgnoreCase);
-                    if (srcMatch.Success)
-                    {
-                        return "https://wiki.leagueoflegends.com" + srcMatch.Groups[1].Value;
-                    }
-                }
-            }
-            catch { }
-            return null;
+            string fileName = $"{searchName}Square.png";
+            return await Task.FromResult(GetFandomImageUrl(fileName));
         }
     }
 }

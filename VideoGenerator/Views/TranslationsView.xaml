@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:converters="clr-namespace:VideoGenerator.Views.Converters">
+             xmlns:converters="clr-namespace:VideoGenerator.Views.Converters"
+             xmlns:utils="clr-namespace:VideoGenerator.Utils">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -20,9 +21,9 @@
         <Grid Grid.Row="0" Margin="0,0,0,32">
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="DICTIONARY &amp; LOCALIZATION" 
-                           FontSize="24" 
+                           FontSize="28" 
                            FontWeight="Black" 
-                           Foreground="{StaticResource TextPrimaryBrush}" />
+                           Foreground="{StaticResource TextHighlightBrush}" />
                 <TextBlock Text="Manage supported languages and HUD event translations." 
                            FontSize="13" 
                            FontWeight="SemiBold" 
@@ -31,11 +32,11 @@
                            Margin="0,4,0,0"/>
             </StackPanel>
             
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                         materialDesign:HintAssist.Hint="Search key or text..."
-                         Style="{StaticResource CompactModernTextBox}"
-                         Width="250"
+                         Style="{StaticResource ModernSearchTextBox}"
+                         materialDesign:HintAssist.Hint="Search..."
+                         Width="180"
                          Margin="0,0,16,0"/>
                 
                 <Button Click="AddNew_Click"
@@ -156,26 +157,29 @@
                                             <ColumnDefinition Width="40"/>
                                         </Grid.ColumnDefinitions>
                                         
-                                        <TextBox Text="{Binding Language, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Style="{StaticResource CompactModernTextBox}"
-                                                 Margin="4"
-                                                 FontWeight="Bold"
-                                                 HorizontalAlignment="Stretch"
-                                                 Visibility="{Binding DataContext.SelectedLanguage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=ALL}"/>
-                                        
-                                        <TextBox Grid.Column="1" Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Style="{StaticResource CompactModernTextBox}"
-                                                 Margin="4" 
-                                                 Foreground="{StaticResource AccentBrush}"
-                                                 FontFamily="Consolas" FontWeight="SemiBold"
-                                                 HorizontalAlignment="Stretch"/>
-                                        
-                                        <TextBox Grid.Column="2" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Style="{StaticResource CompactModernTextBox}"
-                                                 Margin="4"
-                                                 HorizontalAlignment="Stretch"/>
+                                         <TextBox Text="{Binding Language, UpdateSourceTrigger=PropertyChanged}" 
+                                                  Style="{StaticResource DictionaryTextBoxStyle}"
+                                                  Margin="4"
+                                                  FontWeight="Bold"
+                                                  HorizontalAlignment="Stretch"
+                                                  Visibility="{Binding DataContext.SelectedLanguage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=ALL}"/>
+                                         
+                                         <TextBox Grid.Column="1" 
+                                                  Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}" 
+                                                  Style="{StaticResource DictionaryTextBoxStyle}"
+                                                  TextChanged="KeyTextBox_TextChanged"
+                                                  PreviewKeyDown="KeyTextBox_PreviewKeyDown"
+                                                  Margin="4" 
+                                                  Foreground="{StaticResource AccentBrush}"
+                                                  FontFamily="Consolas" FontWeight="SemiBold"
+                                                  HorizontalAlignment="Stretch"/>
+                                         
+                                         <TextBox Grid.Column="2" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
+                                                  Style="{StaticResource DictionaryTextBoxStyle}"
+                                                  Margin="4"
+                                                  HorizontalAlignment="Stretch"/>
 
-                                        <Button Grid.Column="3" Click="Delete_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="30" Height="30" Opacity="0.7" HorizontalAlignment="Right">
+                                         <Button Grid.Column="3" Click="Delete_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="30" Height="30" Opacity="0.7" HorizontalAlignment="Right">
                                             <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                         </Button>
                                     </Grid>

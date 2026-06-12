@@ -8,25 +8,24 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="48,32,48,24">
+    <Grid Margin="32,24,32,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- HEADER -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,48">
+        <StackPanel Grid.Row="0" Margin="0,0,0,32">
             <TextBlock Text="MAPPING &amp; LORE ENGINE" 
                        FontSize="28" 
                        FontWeight="Black" 
-                       Foreground="{StaticResource TextPrimaryBrush}" 
-                       />
+                       Foreground="{StaticResource TextHighlightBrush}" />
             <TextBlock Text="Orchestrate logic behaviors, thematic groupings, and champion identity mapping." 
-                       FontSize="14" 
-                       FontWeight="Medium" 
+                       FontSize="13" 
+                       FontWeight="SemiBold" 
                        Foreground="{StaticResource TextSecondaryBrush}" 
-                       Opacity="0.6" 
-                       Margin="0,6,0,0"/>
+                       Opacity="0.7" 
+                       Margin="0,4,0,0"/>
         </StackPanel>
 
         <!-- MAIN CONTENT AREA -->

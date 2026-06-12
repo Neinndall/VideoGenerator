@@ -31,5 +31,21 @@ namespace VideoGenerator.Views
         }
 
         public AppSettings Settings => AppSettings.Instance;
+
+        private void SelectMediaDirectory_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog
+            {
+                IsFolderPicker = true,
+                Title = "Select Media Source Directory",
+                InitialDirectory = Settings.MediaSourceDirectory ?? System.AppDomain.CurrentDomain.BaseDirectory
+            };
+
+            if (dialog.ShowDialog() == Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+            {
+                Settings.MediaSourceDirectory = dialog.FileName;
+            }
+        }
+
     }
 }

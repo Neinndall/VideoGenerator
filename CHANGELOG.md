@@ -7,6 +7,7 @@ VideoGenerator - Patch Notes v1.1.0.0
     * **Dynamic Status Badges:** Real-time UI feedback (READY, ICON MISSING, NO AUDIO) for each detected event.
     * **Phase 2 (Live Preview):** Clicking any event in the pipeline generates an instant, real-time 1920x1080 preview of the composed frame before encoding.
     * **Execution:** "Start Batch Rendering" now strictly processes the validated queue.
+    * **Real-time Path Sync:** Dashboard immediately mirrors changes made to the "Default Media Source Directory" settings in real-time.
 
 - [BACKGROUND DESIGN STUDIO] Complete cinematic overhaul for v1.1.0.0.
     * **Live HUD Preview:** Added technician-style grid overlay and safe-area guides for professional 1080p previewing.
@@ -16,14 +17,28 @@ VideoGenerator - Patch Notes v1.1.0.0
 - [ENGINE CONFIGURATION] Introduced a comprehensive global settings hub (`SettingsView`).
     * **Audio Engine Properties:** Configurable silence duration between audio tracks.
     * **Dictionary Preferences:** Set the default startup language for the localization module.
+    * **Inline Clear Buttons:** Added custom clear (X) buttons to settings TextBoxes that only show when text is present, allowing quick directory clearing.
 
-- [DICTIONARY] Improved loading logic and compact layout.
+- [DICTIONARY & LOCALIZATION] Complete overhaul of dictionary editing and event matching.
+    * **Flat Edit-in-Place UI:** Replaced heavy outlined textboxes with a modern borderless table design (`DictionaryTextBoxStyle`) that highlights on hover/focus to reduce visual clutter.
+    * **Inline Autocomplete (No Dropdown):** Replaced the ComboBox suggestions with a fast inline `TextBox` autocomplete system. Matches event keys from rules in real-time as you write, suggesting the suffix inline which can be accepted using **Tab**, **Enter** or **Right Arrow** without opening annoying overlay dropdowns.
     * **Anti-Flicker Loading:** Default language is now pre-selected before data fetch to eliminate UI transition jitters.
     * **Compact Sidebar:** Reduced width (110px) and abbreviated titles (LANGS) for optimized screen utilization.
+
+- [HUD PROGRESS BAR] Rebuilt the system progress indicator.
+    * **ModernProgressBar Component:** Created a modular, reusable `ModernProgressBar` UserControl.
+    * **HUD Recipient Design:** Features a rounded, dark grayish container (`#2D2D30` background) that acts as a slot/recipient, hosting a vibrant violet (`AccentBrush`) progress indicator filling inside.
+    * **MainWindow Integration:** The `ENGINE STATUS` footer now renders this unified HUD component instead of raw inline shapes.
 
 - [MAPPING ENGINE] Complete redesign of the "Mapping & Lore Engine" (EventRulesView).
     * **Compact Inspector:** Reduced panel width (300px) to maximize data table visibility.
     * **HUD Abbreviations:** Simplified technical headers (DICT KEY, INT NAME, REPO) for a cleaner professional look.
+
+- [MONSTER LORE ENGINE] Re-engineered neutral camp and monster icon resolver.
+    * **MD5 Hashing CDN Downloader:** Bypassed Fandom/Wikia Cloudflare 403 Forbidden blocks by generating static Wikia CDN image URLs directly via MD5 filename hashing (`static.wikia.nocookie.net`), securing full-resolution image downloads.
+    * **Jungle Camp Mappings:** Configured precise filename keys for all League of Legends jungle camps (Krugs, Wolves, Raptors, Gromp, Elemental Drakes, Elder Dragon, Baron Nashor, Rift Herald, Voidgrubs, Rift Scuttler, and Twisted Treeline Vilemaw).
+    * **Dimension Suffix Robustness:** Normalizes folder names and keywords by removing `2D` and `3D` during rule checks, preventing missing rules and runtime crashes.
+    * **Rule Priority Correction:** Reordered event parsing priorities in `NameParser.cs` so specialized rules (like monster attacks) always evaluate before shorter generic user rules.
 
 🎨 UI/UX REFINEMENTS (GLOBAL THEME)
 ----------------------------------

@@ -97,6 +97,14 @@ namespace VideoGenerator.Views
             catch { }
         }
 
+        private void SplashSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                SearchSplash_Click(sender, new RoutedEventArgs());
+            }
+        }
+
         private void DebouncedUpdatePreview()
         {
             _previewCts?.Cancel();

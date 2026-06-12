@@ -116,18 +116,29 @@
                                    Margin="0,0,0,8"
                                    Opacity="0.4"
                                    Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <Grid>
-                            <ProgressBar Value="100" 
-                                         Height="4" 
-                                         Foreground="{StaticResource AccentBrush}"
-                                         Background="{StaticResource PrimaryBackgroundBrush}"/>
-                        </Grid>
+                        <!-- ModernProgressBar Component -->
+                        <local:ModernProgressBar Value="{Binding EngineProgressBarValue, Mode=OneWay}"
+                                                 IsIndeterminate="{Binding IsEngineBusy, Mode=OneWay}"
+                                                 Visibility="{Binding IsEngineBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 Margin="0,4,0,4"/>
                         <TextBlock Margin="0,8,0,0"
-                                   Text="STABLE - READY"
+                                   Text="{Binding EngineStatusText}"
                                    FontSize="9"
                                    FontWeight="Bold"
-                                   HorizontalAlignment="Center"
-                                   Foreground="{StaticResource SuccessBrush}"/>
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                    <Setter Property="Opacity" Value="0.6"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEngineBusy}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            <Setter Property="Opacity" Value="1.0"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </StackPanel>
                 </Border>
             </Grid>

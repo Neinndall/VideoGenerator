@@ -41,13 +41,13 @@
                     <ControlTemplate.Triggers>
                         <!-- HOVER STATE -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#268B5CF6"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#0DFFFFFF"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
                         
                         <!-- SELECTED STATE -->
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#338B5CF6"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#268B5CF6"/>
                             <Setter TargetName="Indicator" Property="Opacity" Value="1"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
@@ -58,7 +58,7 @@
                                 <Condition Property="IsSelected" Value="True"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="RootBorder" Property="Background" Value="#4D8B5CF6"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#338B5CF6"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </MultiTrigger>
                     </ControlTemplate.Triggers>

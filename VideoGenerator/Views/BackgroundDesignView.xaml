@@ -32,16 +32,12 @@
                            FontSize="28" 
                            FontWeight="Black" 
                            Foreground="{StaticResource TextHighlightBrush}" />
-                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                    <Border Background="{StaticResource AccentBrush}" CornerRadius="4" Padding="6,2" Margin="0,0,12,0">
-                        <TextBlock Text="v1.1.0.0" FontSize="9" FontWeight="Black" Foreground="White"/>
-                    </Border>
-                    <TextBlock Text="Professional 1920x1080 render canvas for dynamic video overlays." 
-                               FontSize="13" 
-                               FontWeight="SemiBold" 
-                               Foreground="{StaticResource TextSecondaryBrush}" 
-                               Opacity="0.7"/>
-                </StackPanel>
+                <TextBlock Text="Customize canvas backgrounds, adjust text vertical offsets and preview live render outcomes." 
+                           FontSize="13" 
+                           FontWeight="SemiBold" 
+                           Foreground="{StaticResource TextSecondaryBrush}" 
+                           Opacity="0.7"
+                           Margin="0,4,0,0"/>
             </StackPanel>
         </Grid>
 
@@ -66,6 +62,7 @@
 
                         <Border Padding="20,24">
                             <StackPanel>
+                            <TextBlock Text="Load your own splash art or wallpaper from your device." FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,16,12" TextWrapping="Wrap" Opacity="0.6"/>
                             <Button Click="SelectBackground_Click"
                                     Style="{StaticResource ModernPrimaryButton}"
                                     Height="44" Margin="0,0,0,16" HorizontalAlignment="Stretch">
@@ -108,13 +105,14 @@
 
                         <Border Padding="20,24">
                             <StackPanel>
-                            <TextBlock Text="Resolve high-quality champion splashes directly from Riot API." FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,16,8" TextWrapping="Wrap" Opacity="0.6"/>
+                            <TextBlock Text="Search from Riot API. (e.g., 'Aatrox' is base, 'Aatrox_1' is skin 1)." FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,16,12" TextWrapping="Wrap" Opacity="0.6"/>
                             <Grid>
                                 <TextBox x:Name="SplashSearchBox" 
                                          materialDesign:HintAssist.Hint="Champion name..." 
-                                         Style="{StaticResource CompactModernTextBox}"
-                                         Padding="12,10" Height="40"/>
-                                <Button Click="SearchSplash_Click" HorizontalAlignment="Right" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="36" Height="36">
+                                         Style="{StaticResource ModernTextBox}"
+                                         Padding="12,8,44,8"
+                                         KeyDown="SplashSearchBox_KeyDown"/>
+                                <Button Click="SearchSplash_Click" HorizontalAlignment="Right" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="36" Height="36" Margin="0,0,4,0" VerticalAlignment="Center">
                                     <materialDesign:PackIcon Kind="ArrowRight" Width="18" Height="18"/>
                                 </Button>
                             </Grid>

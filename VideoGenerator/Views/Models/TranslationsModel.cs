@@ -32,5 +32,6 @@ namespace VideoGenerator.Views.Models
         public ObservableCollection<string> AvailableLanguages { get; } = new();
         public ObservableCollection<TranslationEntry> AllEntries { get; } = new();
         public ObservableCollection<TranslationEntry> FilteredEntries { get; } = new();
+        public ObservableCollection<string> SuggestedEventKeys { get; } = new();
     }
 }

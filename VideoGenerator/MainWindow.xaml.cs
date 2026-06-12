@@ -8,13 +8,48 @@ using VideoGenerator.Utils;
 
 namespace VideoGenerator.Views
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, System.ComponentModel.INotifyPropertyChanged
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly LogService _logService;
         private readonly Dictionary<string, UserControl> _viewCache = new();
 
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+
         public string AppVersion => AssemblyVersion.Version;
+
+        private string _engineStatusText = "STABLE - READY";
+        public string EngineStatusText
+        {
+            get => _engineStatusText;
+            set
+            {
+                if (_engineStatusText != value)
+                {
+                    _engineStatusText = value;
+                    OnPropertyChanged(nameof(EngineStatusText));
+                }
+            }
+        }
+
+        private bool _isEngineBusy = false;
+        public bool IsEngineBusy
+        {
+            get => _isEngineBusy;
+            set
+            {
+                if (_isEngineBusy != value)
+                {
+                    _isEngineBusy = value;
+                    OnPropertyChanged(nameof(IsEngineBusy));
+                    OnPropertyChanged(nameof(EngineProgressBarValue));
+                }
+            }
+        }
+
+        public double EngineProgressBarValue => IsEngineBusy ? 100 : 0;
 
         public MainWindow(IServiceProvider serviceProvider, LogService logService)
         {
@@ -36,6 +71,36 @@ namespace VideoGenerator.Views
             }
         }
 
+        private void SubscribeToDashboardModel(DashboardView dashboardView)
+        {
+            if (dashboardView?.DashboardModel != null)
+            {
+                dashboardView.DashboardModel.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(dashboardView.DashboardModel.IsProcessing))
+                    {
+                        UpdateEngineStatus(dashboardView.DashboardModel.IsProcessing);
+                    }
+                };
+                // Initial update
+                UpdateEngineStatus(dashboardView.DashboardModel.IsProcessing);
+            }
+        }
+
+        private void UpdateEngineStatus(bool isProcessing)
+        {
+            if (isProcessing)
+            {
+                EngineStatusText = "PROCESSING MEDIA...";
+                IsEngineBusy = true;
+            }
+            else
+            {
+                EngineStatusText = "STABLE - READY";
+                IsEngineBusy = false;
+            }
+        }
+
         private void NavigateTo(string viewName)
         {
             if (!_viewCache.ContainsKey(viewName))
@@ -51,7 +116,13 @@ namespace VideoGenerator.Views
                 };
 
                 if (nextView != null)
+                {
                     _viewCache[viewName] = nextView;
+                    if (nextView is DashboardView dv)
+                    {
+                        SubscribeToDashboardModel(dv);
+                    }
+                }
             }
 
             if (_viewCache.TryGetValue(viewName, out var view))

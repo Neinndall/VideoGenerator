@@ -9,7 +9,7 @@ namespace VideoGenerator.Services
     public class AppSettings : ObservableObject
     {
         private static AppSettings _instance;
-        private static readonly string _settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config", "settings.json");
+        private static readonly string _settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoGenerator", "Config", "settings.json");
 
         [JsonIgnore]
         public static AppSettings Instance
@@ -31,6 +31,17 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _customBackgroundPath, value))
+                    SaveSettings();
+            }
+        }
+
+        private string _mediaSourceDirectory;
+        public string MediaSourceDirectory
+        {
+            get => _mediaSourceDirectory;
+            set
+            {
+                if (SetProperty(ref _mediaSourceDirectory, value))
                     SaveSettings();
             }
         }

@@ -15,7 +15,7 @@ namespace VideoGenerator.Views
         private readonly TranslationsModel _model = new();
         private readonly TranslationService _translationService;
 
-        public TranslationsView(TranslationService translationService)
+        public TranslationsView(TranslationService translationService, RuleManager ruleManager)
         {
             InitializeComponent();
             _translationService = translationService;
@@ -32,7 +32,22 @@ namespace VideoGenerator.Views
                 }
             };
 
-            Loaded += (s, e) => LoadEntriesAsync();
+            Loaded += (s, e) => 
+            {
+                LoadEntriesAsync();
+                
+                // Refresh suggestions on active load to ensure new mappings show up instantly
+                _model.SuggestedEventKeys.Clear();
+                var keys = ruleManager.Rules
+                    .Select(r => r.TranslationKey)
+                    .Where(k => !string.IsNullOrEmpty(k))
+                    .Distinct()
+                    .OrderBy(k => k);
+                foreach (var key in keys)
+                {
+                    _model.SuggestedEventKeys.Add(key);
+                }
+            };
         }
 
         private async void LoadEntriesAsync()
@@ -169,7 +184,61 @@ namespace VideoGenerator.Views
             if (sender is FrameworkElement fe && fe.DataContext is TranslationEntry entry)
             {
                 _model.AllEntries.Remove(entry);
-                ApplyFilter();
+                _model.FilteredEntries.Remove(entry);
+            }
+        }
+
+        private bool _isUpdatingText = false;
+        private void KeyTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (_isUpdatingText) return;
+
+            // Only suggest when typing (adding characters)
+            if (sender is System.Windows.Controls.TextBox textBox && e.Changes.Any(c => c.AddedLength > 0))
+            {
+                string currentText = textBox.Text;
+                if (string.IsNullOrEmpty(currentText)) return;
+
+                // Find a match that starts with the typed text
+                string match = _model.SuggestedEventKeys
+                    .FirstOrDefault(s => s.StartsWith(currentText, StringComparison.OrdinalIgnoreCase));
+
+                if (match != null && match.Length > currentText.Length)
+                {
+                    _isUpdatingText = true;
+                    int originalLength = currentText.Length;
+
+                    // Set full suggested text
+                    textBox.Text = currentText + match.Substring(originalLength);
+                    
+                    // Highlight (select) the suggested portion so typing continues naturally or is accepted
+                    textBox.SelectionStart = originalLength;
+                    textBox.SelectionLength = match.Length - originalLength;
+                    _isUpdatingText = false;
+                }
+            }
+        }
+
+        private void KeyTextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (sender is System.Windows.Controls.TextBox textBox)
+            {
+                // Accept the highlighted suggestion with Tab, Enter, or Right Arrow
+                if (e.Key == System.Windows.Input.Key.Tab || e.Key == System.Windows.Input.Key.Enter || e.Key == System.Windows.Input.Key.Right)
+                {
+                    if (textBox.SelectionLength > 0 && textBox.SelectionStart + textBox.SelectionLength == textBox.Text.Length)
+                    {
+                        // Commit by moving caret to the end
+                        textBox.SelectionStart = textBox.Text.Length;
+                        textBox.SelectionLength = 0;
+                        
+                        // Prevent Tab from shifting focus if they just wanted to accept the suggestion
+                        if (e.Key == System.Windows.Input.Key.Tab)
+                        {
+                            e.Handled = true;
+                        }
+                    }
+                }
             }
         }
     }

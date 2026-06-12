@@ -3,11 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:VideoGenerator.Views.Converters"
-             xmlns:services="clr-namespace:VideoGenerator.Services">
+             xmlns:services="clr-namespace:VideoGenerator.Services"
+             xmlns:utils="clr-namespace:VideoGenerator.Utils">
     
     <UserControl.Resources>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:NonLockingImageConverter x:Key="NonLockingImageConverter"/>
     </UserControl.Resources>
 
     <Grid Margin="32,24,32,16">
@@ -95,7 +97,7 @@
         </Grid>
 
         <!-- 3. MAIN WORKSPACE: LIST & PREVIEW -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="2" Height="500">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="380"/>
                 <ColumnDefinition Width="*"/>
@@ -120,7 +122,9 @@
                     <ListBox Grid.Row="1" 
                              ItemsSource="{Binding DashboardModel.ProcessedEvents}"
                              SelectedItem="{Binding DashboardModel.SelectedEvent}"
-                             Style="{StaticResource VirtualizedListBoxStyle}">
+                             Style="{StaticResource VirtualizedListBoxStyle}"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             utils:ScrollHelper.BubbleMouseWheel="False">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Padding="20,14">
@@ -130,12 +134,12 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding FolderName}" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12"/>
+                                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                            <TextBlock Text="{Binding FolderName}" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" TextTrimming="CharacterEllipsis"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                <TextBlock Text="{Binding ParsedData.DisplayText}" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding ParsedData.DisplayText}" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Text=" • " Foreground="{StaticResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding CharacterName}" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                <TextBlock Text="{Binding CharacterName}" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
                                         </StackPanel>
 
@@ -144,6 +148,29 @@
                                         </Border>
                                     </Grid>
                                 </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Status}" Value="Ready">
+                                        <Setter TargetName="StatusBadge" Property="Background" Value="#1A10B981"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="#8010B981"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
+                                        <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                        <Setter TargetName="StatusText" Property="Text" Value="READY"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="Missing Icon">
+                                        <Setter TargetName="StatusBadge" Property="Background" Value="#1AF59E0B"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="#80F59E0B"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
+                                        <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource WarningBrush}"/>
+                                        <Setter TargetName="StatusText" Property="Text" Value="MISSING ICON"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="No Audio">
+                                        <Setter TargetName="StatusBadge" Property="Background" Value="#1AEF4444"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="#80EF4444"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
+                                        <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+                                        <Setter TargetName="StatusText" Property="Text" Value="NO AUDIO"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                         <ListBox.ItemContainerStyle>
@@ -181,7 +208,7 @@
 
                         <Viewbox Stretch="Uniform" VerticalAlignment="Center" Margin="24">
                             <Grid Width="1920" Height="1080" Background="#0D0D0F">
-                                <Image Source="{Binding DashboardModel.PreviewImagePath}" Stretch="UniformToFill"/>
+                                <Image Source="{Binding DashboardModel.PreviewImagePath, Converter={StaticResource NonLockingImageConverter}}" Stretch="UniformToFill"/>
                                 
                                 <!-- Empty State -->
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" 

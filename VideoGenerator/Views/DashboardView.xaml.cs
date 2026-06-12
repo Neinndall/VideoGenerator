@@ -54,6 +54,17 @@ namespace VideoGenerator.Views
 
         private void InitializeData()
         {
+            _model.AudioPath = AppSettings.Instance.MediaSourceDirectory;
+
+            // Sync with Settings when changed anywhere in the app
+            AppSettings.Instance.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(AppSettings.MediaSourceDirectory))
+                {
+                    _model.AudioPath = AppSettings.Instance.MediaSourceDirectory;
+                }
+            };
+
             foreach (var lang in _translationService.AvailableLanguages)
                 _model.AvailableLanguages.Add(lang);
 

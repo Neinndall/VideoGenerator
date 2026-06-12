@@ -20,7 +20,14 @@ namespace VideoGenerator.Services.EventHandlers
             _groupManager = groupManager;
         }
 
-        public bool CanHandle(string folderName) => folderName.Contains(_rule.Keyword, StringComparison.OrdinalIgnoreCase);
+        public bool CanHandle(string folderName)
+        {
+            // Normalize both by removing "2D" and "3D" (case-insensitive) to make matching robust against dimension suffixes
+            string normalizedFolder = Regex.Replace(folderName, @"2D|3D", "", RegexOptions.IgnoreCase);
+            string normalizedKeyword = Regex.Replace(_rule.Keyword, @"2D|3D", "", RegexOptions.IgnoreCase);
+            
+            return normalizedFolder.Contains(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
+        }
 
         public async Task<ParsedEvent> HandleAsync(string folderName, string language)
         {
@@ -36,8 +43,15 @@ namespace VideoGenerator.Services.EventHandlers
             }
 
             // Extraction Logic
-            int index = folderName.IndexOf(_rule.Keyword, StringComparison.OrdinalIgnoreCase);
-            string targetName = folderName.Substring(index + _rule.Keyword.Length);
+            string normalizedFolder = Regex.Replace(folderName, @"2D|3D", "", RegexOptions.IgnoreCase);
+            string normalizedKeyword = Regex.Replace(_rule.Keyword, @"2D|3D", "", RegexOptions.IgnoreCase);
+            
+            int index = normalizedFolder.IndexOf(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
+            string targetName = "";
+            if (index >= 0)
+            {
+                targetName = normalizedFolder.Substring(index + normalizedKeyword.Length);
+            }
             
             // Cleanup target name (remove 2D/3D)
             targetName = Regex.Replace(targetName, @"^(2D|3D)", "");
