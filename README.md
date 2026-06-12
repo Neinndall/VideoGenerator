@@ -33,11 +33,11 @@ Fine-tune HUD layouts in real-time. Includes safe-area indicators, grid overlays
 
 1. **Runtime:** .NET 10.0 Windows SDK (WPF).
 2. **Media Engine:** FFmpeg (extracted automatically to temp directories on startup).
-3. **Build Command:**
+3. **Build command for developers:**
    ```bash
-   dotnet build -c Release
+   dotnet build
    ```
-4. **Run Command:**
+4. **Run command for developers:**
    ```bash
    dotnet run
    ```
