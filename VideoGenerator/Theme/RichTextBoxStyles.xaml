@@ -1,0 +1,41 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Modern RichTextBox (Terminal/Log Style) -->
+    <Style x:Key="ModernRichTextBox" TargetType="RichTextBox">
+        <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        <Setter Property="FontFamily" Value="Consolas"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="VerticalContentAlignment" Value="Top"/>
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RichTextBox">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ScrollViewer x:Name="PART_ContentHost" 
+                                      Focusable="false" 
+                                      HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}" 
+                                      VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Resources>
+            <Style TargetType="{x:Type Paragraph}">
+                <Setter Property="Margin" Value="0"/>
+                <Setter Property="TextAlignment" Value="Left"/>
+            </Style>
+        </Style.Resources>
+    </Style>
+
+</ResourceDictionary>

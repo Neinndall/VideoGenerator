@@ -18,8 +18,15 @@ namespace VideoGenerator.Services
         public LogService()
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            _infoLogPath = Path.Combine(baseDir, "app_information.log");
-            _errorLogPath = Path.Combine(baseDir, "app_errors.log");
+            string logsDir = Path.Combine(baseDir, "logs");
+            
+            if (!Directory.Exists(logsDir))
+            {
+                Directory.CreateDirectory(logsDir);
+            }
+
+            _infoLogPath = Path.Combine(logsDir, "application_logs.log");
+            _errorLogPath = Path.Combine(logsDir, "application_errors.log");
             _dispatcher = System.Windows.Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
         }
 
@@ -72,6 +79,91 @@ namespace VideoGenerator.Services
 
     public static class LogExtensions
     {
+        public static readonly DependencyProperty RichLogSourceProperty =
+            DependencyProperty.RegisterAttached("RichLogSource", typeof(ObservableCollection<string>), typeof(LogExtensions), new PropertyMetadata(null, OnRichLogSourceChanged));
+
+        public static ObservableCollection<string> GetRichLogSource(DependencyObject obj) => (ObservableCollection<string>)obj.GetValue(RichLogSourceProperty);
+        public static void SetRichLogSource(DependencyObject obj, ObservableCollection<string> value) => obj.SetValue(RichLogSourceProperty, value);
+
+        private static void OnRichLogSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is System.Windows.Controls.RichTextBox richTextBox)
+            {
+                if (e.OldValue is ObservableCollection<string> oldCollection)
+                {
+                    oldCollection.CollectionChanged -= (s, args) => CollectionChanged(richTextBox, args);
+                }
+
+                if (e.NewValue is ObservableCollection<string> newCollection)
+                {
+                    richTextBox.Document ??= new System.Windows.Documents.FlowDocument();
+                    richTextBox.Document.Blocks.Clear();
+                    
+                    // Add existing items
+                    foreach (var item in newCollection)
+                    {
+                        AppendLogToRichText(richTextBox, item);
+                    }
+
+                    newCollection.CollectionChanged += (s, args) => CollectionChanged(richTextBox, args);
+                }
+            }
+        }
+
+        private static void CollectionChanged(System.Windows.Controls.RichTextBox richTextBox, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+            {
+                foreach (string item in e.NewItems)
+                {
+                    AppendLogToRichText(richTextBox, item);
+                }
+                richTextBox.ScrollToEnd();
+            }
+            else if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+            {
+                richTextBox.Document?.Blocks.Clear();
+            }
+        }
+
+        private static void AppendLogToRichText(System.Windows.Controls.RichTextBox richTextBox, string message)
+        {
+            if (richTextBox.Document == null) return;
+
+            var paragraph = new System.Windows.Documents.Paragraph { Margin = new Thickness(0, 2, 0, 2) };
+            var run = new System.Windows.Documents.Run($"[{DateTime.Now:HH:mm:ss}] ");
+            run.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(161, 161, 170)); // TextSecondaryColor
+            paragraph.Inlines.Add(run);
+
+            var messageRun = new System.Windows.Documents.Run(message);
+            
+            if (message.StartsWith("!!! ERROR"))
+            {
+                messageRun.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(239, 68, 68)); // ErrorColor
+                messageRun.FontWeight = FontWeights.Bold;
+            }
+            else if (message.StartsWith("[WARN]"))
+            {
+                messageRun.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 158, 11)); // WarningColor
+                messageRun.FontWeight = FontWeights.Bold;
+            }
+            else
+            {
+                messageRun.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(250, 250, 250)); // TextPrimaryColor
+            }
+
+            paragraph.Inlines.Add(messageRun);
+
+            // Optimization: Keep paragraph count reasonable
+            if (richTextBox.Document.Blocks.Count > 500)
+            {
+                richTextBox.Document.Blocks.Remove(richTextBox.Document.Blocks.FirstBlock);
+            }
+
+            richTextBox.Document.Blocks.Add(paragraph);
+        }
+
+        // Legacy ListBox AutoScroll for backwards compatibility (can be removed if no longer used)
         public static readonly DependencyProperty AutoScrollToEndProperty =
             DependencyProperty.RegisterAttached("AutoScrollToEnd", typeof(bool), typeof(LogExtensions), new PropertyMetadata(false, OnAutoScrollToEndChanged));
 

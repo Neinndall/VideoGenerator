@@ -1,13 +1,163 @@
 <UserControl x:Class="VideoGenerator.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:VideoGenerator.Views.Converters">
 
-    <Grid>
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <materialDesign:PackIcon Kind="Cog" Width="64" Height="64" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
-            <TextBlock Text="Settings Section" Style="{StaticResource MaterialDesignHeadline4TextBlock}" Margin="0,16" HorizontalAlignment="Center"/>
-            <TextBlock Text="Advanced configuration options will appear here." Opacity="0.6" HorizontalAlignment="Center"/>
+    <UserControl.Resources>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid Margin="32,24,32,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,32">
+            <TextBlock Text="ENGINE CONFIGURATION" 
+                       FontSize="28" 
+                       FontWeight="Black" 
+                       Foreground="{StaticResource TextHighlightBrush}" />
+            <TextBlock Text="Adjust global parameters, rendering behaviors, and audio timing." 
+                       FontSize="13" 
+                       FontWeight="SemiBold" 
+                       Foreground="{StaticResource TextSecondaryBrush}" 
+                       Opacity="0.7" 
+                       Margin="0,4,0,0"/>
         </StackPanel>
+
+        <!-- Settings Container -->
+        <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Padding="0">
+            <StackPanel>
+                    
+                    <!-- SECTION: MEDIA DIRECTORY CONFIGURATION -->
+                    <Border Background="{StaticResource SurfaceBrush}" 
+                            Padding="24,16" 
+                            BorderBrush="{StaticResource BorderBrush}" 
+                            BorderThickness="0,0,0,1" 
+                            CornerRadius="12,12,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FolderMultipleOutline" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="20" Height="20"/>
+                            <TextBlock Text="MEDIA DIRECTORY CONFIGURATION" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Padding="24,28">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                <TextBlock Text="Default Media Source Directory" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                <TextBlock Text="The default directory where the app captures character audio folders (e.g., character/locke_base_vo_audio)." 
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                 <TextBox Text="{Binding Settings.MediaSourceDirectory, Mode=TwoWay}"
+                                          Style="{StaticResource ModernTextBoxWithClear}"
+                                          Width="250" IsReadOnly="True" Margin="0,0,8,0"
+                                          materialDesign:HintAssist.Hint="No directory selected"/>
+                                <Button Click="SelectMediaDirectory_Click" 
+                                        Style="{StaticResource MaterialDesignIconButton}" 
+                                        Foreground="{StaticResource AccentBrush}" Width="36" Height="36">
+                                    <materialDesign:PackIcon Kind="FolderSearchOutline" Width="18" Height="18"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- DIVIDER -->
+                    <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
+                    <!-- SECTION: AUDIO ENGINE -->
+                    <Border Background="{StaticResource SurfaceBrush}" 
+                            Padding="24,16" 
+                            BorderBrush="{StaticResource BorderBrush}" 
+                            BorderThickness="0,1,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Headphones" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="20" Height="20"/>
+                            <TextBlock Text="AUDIO ENGINE PROPERTIES" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Padding="24,28">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                <TextBlock Text="Silence Between Tracks" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                <TextBlock Text="Determines the duration of silence added between concatenated audio files during video encoding." 
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <ComboBox Grid.Column="1" 
+                                      ItemsSource="{Binding SilenceOptions}"
+                                      SelectedItem="{Binding Settings.SilenceDuration}"
+                                      Style="{StaticResource ModernComboBoxStyle}"
+                                      materialDesign:HintAssist.Hint="Duration (sec)"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- DIVIDER -->
+                    <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
+                    <!-- SECTION: DICTIONARY PREFERENCES -->
+                    <Border Background="{StaticResource SurfaceBrush}" 
+                            Padding="24,16" 
+                            BorderBrush="{StaticResource BorderBrush}" 
+                            BorderThickness="0,1,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Translate" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="20" Height="20"/>
+                            <TextBlock Text="DICTIONARY PREFERENCES" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Padding="24,28">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                <TextBlock Text="Default Dictionary Language" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                <TextBlock Text="The language selected by default when entering the Dictionary section." 
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <ComboBox Grid.Column="1" 
+                                      ItemsSource="{Binding LanguageOptions}"
+                                      SelectedItem="{Binding Settings.DefaultDictionaryLanguage}"
+                                      Style="{StaticResource ModernComboBoxStyle}"
+                                      materialDesign:HintAssist.Hint="Default Language"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- SYSTEM INFO SECTION -->
+                    <Border Background="{StaticResource SurfaceBrush}" 
+                            Padding="24,16" 
+                            BorderBrush="{StaticResource BorderBrush}" 
+                            BorderThickness="0,1,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="InformationOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="20" Height="20"/>
+                            <TextBlock Text="ENGINE INFORMATION" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Margin="24,28" Opacity="0.8">
+                        <TextBlock Text="The VideoGenerator engine utilizes FFmpeg for ultra-high precision encoding. All settings are persistent across sessions and stored in the local configuration repository." 
+                                   TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" FontStyle="Italic" LineHeight="18"/>
+                    </StackPanel>
+
+                </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

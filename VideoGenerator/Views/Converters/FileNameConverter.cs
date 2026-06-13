@@ -4,7 +4,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Data;
 
-namespace VideoGenerator.Converters
+namespace VideoGenerator.Views.Converters
 {
     public class FileNameConverter : IValueConverter
     {

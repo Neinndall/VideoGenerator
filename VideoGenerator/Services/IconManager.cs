@@ -118,9 +118,65 @@ namespace VideoGenerator.Services
 
         public async Task<string> GetMonsterIconAsync(string monsterNameFormatted)
         {
+            // Build expected filename on Fandom
+            string searchName = monsterNameFormatted.Replace(" ", "_");
+            
+            if (monsterNameFormatted.Contains("Cloud", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Cloud_Drake";
+            else if (monsterNameFormatted.Contains("Hextech", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Hextech_Drake";
+            else if (monsterNameFormatted.Contains("Infernal", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Infernal_Drake";
+            else if (monsterNameFormatted.Contains("Mountain", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Mountain_Drake";
+            else if (monsterNameFormatted.Contains("Ocean", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Ocean_Drake";
+            else if (monsterNameFormatted.Contains("Chemtech", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Chemtech_Drake";
+            else if (monsterNameFormatted.Contains("Elder", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Elder_Dragon";
+            else if (monsterNameFormatted.Contains("Dragon", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Dragon";
+            else if (monsterNameFormatted.Contains("Baron", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Baron_Nashor";
+            else if (monsterNameFormatted.Contains("Herald", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Rift_Herald";
+            else if (monsterNameFormatted.Contains("Sentinel", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Blue", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Blue_Sentinel";
+            else if (monsterNameFormatted.Contains("Brambleback", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Red", StringComparison.OrdinalIgnoreCase)) 
+                searchName = "Red_Brambleback";
+            else if (monsterNameFormatted.Contains("Voidgrub", StringComparison.OrdinalIgnoreCase))
+                searchName = "Voidgrub";
+            else if (monsterNameFormatted.Contains("Scuttle", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Crab", StringComparison.OrdinalIgnoreCase))
+                searchName = "Rift_Scuttler";
+            else if (monsterNameFormatted.Contains("Krug", StringComparison.OrdinalIgnoreCase))
+                searchName = "Ancient_Krug";
+            else if (monsterNameFormatted.Contains("Wolf", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Wolves", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Murkwolf", StringComparison.OrdinalIgnoreCase))
+                searchName = "Greater_Murkwolf";
+            else if (monsterNameFormatted.Contains("Raptor", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Raptors", StringComparison.OrdinalIgnoreCase))
+                searchName = "Crimson_Raptor";
+            else if (monsterNameFormatted.Contains("Gromp", StringComparison.OrdinalIgnoreCase))
+                searchName = "Gromp";
+            else if (monsterNameFormatted.Contains("Vilemaw", StringComparison.OrdinalIgnoreCase))
+                searchName = "Vilemaw";
+
+            string localFileName = $"{searchName}Square.png";
+            string localPath = Path.Combine(AppConfig.IconCacheDir, "monster", localFileName);
+            
+            if (File.Exists(localPath))
+            {
+                return localPath; // Return local cache instantly and skip network call!
+            }
+
             string url = await _dataFetcher.GetMonsterIconUrlAsync(monsterNameFormatted);
             if (url == null) return null;
-            return await _dataFetcher.DownloadIconAsync(url, "monster");
+            return await _dataFetcher.DownloadIconAsync(url, "monster", localFileName);
         }
     }
 }

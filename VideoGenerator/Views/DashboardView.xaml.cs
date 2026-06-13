@@ -54,6 +54,17 @@ namespace VideoGenerator.Views
 
         private void InitializeData()
         {
+            _model.AudioPath = AppSettings.Instance.MediaSourceDirectory;
+
+            // Sync with Settings when changed anywhere in the app
+            AppSettings.Instance.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(AppSettings.MediaSourceDirectory))
+                {
+                    _model.AudioPath = AppSettings.Instance.MediaSourceDirectory;
+                }
+            };
+
             foreach (var lang in _translationService.AvailableLanguages)
                 _model.AvailableLanguages.Add(lang);
 
@@ -66,7 +77,33 @@ namespace VideoGenerator.Views
             if (_model.FontNames.Count > 0)
                 _model.SelectedFontName = _model.FontNames.Contains("Segoe UI") ? "Segoe UI" : _model.FontNames[0];
 
+            _model.PropertyChanged += async (s, e) => {
+                if (e.PropertyName == nameof(_model.SelectedEvent) && _model.SelectedEvent != null)
+                {
+                    await UpdatePreviewAsync();
+                }
+            };
+
             _logger.LogInfo("Dashboard initialized.");
+        }
+
+        private async Task UpdatePreviewAsync()
+        {
+            if (_model.SelectedEvent == null) return;
+
+            try
+            {
+                string tempPreviewPath = await _imageGenerator.CreateImageAsync(
+                    _model.SelectedEvent.ParsedData, 
+                    _model.SelectedFontName, 
+                    AppSettings.Instance.CustomBackgroundPath);
+                
+                _model.PreviewImagePath = tempPreviewPath;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Preview generation failed", ex);
+            }
         }
 
         private void SelectFolder_Click(object sender, RoutedEventArgs e)
@@ -82,39 +119,28 @@ namespace VideoGenerator.Views
             {
                 _model.AudioPath = dialog.FileName;
                 _logger.LogInfo($"Audio path selected: {_model.AudioPath}");
+                _model.IsAnalyzed = false;
+                _model.ProcessedEvents.Clear();
             }
         }
 
-        private async void Generate_Click(object sender, RoutedEventArgs e)
+        private async void ProcessFolders_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(_model.AudioPath) || !Directory.Exists(_model.AudioPath))
             {
-                _logger.LogError("Invalid or empty audio path.");
+                _logger.LogError("Invalid or empty media directory.");
                 return;
             }
 
             _model.IsProcessing = true;
+            _model.ProcessedEvents.Clear();
             _logger.Logs.Clear();
-            _logger.LogInfo(">>> STARTING GENERATION PROCESS...");
+            _logger.LogInfo(">>> ANALYZING MEDIA DIRECTORY...");
 
             try
             {
                 await Task.Run(async () =>
                 {
-                    string binFolder = GlobalFFOptions.Current.BinaryFolder;
-                    if (string.IsNullOrEmpty(binFolder) || !Directory.Exists(binFolder))
-                    {
-                        _logger.LogError("FFmpeg binary folder is not configured or missing.");
-                        return;
-                    }
-
-                    string ffmpegPath = Path.Combine(binFolder, "ffmpeg.exe");
-                    if (!File.Exists(ffmpegPath))
-                    {
-                        _logger.LogError("ffmpeg.exe NOT FOUND.");
-                        return;
-                    }
-
                     var lolVersion = await _dataFetcher.GetLatestLolVersionAsync();
                     var audioDirs = Directory.GetDirectories(_model.AudioPath).ToList();
 
@@ -133,8 +159,6 @@ namespace VideoGenerator.Views
                     foreach (var audioDir in audioDirs)
                     {
                         string charName = Path.GetFileName(audioDir);
-                        _logger.LogInfo($">>>> PROCESSING: {charName}");
-
                         var eventFolders = Directory.GetDirectories(audioDir)
                             .Where(f => !f.Contains("cast3D") && !f.Contains("cast2D")).ToList();
 
@@ -143,10 +167,7 @@ namespace VideoGenerator.Views
                         foreach (var folderPath in eventFolders)
                         {
                             string folderName = Path.GetFileName(folderPath);
-                            _logger.LogInfo($"- Parsing event: {folderName}");
-                            
                             var parsedEvent = await _nameParser.ParseFolderNameAsync(folderName, _model.SelectedLanguage);
-                            _logger.LogInfo($"  > Result: \"{parsedEvent.DisplayText}\" | Icon: {parsedEvent.IconLookupName} ({parsedEvent.IconType})");
                             
                             string iconPath = parsedEvent.IconType switch
                             {
@@ -157,13 +178,6 @@ namespace VideoGenerator.Views
                             };
                             parsedEvent.IconPath = iconPath;
 
-                            string imagePath = await _imageGenerator.CreateImageAsync(parsedEvent, _model.SelectedFontName, AppSettings.Instance.CustomBackgroundPath);
-                            if (imagePath == null)
-                            {
-                                _logger.LogError($"Failed to create image for {folderName}");
-                                continue;
-                            }
-
                             var audioFiles = Directory.GetFiles(folderPath, "*.*")
                                 .Where(f => f.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) || 
                                             f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ||
@@ -171,22 +185,66 @@ namespace VideoGenerator.Views
                                             f.EndsWith(".wem", StringComparison.OrdinalIgnoreCase))
                                 .OrderBy(f => f).ToList();
 
-                            if (audioFiles.Count > 0)
-                            {
-                                _logger.LogInfo($"  > Encoding video ({audioFiles.Count} audio files)...");
-                                string outputVideoPath = Path.Combine(AppConfig.OutputVideosDir, charName, $"{folderName}.mp4");
-                                await _videoService.CreateVideoAsync(imagePath, audioFiles, outputVideoPath, _model.SilenceDuration);
-                            }
-                            else
-                            {
-                                _logger.LogWarn($"No audio files found in {folderName}");
-                            }
+                            string status = "Ready";
+                            if (string.IsNullOrEmpty(iconPath)) status = "Missing Icon";
+                            if (audioFiles.Count == 0) status = "No Audio";
+
+                            Application.Current.Dispatcher.Invoke(() => {
+                                _model.ProcessedEvents.Add(new PreviewEventModel {
+                                    CharacterName = charName,
+                                    FolderName = folderName,
+                                    FolderPath = folderPath,
+                                    ParsedData = parsedEvent,
+                                    AudioFiles = audioFiles,
+                                    Status = status
+                                });
+                            });
                         }
                     }
                 });
-                _logger.LogInfo(">>> PROCESS COMPLETED.");
+                
+                _model.IsAnalyzed = _model.ProcessedEvents.Count > 0;
+                _logger.LogInfo($">>> ANALYSIS COMPLETE. Found {_model.ProcessedEvents.Count} events.");
+                if (_model.ProcessedEvents.Count > 0) _model.SelectedEvent = _model.ProcessedEvents[0];
             }
-            catch (Exception ex) { _logger.LogError("Generation process failed", ex); }
+            catch (Exception ex) { _logger.LogError("Analysis failed", ex); }
+            finally { _model.IsProcessing = false; }
+        }
+
+        private async void Generate_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_model.IsAnalyzed || _model.ProcessedEvents.Count == 0) return;
+
+            _model.IsProcessing = true;
+            _logger.LogInfo(">>> STARTING BATCH RENDER...");
+
+            try
+            {
+                await Task.Run(async () =>
+                {
+                    string binFolder = GlobalFFOptions.Current.BinaryFolder;
+                    if (string.IsNullOrEmpty(binFolder) || !Directory.Exists(binFolder))
+                    {
+                        _logger.LogError("FFmpeg binary folder not found.");
+                        return;
+                    }
+
+                    foreach (var ev in _model.ProcessedEvents)
+                    {
+                        if (ev.Status == "No Audio") continue;
+
+                        _logger.LogInfo($"> Rendering: {ev.CharacterName} - {ev.FolderName}");
+                        
+                        string imagePath = await _imageGenerator.CreateImageAsync(ev.ParsedData, _model.SelectedFontName, AppSettings.Instance.CustomBackgroundPath);
+                        if (imagePath == null) continue;
+
+                        string outputVideoPath = Path.Combine(AppConfig.OutputVideosDir, ev.CharacterName, $"{ev.FolderName}.mp4");
+                        await _videoService.CreateVideoAsync(imagePath, ev.AudioFiles, outputVideoPath, _model.SilenceDuration);
+                    }
+                });
+                _logger.LogInfo(">>> BATCH PROCESS COMPLETED.");
+            }
+            catch (Exception ex) { _logger.LogError("Generation failed", ex); }
             finally { _model.IsProcessing = false; }
         }
     }

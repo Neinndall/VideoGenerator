@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace VideoGenerator.Converters
+namespace VideoGenerator.Views.Converters
 {
     public class EqualityToBooleanConverter : IValueConverter
     {

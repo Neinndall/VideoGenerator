@@ -30,17 +30,18 @@ namespace VideoGenerator.Services
         {
             var handlers = new List<IEventHandler>();
 
-            // 1. Load Dynamic User Rules First (Priority)
-            foreach (var rule in _ruleManager.Rules)
-            {
-                handlers.Add(new DynamicRuleHandler(_translationService, rule, _groupManager));
-            }
-
-            // 2. Add Complex Specialized Handlers
+            // 1. Add Complex Specialized Handlers first
             handlers.Add(new ItemEventHandler(_translationService));
             handlers.Add(new MonsterAttackHandler(_translationService));
             handlers.Add(new SkinInteractionHandler(_translationService, _dataFetcher));
             handlers.Add(new GroupInteractionHandler(_translationService, _groupManager));
+
+            // 2. Load Dynamic User Rules sorted by keyword length descending (Fallback/Catch-all)
+            // This prevents short generic keywords (e.g. "Attack") from greedy matching over longer specific keywords (e.g. "Attack2D")
+            foreach (var rule in _ruleManager.Rules.OrderByDescending(r => r.Keyword.Length))
+            {
+                handlers.Add(new DynamicRuleHandler(_translationService, rule, _groupManager));
+            }
 
             return handlers;
         }

@@ -20,7 +20,17 @@ namespace VideoGenerator.Views.Models
         [ObservableProperty]
         private bool _isProcessing = false;
 
+        [ObservableProperty]
+        private bool _isAnalyzed = false;
+
+        [ObservableProperty]
+        private PreviewEventModel _selectedEvent;
+
+        [ObservableProperty]
+        private string _previewImagePath;
+
         public ObservableCollection<string> FontNames { get; } = new();
         public ObservableCollection<string> AvailableLanguages { get; } = new();
+        public ObservableCollection<PreviewEventModel> ProcessedEvents { get; } = new();
     }
 }
