@@ -11,8 +11,7 @@ namespace VideoGenerator.Views.Models
         [ObservableProperty]
         private string _selectedLanguage = "ES";
 
-        [ObservableProperty]
-        private string _selectedFontName = "Arial";
+
 
         [ObservableProperty]
         private double _silenceDuration = 0.0;
@@ -37,7 +36,7 @@ namespace VideoGenerator.Views.Models
 
         public ObservableCollection<string> CharactersList { get; } = new();
         public ObservableCollection<PreviewEventModel> FilteredProcessedEvents { get; } = new();
-        public ObservableCollection<string> FontNames { get; } = new();
+
         public ObservableCollection<string> AvailableLanguages { get; } = new();
         public ObservableCollection<PreviewEventModel> ProcessedEvents { get; } = new();
     }

@@ -10,12 +10,11 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:FileNameConverter x:Key="FileNameConverter"/>
         
-        <!-- Local specific resources for the designer -->
         <Style x:Key="InspectorSectionHeader" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="Black"/>
-            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
-            <Setter Property="Margin" Value="0,0,0,16"/>
+            <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
     </UserControl.Resources>
 
@@ -26,14 +25,14 @@
         </Grid.RowDefinitions>
 
         <!-- 1. CINEMATIC HEADER -->
-        <Grid Grid.Row="0" Margin="0,0,0,32">
+        <Grid Grid.Row="0" Margin="0,0,0,24">
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="HUD &amp; VISUAL DESIGNER" 
-                           FontSize="28" 
+                           FontSize="24" 
                            FontWeight="Black" 
                            Foreground="{StaticResource TextHighlightBrush}" />
-                <TextBlock Text="Customize canvas backgrounds, adjust text vertical offsets and preview live render outcomes." 
-                           FontSize="13" 
+                <TextBlock Text="Customize backgrounds, adjust text vertical offsets, and configure icon alignments in real-time." 
+                           FontSize="12" 
                            FontWeight="SemiBold" 
                            Foreground="{StaticResource TextSecondaryBrush}" 
                            Opacity="0.7"
@@ -44,117 +43,219 @@
         <!-- 2. MAIN DESIGNER WORKSPACE -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="320"/> <!-- Left: Inspector -->
+                <ColumnDefinition Width="380"/> <!-- Left: Inspector -->
                 <ColumnDefinition Width="*"/>   <!-- Right: Live Canvas -->
             </Grid.ColumnDefinitions>
 
-            <!-- LEFT: PROPERTIES INSPECTOR -->
-            <Border Grid.Column="0" Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,24,0">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <!-- SECTION: CANVAS SOURCE -->
-                        <Border Background="{StaticResource SurfaceBrush}" Padding="20,14" CornerRadius="12,12,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+            <!-- LEFT: PROPERTIES INSPECTOR (Grid distributed vertically to match Preview height) -->
+            <Grid Grid.Column="0" Margin="0,0,24,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- SECTION 1: BACKGROUND SOURCE -->
+                <Border Grid.Row="0" Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,0,16">
+                    <StackPanel VerticalAlignment="Stretch">
+                        <!-- Header Bar -->
+                        <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="11,11,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="ImageOutline" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Text="CANVAS SOURCE" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
+                                <materialDesign:PackIcon Kind="ImageOutline" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="CANVAS BACKGROUND" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
                             </StackPanel>
                         </Border>
 
-                        <Border Padding="20,24">
+                        <!-- Body -->
+                        <Border Padding="16">
                             <StackPanel>
-                            <TextBlock Text="Load your own splash art or wallpaper from your device." FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,16,12" TextWrapping="Wrap" Opacity="0.6"/>
-                            <Button Click="SelectBackground_Click"
-                                    Style="{StaticResource ModernPrimaryButton}"
-                                    Height="44" Margin="0,0,0,16" HorizontalAlignment="Stretch">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="CloudUploadOutline" Margin="0,0,10,0" VerticalAlignment="Center" Width="18" Height="18"/>
-                                    <TextBlock Text="UPLOAD ASSET" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
-                                </StackPanel>
-                            </Button>
+                                <TextBlock Text="Configure the workspace background. You can search champion name + skin index (e.g. Aatrox_0) to download from Riot API, or upload a local wallpaper image." 
+                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14" TextWrapping="Wrap" Opacity="0.7" LineHeight="15"/>
 
-                            <!-- Current Asset Info -->
-                            <Border Style="{StaticResource HUDBorder}" Padding="12" 
-                                    Visibility="{Binding Source={x:Static services:AppSettings.Instance}, Path=CustomBackgroundPath, Converter={StaticResource NullToVisibilityConverter}}">
                                 <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="110"/>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <materialDesign:PackIcon Kind="FileImageOutline" Foreground="{StaticResource AccentBrush}" Opacity="0.7" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <TextBlock Grid.Column="1" 
-                                               Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=CustomBackgroundPath, Converter={StaticResource FileNameConverter}}" 
-                                               FontSize="11" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                    <Button Grid.Column="2" Click="RemoveBackground_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="24" Height="24" Padding="0">
-                                        <materialDesign:PackIcon Kind="Close" Width="14" Height="14"/>
+
+                                    <!-- Row 0: Search API -->
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="RIOT SEARCH" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <Grid Grid.Row="0" Grid.Column="1">
+                                        <TextBox x:Name="SplashSearchBox" 
+                                                 materialDesign:HintAssist.Hint="Champion name (e.g. Aatrox)..." 
+                                                 Style="{StaticResource ModernTextBox}"
+                                                 Height="40"
+                                                 Padding="10,6,36,6"
+                                                 KeyDown="SplashSearchBox_KeyDown"/>
+                                        <Button Click="SearchSplash_Click" HorizontalAlignment="Right" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="32" Height="32" Margin="0,0,4,0" VerticalAlignment="Center" ToolTip="Search Riot API">
+                                            <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- Row 2: Local Upload -->
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="LOCAL FILE" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <Button Grid.Row="2" Grid.Column="1" Click="SelectBackground_Click"
+                                            Style="{StaticResource ModernPrimaryButton}"
+                                            Height="36" HorizontalAlignment="Stretch">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="CloudUploadOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="14" Height="14"/>
+                                            <TextBlock Text="UPLOAD NEW FILE" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
+                                        </StackPanel>
                                     </Button>
+
+                                    <!-- Row 4: Current Asset (span columns) -->
+                                    <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource HUDBorder}" Padding="8,6" 
+                                            Visibility="{Binding Source={x:Static services:AppSettings.Instance}, Path=CustomBackgroundPath, Converter={StaticResource NullToVisibilityConverter}}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <materialDesign:PackIcon Grid.Column="0" Kind="FileImageOutline" Foreground="{StaticResource AccentBrush}" Opacity="0.7" VerticalAlignment="Center" Margin="0,0,6,0" Width="14" Height="14"/>
+                                            <TextBlock Grid.Column="1" 
+                                                       Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=CustomBackgroundPath, Converter={StaticResource FileNameConverter}}" 
+                                                       FontSize="10" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            <Button Grid.Column="2" Click="RemoveBackground_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="20" Height="20" Padding="0">
+                                                <materialDesign:PackIcon Kind="Close" Width="12" Height="12"/>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
                                 </Grid>
-                            </Border>
-                        </StackPanel>
-                        </Border>
-
-                        <Border Height="1" Background="{StaticResource BorderBrush}" Margin="20,0"/>
-
-                        <!-- SECTION: LORE SPLASH RESOLVER -->
-                        <Border Background="{StaticResource SurfaceBrush}" Padding="20,14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,1">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Magnify" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Text="SPLASH RESOLVER" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
                             </StackPanel>
-                        </Border>
-
-                        <Border Padding="20,24">
-                            <StackPanel>
-                            <TextBlock Text="Search from Riot API. (e.g., 'Aatrox' is base, 'Aatrox_1' is skin 1)." FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,16,12" TextWrapping="Wrap" Opacity="0.6"/>
-                            <Grid>
-                                <TextBox x:Name="SplashSearchBox" 
-                                         materialDesign:HintAssist.Hint="Champion name..." 
-                                         Style="{StaticResource ModernTextBox}"
-                                         Padding="12,8,44,8"
-                                         KeyDown="SplashSearchBox_KeyDown"/>
-                                <Button Click="SearchSplash_Click" HorizontalAlignment="Right" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="36" Height="36" Margin="0,0,4,0" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="ArrowRight" Width="18" Height="18"/>
-                                </Button>
-                            </Grid>
-                        </StackPanel>
-                        </Border>
-
-                        <Border Height="1" Background="{StaticResource BorderBrush}" Margin="20,0"/>
-
-                        <!-- SECTION: TYPOGRAPHY OFFSETS -->
-                        <Border Background="{StaticResource SurfaceBrush}" Padding="20,14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,1">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="FormatVerticalAlignBottom" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Text="TYPOGRAPHY ENGINE" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Padding="20,24">
-                            <StackPanel>
-                            <TextBox Text="{Binding PreviewText, UpdateSourceTrigger=PropertyChanged}"
-                                     materialDesign:HintAssist.Hint="Live Preview Text" 
-                                     Style="{StaticResource ModernTextBox}"
-                                     Margin="0,0,0,24"/>
-
-                            <StackPanel Margin="0,0,0,8">
-                                <Grid>
-                                    <TextBlock Text="VERTICAL OFFSET" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                    <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=TextVerticalOffset, StringFormat={}{0:F0}px}" 
-                                               HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                                </Grid>
-                                <Slider Minimum="-100" Maximum="100" 
-                                        Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=TextVerticalOffset}"
-                                        Style="{StaticResource ModernSlider}"
-                                        Margin="0,8,0,0"/>
-                            </StackPanel>
-                        </StackPanel>
                         </Border>
                     </StackPanel>
-                </ScrollViewer>
-            </Border>
+                </Border>
+
+                <!-- SECTION 2: HUD TYPOGRAPHY -->
+                <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,0,16">
+                    <StackPanel VerticalAlignment="Stretch">
+                        <!-- Header Bar -->
+                        <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="11,11,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FormatText" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="HUD TYPOGRAPHY" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Customize the text overlays. Enter preview text, choose a typography font family loaded from your system, and adjust the vertical position offset." 
+                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14" TextWrapping="Wrap" Opacity="0.7" LineHeight="15"/>
+
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="12"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="12"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Row 0: Preview Text -->
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="PREVIEW TEXT" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding PreviewText, UpdateSourceTrigger=PropertyChanged}"
+                                             materialDesign:HintAssist.Hint="Type preview text..." 
+                                             Style="{StaticResource ModernTextBox}" Height="40" Padding="10,6"/>
+
+                                    <!-- Row 2: Font Family -->
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="FONT FAMILY" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding FontNames}" 
+                                              SelectedItem="{Binding SelectedFontName}"
+                                              materialDesign:HintAssist.Hint="HUD Font"
+                                              Style="{StaticResource ModernComboBoxStyle}" 
+                                              Height="40" Padding="12,0"/>
+
+                                    <!-- Row 4: Vertical Offset -->
+                                    <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2">
+                                        <Grid Margin="0,0,0,4">
+                                            <TextBlock Text="TEXT VERTICAL OFFSET" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=TextVerticalOffset, StringFormat={}{0:F0}px}" 
+                                                       HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                        </Grid>
+                                        <Slider Minimum="-100" Maximum="100" 
+                                                Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=TextVerticalOffset}"
+                                                Style="{StaticResource ModernSlider}"
+                                                Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- SECTION 3: HUD ICON POSITION -->
+                <Border Grid.Row="2" Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,0,0">
+                    <StackPanel VerticalAlignment="Stretch">
+                        <!-- Header Bar -->
+                        <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="11,11,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ImageFilterCenterFocusWeak" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="HUD ICON POSITION" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Configure the target champion/structure HUD icon placement. Toggle left/right alignment and shift the vertical pixel offset dynamically." 
+                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14" TextWrapping="Wrap" Opacity="0.7" LineHeight="15"/>
+
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="12"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Row 0: Horizontal Alignment -->
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="ALIGNMENT" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <Grid Grid.Row="0" Grid.Column="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <RadioButton x:Name="AlignLeftRadio" Grid.Column="0" Content="LEFT" Checked="AlignLeft_Checked"
+                                                     Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="32" Margin="0,0,4,0"/>
+                                        <RadioButton x:Name="AlignRightRadio" Grid.Column="1" Content="RIGHT" Checked="AlignRight_Checked"
+                                                     Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="32" Margin="4,0,0,0"/>
+                                    </Grid>
+
+                                    <!-- Row 2: Vertical Position -->
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+                                        <Grid Margin="0,0,0,4">
+                                            <TextBlock Text="VERTICAL POSITION" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset, StringFormat={}{0:F0}px}" 
+                                                       HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                        </Grid>
+                                        <Slider Minimum="-600" Maximum="200" 
+                                                Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset}"
+                                                Style="{StaticResource ModernSlider}"
+                                                Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
 
             <!-- RIGHT: LIVE CINEMA CANVAS -->
-            <Grid Grid.Column="1">
+            <Grid Grid.Column="1" Margin="8,0,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
@@ -190,7 +291,7 @@
                                 <Grid>
                                     <!-- Central Title Overlay -->
                                     <Border VerticalAlignment="Top" Margin="0,898,0,0" Height="120" Background="#CC000000" BorderBrush="White" BorderThickness="0,2,0,2">
-                                        <TextBlock Text="{Binding PreviewText}" Foreground="White" FontSize="56" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding PreviewText}" FontFamily="{Binding SelectedFontName}" Foreground="White" FontSize="56" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock.RenderTransform>
                                                 <TranslateTransform Y="{Binding Source={x:Static services:AppSettings.Instance}, Path=TextVerticalOffset}"/>
                                             </TextBlock.RenderTransform>
@@ -198,7 +299,17 @@
                                     </Border>
 
                                     <!-- Square Avatar (Champ/Item) -->
-                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="50,698,0,0" Width="180" Height="180" Background="#26FFFFFF" BorderBrush="#CCFFFFFF" BorderThickness="3" CornerRadius="4">
+                                    <Border HorizontalAlignment="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconAlignment}" 
+                                            VerticalAlignment="Top" 
+                                            Margin="50,698,50,0" 
+                                            Width="180" Height="180" 
+                                            Background="#26FFFFFF" 
+                                            BorderBrush="#CCFFFFFF" 
+                                            BorderThickness="3" 
+                                            CornerRadius="4">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform Y="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset}"/>
+                                        </Border.RenderTransform>
                                         <materialDesign:PackIcon Kind="ImageFilterCenterFocusWeak" Foreground="White" Opacity="0.4" Width="64" Height="64" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                 </Grid>
