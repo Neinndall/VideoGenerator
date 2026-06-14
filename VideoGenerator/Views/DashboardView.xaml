@@ -109,7 +109,7 @@
         </Grid>
 
         <!-- 3. MAIN WORKSPACE: LIST & PREVIEW -->
-        <Grid Grid.Row="2" Height="530">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="380" MinWidth="250" MaxWidth="700"/>
                 <ColumnDefinition Width="Auto"/>
@@ -316,6 +316,7 @@
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">champion</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">item</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">monster</System:String>
+                            <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">structure</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">generic</System:String>
                         </ComboBox>
 

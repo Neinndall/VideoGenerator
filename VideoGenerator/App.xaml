@@ -18,6 +18,7 @@
                 <ResourceDictionary Source="Theme/Animations.xaml" />
                 <ResourceDictionary Source="Theme/LoreTabStyles.xaml" />
                 <ResourceDictionary Source="Theme/InputStyles.xaml" />
+                <ResourceDictionary Source="Theme/ScrollStyles.xaml" />
                 <ResourceDictionary Source="Theme/ListStyles.xaml" />
                 <ResourceDictionary Source="Theme/ButtonStyles.xaml" />
                 <ResourceDictionary Source="Theme/NavigationStyles.xaml" />

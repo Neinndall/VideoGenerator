@@ -258,6 +258,7 @@ namespace VideoGenerator.Views
                 "item" => await _iconManager.GetItemIconAsync(iconName),
                 "monster" => await _iconManager.GetMonsterIconAsync(iconName),
                 "champion" => await _iconManager.GetChampionIconAsync(iconName, lolVersion),
+                "structure" => await _iconManager.GetStructureIconAsync(iconName),
                 _ => null
             };
             ev.ParsedData.IconPath = iconPath;
@@ -423,6 +424,7 @@ namespace VideoGenerator.Views
                             "item" => await _iconManager.GetItemIconAsync(parsedEvent.IconLookupName),
                             "monster" => await _iconManager.GetMonsterIconAsync(parsedEvent.IconLookupName),
                             "champion" => await _iconManager.GetChampionIconAsync(parsedEvent.IconLookupName, lolVersion),
+                            "structure" => await _iconManager.GetStructureIconAsync(parsedEvent.IconLookupName),
                             _ => null
                         };
                         parsedEvent.IconPath = iconPath;
