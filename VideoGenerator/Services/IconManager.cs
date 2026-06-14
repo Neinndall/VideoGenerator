@@ -110,6 +110,13 @@ namespace VideoGenerator.Services
         {
             if (string.IsNullOrEmpty(itemNameOrId)) return null;
 
+            // Resolve name to ID dynamically using DDragon database
+            string resolvedId = await _dataFetcher.ResolveItemNameToIdAsync(itemNameOrId);
+            if (!string.IsNullOrEmpty(resolvedId))
+            {
+                itemNameOrId = resolvedId;
+            }
+
             // 1. If numeric (ID), try Community Dragon & DDragon
             if (int.TryParse(itemNameOrId, out int itemId))
             {

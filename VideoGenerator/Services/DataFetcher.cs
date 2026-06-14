@@ -276,5 +276,82 @@ namespace VideoGenerator.Services
             string fileName = $"{searchName}Square.png";
             return await Task.FromResult(GetFandomImageUrl(fileName));
         }
+
+        private Dictionary<string, string> _itemNameIdCache;
+        private readonly object _itemCacheLock = new();
+
+        public async Task<string> ResolveItemNameToIdAsync(string itemName)
+        {
+            if (string.IsNullOrEmpty(itemName)) return null;
+            if (int.TryParse(itemName, out _)) return itemName; // already an ID
+
+            if (_itemNameIdCache == null)
+            {
+                try
+                {
+                    string version = await GetLatestLolVersionAsync();
+                    string url = $"https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/item.json";
+                    string jsonStr = await _httpClient.GetStringAsync(url);
+                    using (JsonDocument doc = JsonDocument.Parse(jsonStr))
+                    {
+                        var dataProp = doc.RootElement.GetProperty("data");
+                        var tempMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var itemProp in dataProp.EnumerateObject())
+                        {
+                            string id = itemProp.Name;
+                            string name = itemProp.Value.GetProperty("name").GetString();
+                            if (!string.IsNullOrEmpty(name))
+                            {
+                                tempMap[name] = id;
+                                string normalized = Regex.Replace(name, @"[^A-Za-z0-9]", "");
+                                if (!tempMap.ContainsKey(normalized))
+                                {
+                                    tempMap[normalized] = id;
+                                }
+                            }
+                        }
+                        lock (_itemCacheLock)
+                        {
+                            _itemNameIdCache = tempMap;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error fetching DDragon items: {ex.Message}");
+                    return null;
+                }
+            }
+
+            if (_itemNameIdCache != null)
+            {
+                // 1. Direct exact or normalized match
+                if (_itemNameIdCache.TryGetValue(itemName, out string id))
+                {
+                    return id;
+                }
+
+                string cleanSearch = Regex.Replace(itemName, @"[^A-Za-z0-9]", "");
+                if (_itemNameIdCache.TryGetValue(cleanSearch, out id))
+                {
+                    return id;
+                }
+
+                // 2. Partial match
+                var bestMatch = _itemNameIdCache.Keys.FirstOrDefault(k => k.Contains(itemName, StringComparison.OrdinalIgnoreCase));
+                if (bestMatch != null)
+                {
+                    return _itemNameIdCache[bestMatch];
+                }
+
+                var bestMatchClean = _itemNameIdCache.Keys.FirstOrDefault(k => k.Contains(cleanSearch, StringComparison.OrdinalIgnoreCase));
+                if (bestMatchClean != null)
+                {
+                    return _itemNameIdCache[bestMatchClean];
+                }
+            }
+
+            return null;
+        }
     }
 }

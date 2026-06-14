@@ -241,6 +241,16 @@ namespace VideoGenerator.Views
             string iconName = QuickEditIconLookup.Text;
             string iconType = QuickEditIconType.SelectedValue?.ToString() ?? "generic";
 
+            if (iconType == "item" && !string.IsNullOrEmpty(iconName))
+            {
+                string resolvedId = await _dataFetcher.ResolveItemNameToIdAsync(iconName);
+                if (!string.IsNullOrEmpty(resolvedId))
+                {
+                    iconName = resolvedId;
+                    QuickEditIconLookup.Text = resolvedId; // Update textbox in UI
+                }
+            }
+
             _logger.LogInfo($"Applying Quick Edit for folder: {key} -> '{text}' ({iconName}, {iconType})");
 
             // 1. Update translations.json global dictionary
