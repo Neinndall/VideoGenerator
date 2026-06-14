@@ -1,6 +1,6 @@
 {
     "EN": {
-        "event_penta_kill": "Penta Kill",
+        "event_penta_kill": "Pentakill",
         "event_first_blood": "First Blood",
         "event_turret_takedown": "Turret Takedown",
         "event_kill_ally_ahead": "Kill (Ally Team Ahead)",
@@ -75,7 +75,7 @@
         "suffix_in_general": " in General"
     },
     "TR": {
-        "event_penta_kill": "Penta Kill",
+        "event_penta_kill": "Pentakill",
         "event_first_blood": "İlk Kan",
         "event_turret_takedown": "Kule Yıkımı",
         "event_kill_ally_ahead": "Skor (Takım Önde)",

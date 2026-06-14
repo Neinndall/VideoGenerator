@@ -44,7 +44,13 @@ namespace VideoGenerator
             services.AddSingleton<GroupManager>();
             services.AddSingleton<AliasManager>();
             services.AddSingleton<IconManager>();
-            services.AddSingleton<NameParser>();
+            services.AddSingleton<NameParser>(provider => new NameParser(
+                provider.GetRequiredService<TranslationService>(),
+                provider.GetRequiredService<DataFetcher>(),
+                provider.GetRequiredService<RuleManager>(),
+                provider.GetRequiredService<GroupManager>(),
+                provider.GetRequiredService<AliasManager>()
+            ));
             services.AddSingleton<ImageGenerator>();
             services.AddSingleton<VideoService>();
 

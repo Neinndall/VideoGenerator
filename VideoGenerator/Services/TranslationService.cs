@@ -122,5 +122,26 @@ namespace VideoGenerator.Services
             }
             return text;
         }
+        public void UpdateTranslation(string language, string key, string value)
+        {
+            if (string.IsNullOrEmpty(language) || string.IsNullOrEmpty(key)) return;
+
+            if (!_translations.ContainsKey(language))
+            {
+                _translations[language] = new Dictionary<string, string>();
+            }
+
+            _translations[language][key] = value;
+
+            try
+            {
+                string json = JsonSerializer.Serialize(_translations, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_localTranslationsPath, json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving updated translations: {ex.Message}");
+            }
+        }
     }
 }

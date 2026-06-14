@@ -11,6 +11,7 @@
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="VirtualizingStackPanel.IsVirtualizing" Value="True"/>
         <Setter Property="VirtualizingStackPanel.VirtualizationMode" Value="Recycling"/>
+        <Setter Property="VirtualizingStackPanel.ScrollUnit" Value="Pixel"/>
         <Setter Property="utils:ScrollHelper.BubbleMouseWheel" Value="True"/>
         
         <Setter Property="ItemContainerStyle">
@@ -21,6 +22,7 @@
                     <Setter Property="Padding" Value="0"/>
                     <Setter Property="Cursor" Value="Hand"/>
                     <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListBoxItem">
@@ -29,7 +31,15 @@
                                         BorderBrush="{StaticResource BorderBrush}" 
                                         BorderThickness="0,0,0,1" 
                                         SnapsToDevicePixels="True">
-                                    <ContentPresenter />
+                                    <Grid>
+                                        <!-- Vertical accent bar on the left -->
+                                        <Border x:Name="SelectionBar" 
+                                                Width="4" 
+                                                HorizontalAlignment="Left" 
+                                                Background="Transparent" 
+                                                Margin="0,2,0,2"/>
+                                        <ContentPresenter Margin="4,0,0,0" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                    </Grid>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
@@ -37,7 +47,8 @@
                                         <Setter Property="Foreground" Value="White"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#268B5CF6"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#1C8B5CF6"/>
+                                        <Setter TargetName="SelectionBar" Property="Background" Value="{StaticResource AccentBrush}"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </Trigger>
                                     <MultiTrigger>
@@ -45,7 +56,8 @@
                                             <Condition Property="IsSelected" Value="True"/>
                                             <Condition Property="IsMouseOver" Value="True"/>
                                         </MultiTrigger.Conditions>
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#338B5CF6"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#2A8B5CF6"/>
+                                        <Setter TargetName="SelectionBar" Property="Background" Value="{StaticResource AccentBrushLight}"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </MultiTrigger>
                                 </ControlTemplate.Triggers>
@@ -76,7 +88,7 @@
                                         BorderBrush="{StaticResource BorderBrush}" 
                                         BorderThickness="0,0,0,1" 
                                         SnapsToDevicePixels="True">
-                                    <ContentPresenter />
+                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
