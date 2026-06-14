@@ -33,17 +33,67 @@ namespace VideoGenerator.Views
             
             DataContext = _model;
 
+            // Load System Fonts
+            foreach (var family in SixLabors.Fonts.SystemFonts.Families)
+                _model.FontNames.Add(family.Name);
+
+            if (_model.FontNames.Count > 0)
+            {
+                string savedFont = AppSettings.Instance.SelectedFontName;
+                if (!string.IsNullOrEmpty(savedFont) && _model.FontNames.Contains(savedFont))
+                {
+                    _model.SelectedFontName = savedFont;
+                }
+                else
+                {
+                    _model.SelectedFontName = _model.FontNames.Contains("Segoe UI") ? "Segoe UI" : _model.FontNames[0];
+                }
+            }
+
+            // Initialize radio buttons
+            if (AppSettings.Instance.IconAlignment.Equals("Right", StringComparison.OrdinalIgnoreCase))
+                AlignRightRadio.IsChecked = true;
+            else
+                AlignLeftRadio.IsChecked = true;
+
             _model.PropertyChanged += (s, e) => {
                 if (e.PropertyName == nameof(_model.PreviewText))
                     DebouncedUpdatePreview();
+                else if (e.PropertyName == nameof(_model.SelectedFontName))
+                {
+                    AppSettings.Instance.SelectedFontName = _model.SelectedFontName;
+                    DebouncedUpdatePreview();
+                }
             };
 
             AppSettings.Instance.PropertyChanged += (s, e) => {
-                if (e.PropertyName == nameof(AppSettings.CustomBackgroundPath) || e.PropertyName == nameof(AppSettings.TextVerticalOffset))
+                if (e.PropertyName == nameof(AppSettings.CustomBackgroundPath) || 
+                    e.PropertyName == nameof(AppSettings.TextVerticalOffset) ||
+                    e.PropertyName == nameof(AppSettings.IconAlignment) ||
+                    e.PropertyName == nameof(AppSettings.IconVerticalOffset) ||
+                    e.PropertyName == nameof(AppSettings.SelectedFontName))
+                {
+                    if (e.PropertyName == nameof(AppSettings.SelectedFontName) && _model.SelectedFontName != AppSettings.Instance.SelectedFontName)
+                    {
+                        _model.SelectedFontName = AppSettings.Instance.SelectedFontName;
+                    }
                     DebouncedUpdatePreview();
+                }
             };
 
             UpdatePreview();
+        }
+
+        private void AlignLeft_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AppSettings.Instance != null)
+                AppSettings.Instance.IconAlignment = "Left";
+        }
+
+        private void AlignRight_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AppSettings.Instance != null)
+                AppSettings.Instance.IconAlignment = "Right";
         }
 
         private void SelectBackground_Click(object sender, RoutedEventArgs e)
@@ -131,7 +181,7 @@ namespace VideoGenerator.Views
 
                 // Perform generation in background thread
                 byte[] imageBytes = await Task.Run(() => 
-                    _imageGenerator.CreateImageBytesAsync(mockEvent, "Segoe UI", AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset));
+                    _imageGenerator.CreateImageBytesAsync(mockEvent, _model.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset));
 
                 if (imageBytes != null)
                 {

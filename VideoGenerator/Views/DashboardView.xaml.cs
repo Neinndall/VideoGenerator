@@ -77,22 +77,6 @@ namespace VideoGenerator.Views
             if (_model.AvailableLanguages.Count > 0)
                 _model.SelectedLanguage = _model.AvailableLanguages.Contains("EN") ? "EN" : _model.AvailableLanguages[0];
 
-            foreach (var family in SixLabors.Fonts.SystemFonts.Families)
-                _model.FontNames.Add(family.Name);
-
-            if (_model.FontNames.Count > 0)
-            {
-                string savedFont = AppSettings.Instance.SelectedFontName;
-                if (!string.IsNullOrEmpty(savedFont) && _model.FontNames.Contains(savedFont))
-                {
-                    _model.SelectedFontName = savedFont;
-                }
-                else
-                {
-                    _model.SelectedFontName = _model.FontNames.Contains("Segoe UI") ? "Segoe UI" : _model.FontNames[0];
-                }
-            }
-
             _model.PropertyChanged += async (s, e) => {
                 if (e.PropertyName == nameof(_model.SelectedEvent) && _model.SelectedEvent != null)
                 {
@@ -101,11 +85,6 @@ namespace VideoGenerator.Views
                 else if (e.PropertyName == nameof(_model.SelectedFilter) || e.PropertyName == nameof(_model.SelectedCharacter))
                 {
                     ApplyFilter();
-                }
-                else if (e.PropertyName == nameof(_model.SelectedFontName))
-                {
-                    AppSettings.Instance.SelectedFontName = _model.SelectedFontName;
-                    await UpdatePreviewAsync();
                 }
             };
 
@@ -310,7 +289,7 @@ namespace VideoGenerator.Views
             {
                 byte[] bytes = await _imageGenerator.CreateImageBytesAsync(
                     _model.SelectedEvent.ParsedData, 
-                    _model.SelectedFontName, 
+                    AppSettings.Instance.SelectedFontName, 
                     AppSettings.Instance.CustomBackgroundPath);
                 
                 if (bytes != null)
@@ -517,7 +496,7 @@ namespace VideoGenerator.Views
 
                         _logger.LogInfo($"> Rendering: {ev.CharacterName} - {ev.FolderName}");
                         
-                        string imagePath = await _imageGenerator.CreateImageAsync(ev.ParsedData, _model.SelectedFontName, AppSettings.Instance.CustomBackgroundPath);
+                        string imagePath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath);
                         if (imagePath == null) continue;
 
                         string outputVideoPath = Path.Combine(AppConfig.OutputVideosDir, ev.CharacterName, $"{ev.FolderName}.mp4");

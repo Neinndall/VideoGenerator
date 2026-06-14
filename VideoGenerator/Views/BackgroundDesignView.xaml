@@ -136,6 +136,13 @@
                                      Style="{StaticResource ModernTextBox}"
                                      Margin="0,0,0,24"/>
 
+                            <ComboBox ItemsSource="{Binding FontNames}" 
+                                      SelectedItem="{Binding SelectedFontName}"
+                                      materialDesign:HintAssist.Hint="HUD Typography"
+                                      Style="{StaticResource ModernComboBoxStyle}" 
+                                      Height="44" Padding="12,0"
+                                      Margin="0,0,0,24"/>
+
                             <StackPanel Margin="0,0,0,8">
                                 <Grid>
                                     <TextBlock Text="TEXT VERTICAL OFFSET" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
@@ -228,7 +235,7 @@
                                 <Grid>
                                     <!-- Central Title Overlay -->
                                     <Border VerticalAlignment="Top" Margin="0,898,0,0" Height="120" Background="#CC000000" BorderBrush="White" BorderThickness="0,2,0,2">
-                                        <TextBlock Text="{Binding PreviewText}" Foreground="White" FontSize="56" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding PreviewText}" FontFamily="{Binding SelectedFontName}" Foreground="White" FontSize="56" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock.RenderTransform>
                                                 <TranslateTransform Y="{Binding Source={x:Static services:AppSettings.Instance}, Path=TextVerticalOffset}"/>
                                             </TextBlock.RenderTransform>

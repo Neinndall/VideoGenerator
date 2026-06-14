@@ -57,6 +57,39 @@ namespace VideoGenerator.Services
             }
         }
 
+        private string _iconAlignment = "Left";
+        public string IconAlignment
+        {
+            get => _iconAlignment;
+            set
+            {
+                if (SetProperty(ref _iconAlignment, value))
+                    SaveSettings();
+            }
+        }
+
+        private float _iconVerticalOffset = 0f;
+        public float IconVerticalOffset
+        {
+            get => _iconVerticalOffset;
+            set
+            {
+                if (SetProperty(ref _iconVerticalOffset, value))
+                    SaveSettings();
+            }
+        }
+
+        private string _selectedFontName = "Segoe UI";
+        public string SelectedFontName
+        {
+            get => _selectedFontName;
+            set
+            {
+                if (SetProperty(ref _selectedFontName, value))
+                    SaveSettings();
+            }
+        }
+
         private double _silenceDuration = 0.0;
         public double SilenceDuration
         {

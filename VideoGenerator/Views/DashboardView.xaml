@@ -48,7 +48,6 @@
                         <ColumnDefinition Width="*"/> <!-- Directory expands dynamically -->
                         <ColumnDefinition Width="Auto"/> <!-- Lang dropdown -->
                         <ColumnDefinition Width="Auto"/> <!-- Character filter (Hidden until processed) -->
-                        <ColumnDefinition Width="Auto"/> <!-- Font dropdown -->
                     </Grid.ColumnDefinitions>
 
                     <!-- Path Selector -->
@@ -86,13 +85,7 @@
                                   Style="{StaticResource ModernComboBoxStyle}" Height="52" Padding="12,0"/>
                     </StackPanel>
 
-                    <!-- Font -->
-                    <StackPanel Grid.Column="3" Width="180" VerticalAlignment="Center">
-                        <ComboBox ItemsSource="{Binding DashboardModel.FontNames}" 
-                                  SelectedItem="{Binding DashboardModel.SelectedFontName}"
-                                  materialDesign:HintAssist.Hint="HUD Typography"
-                                  Style="{StaticResource ModernComboBoxStyle}" Height="52" Padding="12,0"/>
-                    </StackPanel>
+
                 </Grid>
             </Border>
 

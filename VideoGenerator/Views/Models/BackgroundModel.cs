@@ -13,5 +13,11 @@ namespace VideoGenerator.Views.Models
 
         [ObservableProperty]
         private string _customBackgroundPath;
+
+        [ObservableProperty]
+        private System.Collections.ObjectModel.ObservableCollection<string> _fontNames = new();
+
+        [ObservableProperty]
+        private string _selectedFontName = "Segoe UI";
     }
 }
