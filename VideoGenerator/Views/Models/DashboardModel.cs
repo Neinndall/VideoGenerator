@@ -29,6 +29,14 @@ namespace VideoGenerator.Views.Models
         [ObservableProperty]
         private string _previewImagePath;
 
+        [ObservableProperty]
+        private string _selectedFilter = "ALL"; // ALL, ERRORS, PENDING
+
+        [ObservableProperty]
+        private string _selectedCharacter = "ALL"; // ALL, Ahri, Lucian, etc.
+
+        public ObservableCollection<string> CharactersList { get; } = new();
+        public ObservableCollection<PreviewEventModel> FilteredProcessedEvents { get; } = new();
         public ObservableCollection<string> FontNames { get; } = new();
         public ObservableCollection<string> AvailableLanguages { get; } = new();
         public ObservableCollection<PreviewEventModel> ProcessedEvents { get; } = new();

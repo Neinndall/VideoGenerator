@@ -45,14 +45,23 @@ namespace VideoGenerator.Services
                     
                     if (userRules != null)
                     {
-                        // 2. Merge Strategy: Add official rules that are missing
+                        // 2. Merge Strategy: Add official rules that are missing or update them if changed
                         var mergedList = new List<EventRule>(userRules);
                         
                         foreach (var official in officialRules)
                         {
-                            if (!mergedList.Any(r => r.Keyword.Equals(official.Keyword, StringComparison.OrdinalIgnoreCase)))
+                            var existing = mergedList.FirstOrDefault(r => r.Keyword.Equals(official.Keyword, StringComparison.OrdinalIgnoreCase));
+                            if (existing == null)
                             {
                                 mergedList.Add(official);
+                            }
+                            else
+                            {
+                                // Overwrite system properties to sync code updates for default rules
+                                existing.TranslationKey = official.TranslationKey;
+                                existing.IconType = official.IconType;
+                                existing.Type = official.Type;
+                                existing.ExtractsTarget = official.ExtractsTarget;
                             }
                         }
                         

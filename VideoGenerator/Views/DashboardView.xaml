@@ -7,6 +7,7 @@
              xmlns:utils="clr-namespace:VideoGenerator.Utils">
     
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:NonLockingImageConverter x:Key="NonLockingImageConverter"/>
@@ -19,7 +20,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
+ 
         <!-- 1. CINEMATIC HEADER -->
         <StackPanel Grid.Row="0" Margin="0,0,0,32">
             <TextBlock Text="PRODUCTION DASHBOARD" 
@@ -44,13 +45,14 @@
             <Border Style="{StaticResource ModernContainer}" Margin="0,0,16,0" Padding="12">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="180"/>
-                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="*"/> <!-- Directory expands dynamically -->
+                        <ColumnDefinition Width="Auto"/> <!-- Lang dropdown -->
+                        <ColumnDefinition Width="Auto"/> <!-- Character filter (Hidden until processed) -->
+                        <ColumnDefinition Width="Auto"/> <!-- Font dropdown -->
                     </Grid.ColumnDefinitions>
 
                     <!-- Path Selector -->
-                    <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Bottom">
+                    <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -58,28 +60,38 @@
                             </Grid.ColumnDefinitions>
                             <TextBox Text="{Binding DashboardModel.AudioPath}"
                                      materialDesign:HintAssist.Hint="Media Source Directory"
-                                     Style="{StaticResource CompactModernTextBox}"
+                                     Style="{StaticResource ModernTextBox}"
                                      IsReadOnly="True" Margin="0,0,8,0"/>
-                            <Button Grid.Column="1" Click="SelectFolder_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="36" Height="36">
-                                <materialDesign:PackIcon Kind="FolderSearchOutline" Width="18" Height="18"/>
+                            <Button Grid.Column="1" Click="SelectFolder_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="40" Height="40">
+                                <materialDesign:PackIcon Kind="FolderSearchOutline" Width="20" Height="20"/>
                             </Button>
                         </Grid>
                     </StackPanel>
 
                     <!-- Lang -->
-                    <StackPanel Grid.Column="1" Margin="0,0,16,0" VerticalAlignment="Bottom">
+                    <StackPanel Grid.Column="1" Width="130" Margin="0,0,16,0" VerticalAlignment="Center">
                         <ComboBox ItemsSource="{Binding DashboardModel.AvailableLanguages}" 
                                   SelectedItem="{Binding DashboardModel.SelectedLanguage}"
+                                  IsEnabled="{Binding DashboardModel.IsAnalyzed, Converter={StaticResource InverseBooleanConverter}}"
                                   materialDesign:HintAssist.Hint="Target Lang"
-                                  Style="{StaticResource ModernComboBoxStyle}" Height="42" Padding="12,0"/>
+                                  Style="{StaticResource ModernComboBoxStyle}" Height="52" Padding="12,0"/>
+                    </StackPanel>
+
+                    <!-- Character Selector (Only visible after analysis is complete) -->
+                    <StackPanel Grid.Column="2" Width="160" Margin="0,0,16,0" VerticalAlignment="Center"
+                                Visibility="{Binding DashboardModel.IsAnalyzed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding DashboardModel.CharactersList}" 
+                                  SelectedItem="{Binding DashboardModel.SelectedCharacter}"
+                                  materialDesign:HintAssist.Hint="Filter Character"
+                                  Style="{StaticResource ModernComboBoxStyle}" Height="52" Padding="12,0"/>
                     </StackPanel>
 
                     <!-- Font -->
-                    <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                    <StackPanel Grid.Column="3" Width="180" VerticalAlignment="Center">
                         <ComboBox ItemsSource="{Binding DashboardModel.FontNames}" 
                                   SelectedItem="{Binding DashboardModel.SelectedFontName}"
                                   materialDesign:HintAssist.Hint="HUD Typography"
-                                  Style="{StaticResource ModernComboBoxStyle}" Height="42" Padding="12,0"/>
+                                  Style="{StaticResource ModernComboBoxStyle}" Height="52" Padding="12,0"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -97,16 +109,18 @@
         </Grid>
 
         <!-- 3. MAIN WORKSPACE: LIST & PREVIEW -->
-        <Grid Grid.Row="2" Height="500">
+        <Grid Grid.Row="2" Height="530">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="380"/>
+                <ColumnDefinition Width="380" MinWidth="250" MaxWidth="700"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- LEFT: DETECTED EVENTS LIST -->
-            <Border Grid.Column="0" Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,24,0">
+            <Border Grid.Column="0" Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
@@ -114,17 +128,31 @@
                     <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                         <Grid>
                             <TextBlock Text="DETECTED PIPELINE" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding DashboardModel.ProcessedEvents.Count, StringFormat='{}COUNT: {0}'}" 
+                            <TextBlock Text="{Binding DashboardModel.FilteredProcessedEvents.Count, StringFormat='{}COUNT: {0}'}" 
                                        HorizontalAlignment="Right" FontSize="9" FontWeight="Black" Foreground="{StaticResource AccentBrush}"/>
                         </Grid>
                     </Border>
 
-                    <ListBox Grid.Row="1" 
-                             ItemsSource="{Binding DashboardModel.ProcessedEvents}"
-                             SelectedItem="{Binding DashboardModel.SelectedEvent}"
-                             Style="{StaticResource VirtualizedListBoxStyle}"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             utils:ScrollHelper.BubbleMouseWheel="False">
+                    <!-- Filter pills -->
+                    <Border Grid.Row="1" Background="#0C0C0E" Padding="12,8" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <RadioButton Grid.Column="0" Content="ALL" GroupName="FilterGroup" IsChecked="True" Checked="Filter_Checked" Tag="ALL" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                            <RadioButton Grid.Column="1" Content="ERRORS" GroupName="FilterGroup" Checked="Filter_Checked" Tag="ERRORS" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                            <RadioButton Grid.Column="2" Content="PENDING" GroupName="FilterGroup" Checked="Filter_Checked" Tag="PENDING" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                        </Grid>
+                    </Border>
+
+                    <ListBox Grid.Row="2" 
+                              ItemsSource="{Binding DashboardModel.FilteredProcessedEvents}"
+                              SelectedItem="{Binding DashboardModel.SelectedEvent}"
+                              Style="{StaticResource VirtualizedListBoxStyle}"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              utils:ScrollHelper.BubbleMouseWheel="False">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Padding="20,14">
@@ -132,9 +160,10 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         
-                                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <StackPanel Grid.Column="0" Margin="0,0,12,0" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding FolderName}" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" TextTrimming="CharacterEllipsis"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                                 <TextBlock Text="{Binding ParsedData.DisplayText}" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
@@ -146,6 +175,17 @@
                                         <Border x:Name="StatusBadge" Grid.Column="1" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
                                             <TextBlock x:Name="StatusText" FontSize="8" FontWeight="Black"/>
                                         </Border>
+
+                                        <!-- Delete Button -->
+                                        <Button Grid.Column="2"
+                                                Click="DeleteEvent_Click"
+                                                Style="{StaticResource MaterialDesignIconButton}"
+                                                Foreground="{StaticResource ErrorBrush}"
+                                                Width="28" Height="28"
+                                                Margin="12,0,0,0"
+                                                ToolTip="Remove event from pipeline">
+                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="14" Height="14"/>
+                                        </Button>
                                     </Grid>
                                 </Border>
                                 <DataTemplate.Triggers>
@@ -173,21 +213,24 @@
                                 </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource ModernNavItem}">
-                                <Setter Property="Margin" Value="0,0,0,0"/>
-                                <Setter Property="Padding" Value="0"/>
-                                <Setter Property="Height" Value="Auto"/>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
                     </ListBox>
                 </Grid>
             </Border>
 
-            <!-- RIGHT: LIVE RENDERING PREVIEW -->
-            <Grid Grid.Column="1">
+            <!-- Resizable Splitter -->
+            <GridSplitter Grid.Column="1" 
+                          Width="12" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Stretch" 
+                          Background="Transparent" 
+                          ResizeBehavior="PreviousAndNext"
+                          Cursor="SizeWE"/>
+
+            <!-- RIGHT: LIVE RENDERING PREVIEW & QUICK EDIT -->
+            <Grid Grid.Column="2" Margin="12,0,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
@@ -212,7 +255,7 @@
                                 
                                 <!-- Empty State -->
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" 
-                                            Visibility="{Binding DashboardModel.PreviewImagePath, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}">
+                                             Visibility="{Binding DashboardModel.PreviewImagePath, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}">
                                     <materialDesign:PackIcon Kind="ImageSearchOutline" Width="120" Height="120" HorizontalAlignment="Center" Opacity="0.1" Foreground="White"/>
                                     <TextBlock Text="SELECT AN EVENT TO PREVIEW" FontWeight="Black" FontSize="32" Opacity="0.1" Foreground="White" Margin="0,24,0,0"/>
                                 </StackPanel>
@@ -230,15 +273,73 @@
                     </Grid>
                 </Border>
 
+                <!-- QUICK EDIT PANEL (Collapsible, shown when an event is selected) -->
+                <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Margin="0,12,0,0" Padding="16"
+                        Visibility="{Binding DashboardModel.SelectedEvent, Converter={StaticResource NullToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Text Input -->
+                        <TextBox x:Name="QuickEditDisplayText" Grid.Column="0"
+                                 Text="{Binding DashboardModel.SelectedEvent.ParsedData.DisplayText, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="Edit Display Text"
+                                 Style="{StaticResource CompactModernTextBox}"
+                                 Margin="0,0,12,0"/>
+
+                        <!-- Icon Lookup Name Input -->
+                        <TextBox x:Name="QuickEditIconLookup" Grid.Column="1"
+                                 Text="{Binding DashboardModel.SelectedEvent.ParsedData.IconLookupName, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="Icon Lookup Name"
+                                 Margin="0,0,12,0">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource CompactModernTextBox}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedValue, ElementName=QuickEditIconType}" Value="generic">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+
+                        <!-- Icon Type Combo -->
+                        <ComboBox x:Name="QuickEditIconType" Grid.Column="2"
+                                  SelectedValue="{Binding DashboardModel.SelectedEvent.ParsedData.IconType, UpdateSourceTrigger=PropertyChanged}"
+                                  materialDesign:HintAssist.Hint="Icon Type"
+                                  Style="{StaticResource ModernComboBoxStyle}"
+                                  Height="40" Margin="0,0,12,0">
+                            <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">champion</System:String>
+                            <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">item</System:String>
+                            <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">monster</System:String>
+                            <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">generic</System:String>
+                        </ComboBox>
+
+                        <!-- Save changes button -->
+                        <Button Grid.Column="3" Click="ApplyQuickEdit_Click"
+                                Style="{StaticResource ModernPrimaryButton}"
+                                Height="40" Padding="16,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ContentSaveOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
+                                <TextBlock Text="APPLY CHANGES" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
                 <!-- FINAL ACTION -->
-                <Button Grid.Row="1" 
+                <Button Grid.Row="2" 
                         Click="Generate_Click"
                         IsEnabled="{Binding DashboardModel.IsAnalyzed}"
                         Style="{StaticResource ModernPrimaryButton}"
-                        Height="70" Margin="0,24,0,0">
+                        Height="60" Margin="0,12,0,0">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="PlayCircleOutline" Margin="0,0,16,0" VerticalAlignment="Center" Width="28" Height="28"/>
-                        <TextBlock Text="START BATCH RENDERING" VerticalAlignment="Center" FontSize="16" FontWeight="Black"/>
+                        <materialDesign:PackIcon Kind="PlayCircleOutline" Margin="0,0,16,0" VerticalAlignment="Center" Width="24" Height="24"/>
+                        <TextBlock Text="START BATCH RENDERING" VerticalAlignment="Center" FontSize="14" FontWeight="Black"/>
                     </StackPanel>
                 </Button>
             </Grid>

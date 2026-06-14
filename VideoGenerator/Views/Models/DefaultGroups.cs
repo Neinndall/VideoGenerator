@@ -8,20 +8,26 @@ namespace VideoGenerator.Views.Models
         {
             return new List<ThematicGroup>
             {
-                // Regions
-                new ThematicGroup { Name = "Bandle City", Category = "Region", ChampionsRaw = "Corki, Lulu, Yuumi, Veigar" },
-                new ThematicGroup { Name = "Bilgewater", Category = "Region", ChampionsRaw = "Fizz, Gangplank, Graves, Nautilus" },
-                new ThematicGroup { Name = "Demacia", Category = "Region", ChampionsRaw = "Fiora, Galio, Garen, Lux, Poppy, Lucian" },
-                new ThematicGroup { Name = "Ixtal", Category = "Region", ChampionsRaw = "Malphite, Milio, Neeko, Nidalee, Qiyana, Rengar" },
+                // Regions & Factions
+                new ThematicGroup { Name = "Bandle City", Category = "Region", ChampionsRaw = "Corki, Lulu, Yuumi, Veigar, Tristana, Rumble, Teemo, Kennen" },
+                new ThematicGroup { Name = "Bilgewater", Category = "Region", ChampionsRaw = "Fizz, Gangplank, Graves, Nautilus, Miss Fortune, Illaoi, Pyke, Twisted Fate" },
+                new ThematicGroup { Name = "Demacia", Category = "Region", ChampionsRaw = "Fiora, Galio, Garen, Lux, Poppy, Lucian, Jarvan IV, Quinn, Shyvana, Sona, Vayne, Xin Zhao, Sylas" },
+                new ThematicGroup { Name = "Ixtal", Category = "Region", ChampionsRaw = "Malphite, Milio, Neeko, Nidalee, Qiyana, Rengar, Zyra" },
                 new ThematicGroup { Name = "Darkin", Category = "Region", ChampionsRaw = "Aatrox, Kayn, Varus, Naafiri" },
+                new ThematicGroup { Name = "Ascended Darkin", Category = "Region", ChampionsRaw = "Aatrox, Varus, Naafiri" },
                 new ThematicGroup { Name = "Noxus", Category = "Region", ChampionsRaw = "Darius, Draven, Katarina, Swain, Talon, Vladimir, Sion, Kled, Samira, Rell, Briar, LeBlanc, Cassiopeia, Riven" },
                 new ThematicGroup { Name = "Ionia", Category = "Region", ChampionsRaw = "Ahri, Akali, Irelia, Jhin, Karma, Kayn, Kennen, Lee Sin, Lillia, Master Yi, Rakan, Sett, Shen, Syndra, Varus, Wukong, Xayah, Yasuo, Yone, Zed" },
                 new ThematicGroup { Name = "Vastaya", Category = "Region", ChampionsRaw = "Ahri, Nami, Neeko, Rakan, Rengar, Wukong, Xayah" },
                 new ThematicGroup { Name = "Demon", Category = "Region", ChampionsRaw = "Fiddlesticks, Evelynn, Nocturne, Shaco, Tahm Kench, Swain, Yone, Annie" },
-                new ThematicGroup { Name = "Ascended", Category = "Region", ChampionsRaw = "Azir, Pantheon" },
-                new ThematicGroup { Name = "Void", Category = "Region", ChampionsRaw = "VelKoz, RekSai, Kassadin, Kaisa" },
+                new ThematicGroup { Name = "Ascended", Category = "Region", ChampionsRaw = "Azir, Pantheon, Renekton, Nasus, Xerath" },
+                new ThematicGroup { Name = "Void", Category = "Region", ChampionsRaw = "VelKoz, RekSai, Kassadin, Kaisa, ChoGath, KogMaw, Malzahar, KhaZix" },
                 new ThematicGroup { Name = "Kinkou", Category = "Region", ChampionsRaw = "Shen, Akali, Kennen" },
-                new ThematicGroup { Name = "Shurima", Category = "Region", ChampionsRaw = "Akshan, Amumu, Sivir, Renekton, Taliyah, Nasus, Rammus, kSante" },
+                new ThematicGroup { Name = "Shurima", Category = "Region", ChampionsRaw = "Akshan, Amumu, Sivir, Renekton, Taliyah, Nasus, Rammus, kSante, Azir, Xerath" },
+                new ThematicGroup { Name = "Targon", Category = "Region", ChampionsRaw = "Leona, Diana, Pantheon, Taric, Zoe, Aphelios, Aurelion Sol" },
+                new ThematicGroup { Name = "Freljord", Category = "Region", ChampionsRaw = "Ashe, Sejuani, Lissandra, Braum, Olaf, Tryndamere, Volibear, Anivia, Ornn, Gnar, Nunu" },
+                new ThematicGroup { Name = "Shadow Isles", Category = "Region", ChampionsRaw = "Viego, Thresh, Hecarim, Kalista, Karthus, Yorick, Gwen, Senna, Maokai, Elise" },
+                new ThematicGroup { Name = "Piltover", Category = "Region", ChampionsRaw = "Jayce, Caitlyn, Vi, Ezreal, Heimerdinger, Orianna, Seraphine" },
+                new ThematicGroup { Name = "Zaun", Category = "Region", ChampionsRaw = "Jinx, Ekko, Twitch, Singed, Warwick, Urgot, Viktor, Blitzcrank, Zac, Dr Mundo, Renata" },
 
                 // Classes
                 new ThematicGroup { Name = "Assassin", Category = "Class", ChampionsRaw = "Zed, Akali, Katarina, Talon, Pyke" },

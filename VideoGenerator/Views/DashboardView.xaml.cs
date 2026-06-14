@@ -10,6 +10,8 @@ using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
 using FFMpegCore;
 using System.Collections.Specialized;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace VideoGenerator.Views
 {
@@ -57,11 +59,15 @@ namespace VideoGenerator.Views
             _model.AudioPath = AppSettings.Instance.MediaSourceDirectory;
 
             // Sync with Settings when changed anywhere in the app
-            AppSettings.Instance.PropertyChanged += (s, e) =>
+            AppSettings.Instance.PropertyChanged += async (s, e) =>
             {
                 if (e.PropertyName == nameof(AppSettings.MediaSourceDirectory))
                 {
                     _model.AudioPath = AppSettings.Instance.MediaSourceDirectory;
+                }
+                else if (e.PropertyName == nameof(AppSettings.CustomBackgroundPath))
+                {
+                    await UpdatePreviewAsync();
                 }
             };
 
@@ -82,9 +88,192 @@ namespace VideoGenerator.Views
                 {
                     await UpdatePreviewAsync();
                 }
+                else if (e.PropertyName == nameof(_model.SelectedFilter) || e.PropertyName == nameof(_model.SelectedCharacter))
+                {
+                    ApplyFilter();
+                }
+            };
+
+            _model.ProcessedEvents.CollectionChanged += (s, e) =>
+            {
+                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add && e.NewItems != null)
+                {
+                    foreach (PreviewEventModel ev in e.NewItems)
+                    {
+                        // 1. Add character to characters list if not already present (no full rebuild)
+                        if (!_model.CharactersList.Contains(ev.CharacterName))
+                        {
+                            // Keep character list sorted by inserting at the correct index
+                            int insertIdx = 1; // Index 0 is "ALL"
+                            while (insertIdx < _model.CharactersList.Count && string.Compare(_model.CharactersList[insertIdx], ev.CharacterName, StringComparison.OrdinalIgnoreCase) < 0)
+                            {
+                                insertIdx++;
+                            }
+                            _model.CharactersList.Insert(insertIdx, ev.CharacterName);
+                        }
+
+                        // 2. Direct filter check: add to FilteredProcessedEvents if matching (no full rebuild)
+                        var filter = _model.SelectedFilter;
+                        var characterFilter = _model.SelectedCharacter ?? "ALL";
+
+                        if (characterFilter == "ALL" || string.Equals(ev.CharacterName, characterFilter, StringComparison.OrdinalIgnoreCase))
+                        {
+                            bool include = filter switch
+                            {
+                                "ERRORS" => ev.Status == "Missing Icon" || ev.Status == "No Audio",
+                                "PENDING" => ev.ParsedData == null || string.IsNullOrEmpty(ev.ParsedData.DisplayText) || ev.ParsedData.DisplayText.Contains("event_") || ev.ParsedData.DisplayText.Contains("interaction_") || ev.ParsedData.DisplayText.Equals(ev.FolderName),
+                                _ => true
+                            };
+
+                            if (include)
+                            {
+                                _model.FilteredProcessedEvents.Add(ev);
+                            }
+                        }
+                    }
+
+                    // Automatically select first item if selection is empty
+                    if (_model.SelectedEvent == null && _model.FilteredProcessedEvents.Count > 0)
+                    {
+                        _model.SelectedEvent = _model.FilteredProcessedEvents[0];
+                    }
+                }
+                else if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove && e.OldItems != null)
+                {
+                    foreach (PreviewEventModel ev in e.OldItems)
+                    {
+                        _model.FilteredProcessedEvents.Remove(ev);
+
+                        if (_model.SelectedEvent == ev)
+                        {
+                            _model.SelectedEvent = _model.FilteredProcessedEvents.FirstOrDefault();
+                        }
+
+                        bool hasOtherWithSameChar = _model.ProcessedEvents.Any(x => string.Equals(x.CharacterName, ev.CharacterName, StringComparison.OrdinalIgnoreCase));
+                        if (!hasOtherWithSameChar && ev.CharacterName != "ALL")
+                        {
+                            _model.CharactersList.Remove(ev.CharacterName);
+                            if (string.Equals(_model.SelectedCharacter, ev.CharacterName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                _model.SelectedCharacter = "ALL";
+                            }
+                        }
+                    }
+                }
+                else if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+                {
+                    _model.CharactersList.Clear();
+                    _model.CharactersList.Add("ALL");
+                    _model.FilteredProcessedEvents.Clear();
+                }
             };
 
             _logger.LogInfo("Dashboard initialized.");
+        }
+
+        private void ApplyFilter()
+        {
+            var filter = _model.SelectedFilter;
+            var characterFilter = _model.SelectedCharacter ?? "ALL";
+            var currentSelected = _model.SelectedEvent;
+
+            _model.FilteredProcessedEvents.Clear();
+            foreach (var ev in _model.ProcessedEvents)
+            {
+                // Check character filter
+                if (characterFilter != "ALL" && !string.Equals(ev.CharacterName, characterFilter, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // Check status filter
+                bool include = filter switch
+                {
+                    "ERRORS" => ev.Status == "Missing Icon" || ev.Status == "No Audio",
+                    "PENDING" => ev.ParsedData == null || string.IsNullOrEmpty(ev.ParsedData.DisplayText) || ev.ParsedData.DisplayText.Contains("event_") || ev.ParsedData.DisplayText.Contains("interaction_") || ev.ParsedData.DisplayText.Equals(ev.FolderName),
+                    _ => true
+                };
+
+                if (include)
+                {
+                    _model.FilteredProcessedEvents.Add(ev);
+                }
+            }
+
+            if (currentSelected != null && _model.FilteredProcessedEvents.Contains(currentSelected))
+            {
+                _model.SelectedEvent = currentSelected;
+            }
+            else if (_model.FilteredProcessedEvents.Count > 0)
+            {
+                _model.SelectedEvent = _model.FilteredProcessedEvents[0];
+            }
+            else
+            {
+                _model.SelectedEvent = null;
+            }
+        }
+
+        private void Filter_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is RadioButton rb && rb.IsChecked == true && rb.Tag != null)
+            {
+                _model.SelectedFilter = rb.Tag.ToString();
+            }
+        }
+
+        private void DeleteEvent_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.DataContext is PreviewEventModel ev)
+            {
+                _logger.LogInfo($"Removing event from pipeline: {ev.CharacterName} - {ev.FolderName}");
+                _model.ProcessedEvents.Remove(ev);
+            }
+        }
+
+        private async void ApplyQuickEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (_model.SelectedEvent == null) return;
+
+            var ev = _model.SelectedEvent;
+            string key = ev.FolderName;
+            string text = QuickEditDisplayText.Text;
+            string iconName = QuickEditIconLookup.Text;
+            string iconType = QuickEditIconType.SelectedValue?.ToString() ?? "generic";
+
+            _logger.LogInfo($"Applying Quick Edit for folder: {key} -> '{text}' ({iconName}, {iconType})");
+
+            // 1. Update translations.json global dictionary
+            _translationService.UpdateTranslation(_model.SelectedLanguage, key, text);
+
+            // 2. Refresh current in-memory parsed data
+            ev.ParsedData.DisplayText = text;
+            ev.ParsedData.IconLookupName = iconName;
+            ev.ParsedData.IconType = iconType;
+
+            // 3. Re-download or update local icon paths
+            var lolVersion = await _dataFetcher.GetLatestLolVersionAsync();
+            string iconPath = iconType switch
+            {
+                "item" => await _iconManager.GetItemIconAsync(iconName),
+                "monster" => await _iconManager.GetMonsterIconAsync(iconName),
+                "champion" => await _iconManager.GetChampionIconAsync(iconName, lolVersion),
+                _ => null
+            };
+            ev.ParsedData.IconPath = iconPath;
+
+            // 4. Update status
+            string newStatus = "Ready";
+            if (string.IsNullOrEmpty(iconPath) && iconType != "generic") newStatus = "Missing Icon";
+            if (ev.AudioFiles.Count == 0) newStatus = "No Audio";
+            ev.Status = newStatus;
+
+            // 5. Force update preview
+            await UpdatePreviewAsync();
+
+            // 6. Refresh filters in case of change
+            ApplyFilter();
+            _model.SelectedEvent = ev;
         }
 
         private async Task UpdatePreviewAsync()
@@ -93,12 +282,20 @@ namespace VideoGenerator.Views
 
             try
             {
-                string tempPreviewPath = await _imageGenerator.CreateImageAsync(
+                byte[] bytes = await _imageGenerator.CreateImageBytesAsync(
                     _model.SelectedEvent.ParsedData, 
                     _model.SelectedFontName, 
                     AppSettings.Instance.CustomBackgroundPath);
                 
-                _model.PreviewImagePath = tempPreviewPath;
+                if (bytes != null)
+                {
+                    Directory.CreateDirectory(AppConfig.CacheDir);
+                    string tempPreviewPath = Path.Combine(AppConfig.CacheDir, "preview_temp.png");
+                    await File.WriteAllBytesAsync(tempPreviewPath, bytes);
+                    
+                    _model.PreviewImagePath = null;
+                    _model.PreviewImagePath = tempPreviewPath;
+                }
             }
             catch (Exception ex)
             {
@@ -108,16 +305,15 @@ namespace VideoGenerator.Views
 
         private void SelectFolder_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new CommonOpenFileDialog
+            var dialog = new Microsoft.Win32.OpenFolderDialog
             {
-                IsFolderPicker = true,
                 Title = "Select Audio Directory",
-                InitialDirectory = _model.AudioPath ?? AppDomain.CurrentDomain.BaseDirectory
+                InitialDirectory = Directory.Exists(_model.AudioPath) ? _model.AudioPath : AppDomain.CurrentDomain.BaseDirectory
             };
 
-            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            if (dialog.ShowDialog() == true)
             {
-                _model.AudioPath = dialog.FileName;
+                _model.AudioPath = dialog.FolderName;
                 _logger.LogInfo($"Audio path selected: {_model.AudioPath}");
                 _model.IsAnalyzed = false;
                 _model.ProcessedEvents.Clear();
@@ -142,69 +338,125 @@ namespace VideoGenerator.Views
                 await Task.Run(async () =>
                 {
                     var lolVersion = await _dataFetcher.GetLatestLolVersionAsync();
-                    var audioDirs = Directory.GetDirectories(_model.AudioPath).ToList();
+                    
+                    // Recursive lookup: Find all directories that contain audio files directly
+                    var allDirs = Directory.GetDirectories(_model.AudioPath, "*", SearchOption.AllDirectories).ToList();
+                    
+                    // Also include the selected folder itself in case it contains audio directly
+                    allDirs.Insert(0, _model.AudioPath);
 
-                    if (audioDirs.Count == 0)
+                    var eventFolders = new List<string>();
+                    foreach (var dir in allDirs)
                     {
-                        var rootAudios = Directory.GetFiles(_model.AudioPath, "*.*")
-                            .Where(s => s.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) || 
-                                        s.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) || 
-                                        s.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase) ||
-                                        s.EndsWith(".wem", StringComparison.OrdinalIgnoreCase)).ToList();
+                        // Exclude cast folders and check if contains at least one audio file
+                        if (dir.Contains("cast3D") || dir.Contains("cast2D")) continue;
+
+                        bool hasAudio = Directory.GetFiles(dir, "*.*")
+                            .Any(f => f.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) || 
+                                      f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) || 
+                                      f.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase) ||
+                                      f.EndsWith(".wem", StringComparison.OrdinalIgnoreCase));
                         
-                        if (rootAudios.Count > 0) audioDirs.Add(_model.AudioPath);
-                        else { _logger.LogError("No audio found."); return; }
+                        if (hasAudio)
+                        {
+                            eventFolders.Add(dir);
+                        }
                     }
 
-                    foreach (var audioDir in audioDirs)
+                    if (eventFolders.Count == 0)
                     {
-                        string charName = Path.GetFileName(audioDir);
-                        var eventFolders = Directory.GetDirectories(audioDir)
-                            .Where(f => !f.Contains("cast3D") && !f.Contains("cast2D")).ToList();
+                        _logger.LogError("No folders containing audio files (.mp3, .wav, .ogg, .wem) were found.");
+                        return;
+                    }
 
-                        if (eventFolders.Count == 0 && audioDir == _model.AudioPath) eventFolders.Add(audioDir);
-
-                        foreach (var folderPath in eventFolders)
+                    foreach (var folderPath in eventFolders)
+                    {
+                        string folderName = Path.GetFileName(folderPath);
+                        
+                        // Extract Character Folder Name by walking up the directory tree
+                        // until we reach the direct subdirectory of the selected root path.
+                        string charFolderName = "General";
+                        string current = folderPath;
+                        string parent = Path.GetDirectoryName(current);
+                        
+                        while (!string.IsNullOrEmpty(parent))
                         {
-                            string folderName = Path.GetFileName(folderPath);
-                            var parsedEvent = await _nameParser.ParseFolderNameAsync(folderName, _model.SelectedLanguage);
-                            
-                            string iconPath = parsedEvent.IconType switch
+                            if (parent.Equals(_model.AudioPath, StringComparison.OrdinalIgnoreCase))
                             {
-                                "item" => await _iconManager.GetItemIconAsync(parsedEvent.IconLookupName),
-                                "monster" => await _iconManager.GetMonsterIconAsync(parsedEvent.IconLookupName),
-                                "champion" => await _iconManager.GetChampionIconAsync(parsedEvent.IconLookupName, lolVersion),
-                                _ => null
-                            };
-                            parsedEvent.IconPath = iconPath;
-
-                            var audioFiles = Directory.GetFiles(folderPath, "*.*")
-                                .Where(f => f.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) || 
-                                            f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ||
-                                            f.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase) ||
-                                            f.EndsWith(".wem", StringComparison.OrdinalIgnoreCase))
-                                .OrderBy(f => f).ToList();
-
-                            string status = "Ready";
-                            if (string.IsNullOrEmpty(iconPath)) status = "Missing Icon";
-                            if (audioFiles.Count == 0) status = "No Audio";
-
-                            Application.Current.Dispatcher.Invoke(() => {
-                                _model.ProcessedEvents.Add(new PreviewEventModel {
-                                    CharacterName = charName,
-                                    FolderName = folderName,
-                                    FolderPath = folderPath,
-                                    ParsedData = parsedEvent,
-                                    AudioFiles = audioFiles,
-                                    Status = status
-                                });
-                            });
+                                charFolderName = Path.GetFileName(current);
+                                break;
+                            }
+                            current = parent;
+                            parent = Path.GetDirectoryName(current);
                         }
+
+                        // If no subdirectory match was found (e.g. selected event folder itself), fallback to its own name or parent
+                        if (charFolderName == "General" || string.IsNullOrEmpty(charFolderName))
+                        {
+                            charFolderName = Path.GetFileName(_model.AudioPath);
+                        }
+
+                        // Clean character folder name to extract clean champion name (e.g. "ahri_skin89_vo_audio" -> "Ahri")
+                        string charName = charFolderName;
+                        var cleanCharMatch = Regex.Match(charFolderName, @"^([A-Za-z0-9]+)_skin\d+", RegexOptions.IgnoreCase);
+                        if (cleanCharMatch.Success)
+                        {
+                            charName = cleanCharMatch.Groups[1].Value;
+                        }
+                        else
+                        {
+                            // Strip suffixes like _vo_audio, _audio etc.
+                            charName = Regex.Replace(charName, @"_vo_audio|_audio", "", RegexOptions.IgnoreCase);
+                            charName = charName.Replace("_", " ");
+                        }
+
+                        // Capitalize first letter (e.g., ahri -> Ahri)
+                        if (!string.IsNullOrEmpty(charName))
+                        {
+                            charName = charName.Substring(0, 1).ToUpper() + charName.Substring(1);
+                        }
+
+                        var parsedEvent = await _nameParser.ParseFolderNameAsync(folderName, _model.SelectedLanguage);
+                        
+                        string iconPath = parsedEvent.IconType switch
+                        {
+                            "item" => await _iconManager.GetItemIconAsync(parsedEvent.IconLookupName),
+                            "monster" => await _iconManager.GetMonsterIconAsync(parsedEvent.IconLookupName),
+                            "champion" => await _iconManager.GetChampionIconAsync(parsedEvent.IconLookupName, lolVersion),
+                            _ => null
+                        };
+                        parsedEvent.IconPath = iconPath;
+
+                        var audioFiles = Directory.GetFiles(folderPath, "*.*")
+                            .Where(f => f.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) || 
+                                        f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ||
+                                        f.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase) ||
+                                        f.EndsWith(".wem", StringComparison.OrdinalIgnoreCase))
+                            .OrderBy(f => f).ToList();
+
+                        string status = "Ready";
+                        if (string.IsNullOrEmpty(iconPath) && parsedEvent.IconType != "generic") status = "Missing Icon";
+                        if (audioFiles.Count == 0) status = "No Audio";
+
+                        var ev = new PreviewEventModel {
+                            CharacterName = charName,
+                            FolderName = folderName,
+                            FolderPath = folderPath,
+                            ParsedData = parsedEvent,
+                            AudioFiles = audioFiles,
+                            Status = status
+                        };
+
+                        Application.Current.Dispatcher.Invoke(() => {
+                            _model.ProcessedEvents.Add(ev);
+                        });
+
+                        await Task.Delay(25); // Allow UI thread to animate progress bar and render the new item smoothly
                     }
                 });
                 
                 _model.IsAnalyzed = _model.ProcessedEvents.Count > 0;
-                _logger.LogInfo($">>> ANALYSIS COMPLETE. Found {_model.ProcessedEvents.Count} events.");
+                _logger.LogInfo($">>> ANALYSIS COMPLETE. Found {_model.ProcessedEvents.Count} folders containing audio.");
                 if (_model.ProcessedEvents.Count > 0) _model.SelectedEvent = _model.ProcessedEvents[0];
             }
             catch (Exception ex) { _logger.LogError("Analysis failed", ex); }
@@ -213,13 +465,16 @@ namespace VideoGenerator.Views
 
         private async void Generate_Click(object sender, RoutedEventArgs e)
         {
-            if (!_model.IsAnalyzed || _model.ProcessedEvents.Count == 0) return;
+            if (!_model.IsAnalyzed || _model.FilteredProcessedEvents.Count == 0) return;
 
             _model.IsProcessing = true;
             _logger.LogInfo(">>> STARTING BATCH RENDER...");
 
             try
             {
+                // Create a local list of events to render from the filtered view
+                var eventsToRender = _model.FilteredProcessedEvents.ToList();
+
                 await Task.Run(async () =>
                 {
                     string binFolder = GlobalFFOptions.Current.BinaryFolder;
@@ -229,7 +484,7 @@ namespace VideoGenerator.Views
                         return;
                     }
 
-                    foreach (var ev in _model.ProcessedEvents)
+                    foreach (var ev in eventsToRender)
                     {
                         if (ev.Status == "No Audio") continue;
 
