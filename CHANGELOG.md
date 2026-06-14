@@ -1,3 +1,26 @@
+VideoGenerator - Patch Notes | v1.2.1.1
+
+MINOR UPDATE & DESIGN REFINEMENT
+This version focuses on a clean visual redesign of the Background Design studio, properties alignment, global font settings integration, and extended event rule mapping support.
+
+New Features
+  - Design Studio / Figma-Style Properties Inspector: Redesigned the properties panels in Background Design to align labels (e.g. search, font, alignment) on the left (110px) and control inputs on the right in a clean grid.
+  - Design Studio / Separated Card Headers: Enclosed property section titles in styled header bars with a distinct background (SurfaceBrush) and bottom separator lines.
+  - Design Studio / Proportional Height Distribution: Distributed the property cards vertically using equal proportional row definitions (*) to seamlessly cover the full height of the 1080p Live Preview canvas.
+  - Design Studio / Inline Explanatory Guides: Added clear description text in each configuration panel explaining Riot API searching, custom uploading, typography vertical offsets, and icon alignments.
+  - Core / Dynamic Item Name Resolution: Added dynamic name-to-ID resolution using DDragon data inside Quick Edit and IconManager, allowing users to type standard item names (e.g. "Infinity" or "Boots") and automatically resolve them to official Riot IDs and icons.
+  - Design Studio / Customizable Icon Layout: Added controls in Background Design to align the overlay icon (Left or Right) and adjust its vertical position via relative offset coordinates, updating both the live designer canvas and the image generator.
+
+Improvements
+  - Core / Global Typography Settings: Moved the Font Family selector from the Dashboard directly into the Typography panel of the Background Design tab, saving configuration parameters dynamically to settings.json.
+  - Core / Expanded Event Rule Mappings: Added native event rule mappings for `KillAheadAllyTeam` and `KillBehindAllyTeam` to map correctly to generic "Ally Team Ahead / Behind" translations, preventing wrong champion lookup matches.
+  - Icons / Flexible Champion Skin Resolution: Extended GetChampionIconAsync to recognize both AatroxSkin1 and Aatrox_1 formats, with automatic leading-zero normalization (e.g. Aatrox_01 -> Aatrox_1).
+
+Bug Fixes
+  - UI / Layout Alignment: Expanded the sidebar width from 340px to 380px to provide better breathing room, eliminating text wrapping and control crowding.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.1.0
 
 MEDIUM UPDATE
