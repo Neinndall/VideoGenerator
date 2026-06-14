@@ -138,7 +138,7 @@
 
                             <StackPanel Margin="0,0,0,8">
                                 <Grid>
-                                    <TextBlock Text="VERTICAL OFFSET" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="TEXT VERTICAL OFFSET" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
                                     <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=TextVerticalOffset, StringFormat={}{0:F0}px}" 
                                                HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
                                 </Grid>
@@ -148,6 +148,44 @@
                                         Margin="0,8,0,0"/>
                             </StackPanel>
                         </StackPanel>
+                        </Border>
+
+                        <Border Height="1" Background="{StaticResource BorderBrush}" Margin="20,0"/>
+
+                        <!-- SECTION: ICON POSITION -->
+                        <Border Background="{StaticResource SurfaceBrush}" Padding="20,14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,1">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ImageFilterCenterFocusWeak" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="ICON ALIGNMENT &amp; POSITION" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Padding="20,24">
+                            <StackPanel>
+                                <TextBlock Text="HORIZONTAL ALIGNMENT" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
+                                <Grid Margin="0,0,0,24">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <RadioButton x:Name="AlignLeftRadio" Grid.Column="0" Content="LEFT" Checked="AlignLeft_Checked"
+                                                 Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                                    <RadioButton x:Name="AlignRightRadio" Grid.Column="1" Content="RIGHT" Checked="AlignRight_Checked"
+                                                 Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                                </Grid>
+
+                                <StackPanel Margin="0,0,0,8">
+                                    <Grid>
+                                        <TextBlock Text="VERTICAL POSITION" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                        <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset, StringFormat={}{0:F0}px}" 
+                                                   HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                    </Grid>
+                                    <Slider Minimum="-600" Maximum="200" 
+                                            Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset}"
+                                            Style="{StaticResource ModernSlider}"
+                                            Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
@@ -198,7 +236,17 @@
                                     </Border>
 
                                     <!-- Square Avatar (Champ/Item) -->
-                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="50,698,0,0" Width="180" Height="180" Background="#26FFFFFF" BorderBrush="#CCFFFFFF" BorderThickness="3" CornerRadius="4">
+                                    <Border HorizontalAlignment="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconAlignment}" 
+                                            VerticalAlignment="Top" 
+                                            Margin="50,698,50,0" 
+                                            Width="180" Height="180" 
+                                            Background="#26FFFFFF" 
+                                            BorderBrush="#CCFFFFFF" 
+                                            BorderThickness="3" 
+                                            CornerRadius="4">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform Y="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset}"/>
+                                        </Border.RenderTransform>
                                         <materialDesign:PackIcon Kind="ImageFilterCenterFocusWeak" Foreground="White" Opacity="0.4" Width="64" Height="64" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                 </Grid>

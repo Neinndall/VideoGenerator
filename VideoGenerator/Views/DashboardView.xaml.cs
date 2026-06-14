@@ -81,7 +81,17 @@ namespace VideoGenerator.Views
                 _model.FontNames.Add(family.Name);
 
             if (_model.FontNames.Count > 0)
-                _model.SelectedFontName = _model.FontNames.Contains("Segoe UI") ? "Segoe UI" : _model.FontNames[0];
+            {
+                string savedFont = AppSettings.Instance.SelectedFontName;
+                if (!string.IsNullOrEmpty(savedFont) && _model.FontNames.Contains(savedFont))
+                {
+                    _model.SelectedFontName = savedFont;
+                }
+                else
+                {
+                    _model.SelectedFontName = _model.FontNames.Contains("Segoe UI") ? "Segoe UI" : _model.FontNames[0];
+                }
+            }
 
             _model.PropertyChanged += async (s, e) => {
                 if (e.PropertyName == nameof(_model.SelectedEvent) && _model.SelectedEvent != null)
@@ -91,6 +101,11 @@ namespace VideoGenerator.Views
                 else if (e.PropertyName == nameof(_model.SelectedFilter) || e.PropertyName == nameof(_model.SelectedCharacter))
                 {
                     ApplyFilter();
+                }
+                else if (e.PropertyName == nameof(_model.SelectedFontName))
+                {
+                    AppSettings.Instance.SelectedFontName = _model.SelectedFontName;
+                    await UpdatePreviewAsync();
                 }
             };
 

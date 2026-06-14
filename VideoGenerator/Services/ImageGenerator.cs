@@ -111,8 +111,17 @@ namespace VideoGenerator.Services
                 // 4. Draw Icon (Above the Ribbon)
                 if (!string.IsNullOrEmpty(eventData.IconPath) && File.Exists(eventData.IconPath))
                 {
-                    int iconY = HudTextures.IconY;
-                    var borderRect = new Rectangle(HudTextures.IconX - 2, iconY - 2, HudTextures.IconSize + 4, HudTextures.IconSize + 4);
+                    // Calculate horizontal position based on alignment
+                    int iconX = HudTextures.IconX; // Default Left = 50
+                    if (AppSettings.Instance.IconAlignment.Equals("Right", StringComparison.OrdinalIgnoreCase))
+                    {
+                        iconX = HudTextures.CanvasWidth - HudTextures.IconSize - HudTextures.IconX; // 1920 - 180 - 50 = 1690
+                    }
+
+                    // Calculate vertical position including offset
+                    int iconY = (int)(HudTextures.IconY + AppSettings.Instance.IconVerticalOffset);
+
+                    var borderRect = new Rectangle(iconX - 2, iconY - 2, HudTextures.IconSize + 4, HudTextures.IconSize + 4);
 
                     using var icon = await Image.LoadAsync<Rgba32>(eventData.IconPath);
                     
@@ -126,7 +135,7 @@ namespace VideoGenerator.Services
                     icon.Mutate(x => x.Resize(HudTextures.IconSize - 4, HudTextures.IconSize - 4));
                     
                     image.Mutate(x => x.Fill(Color.White, borderRect));
-                    image.Mutate(x => x.DrawImage(icon, new Point(HudTextures.IconX, iconY), 1f));
+                    image.Mutate(x => x.DrawImage(icon, new Point(iconX, iconY), 1f));
                 }
 
                 // 5. Global 1px border
