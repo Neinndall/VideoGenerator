@@ -26,12 +26,13 @@ namespace VideoGenerator.Services
 
         public async Task<string> GetChampionIconAsync(string championName, string lolVersion)
         {
-            // Case 1: Specific Skin Pattern (e.g., CamilleSkin44)
-            var skinMatch = Regex.Match(championName, @"(\w+)Skin(\d+)");
+            // Case 1: Specific Skin Pattern (e.g., CamilleSkin44 or Aatrox_1)
+            var skinMatch = Regex.Match(championName, @"^([A-Za-z]+)(?:Skin|_)(\d+)$", RegexOptions.IgnoreCase);
             if (skinMatch.Success)
             {
                 string name = skinMatch.Groups[1].Value;
-                string skinIndex = skinMatch.Groups[2].Value;
+                // Parse as int to strip any leading zeros (e.g., "01" -> "1")
+                string skinIndex = int.Parse(skinMatch.Groups[2].Value).ToString();
                 return await GetSplashUrlAsync(name, skinIndex);
             }
 
