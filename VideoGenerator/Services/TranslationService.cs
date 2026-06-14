@@ -44,19 +44,8 @@ namespace VideoGenerator.Services
         {
             try
             {
-                // 1. Try to load from external file first
-                if (File.Exists(_localTranslationsPath))
-                {
-                    string json = File.ReadAllText(_localTranslationsPath);
-                    var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
-                    if (data != null) 
-                    {
-                        _translations = data;
-                        return;
-                    }
-                }
-
-                // 2. If not found or invalid, load from embedded resource and save it out
+                // 1. Load from embedded resource first (acts as default / fallback source)
+                Dictionary<string, Dictionary<string, string>> embeddedData = new();
                 var uri = new Uri("pack://application:,,,/Resources/translations.json");
                 var resourceStream = System.Windows.Application.GetResourceStream(uri);
 
@@ -65,14 +54,59 @@ namespace VideoGenerator.Services
                     using var reader = new StreamReader(resourceStream.Stream);
                     string json = reader.ReadToEnd();
                     var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
-                    
-                    if (data != null) 
+                    if (data != null)
                     {
-                        _translations = data;
-                        // Ensure directory exists
-                        Directory.CreateDirectory(Path.GetDirectoryName(_localTranslationsPath)!);
-                        File.WriteAllText(_localTranslationsPath, json);
+                        embeddedData = data;
                     }
+                }
+
+                // 2. Try to load from external file
+                if (File.Exists(_localTranslationsPath))
+                {
+                    string json = File.ReadAllText(_localTranslationsPath);
+                    var localData = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
+                    if (localData != null)
+                    {
+                        bool mergedAny = false;
+                        // Merge embedded keys that are missing in the local file
+                        foreach (var langPair in embeddedData)
+                        {
+                            string lang = langPair.Key;
+                            if (!localData.ContainsKey(lang))
+                            {
+                                localData[lang] = new Dictionary<string, string>();
+                                mergedAny = true;
+                            }
+
+                            foreach (var keyPair in langPair.Value)
+                            {
+                                if (!localData[lang].ContainsKey(keyPair.Key))
+                                {
+                                    localData[lang][keyPair.Key] = keyPair.Value;
+                                    mergedAny = true;
+                                }
+                            }
+                        }
+
+                        _translations = localData;
+
+                        if (mergedAny)
+                        {
+                            // Save updated local translations back
+                            string updatedJson = JsonSerializer.Serialize(_translations, new JsonSerializerOptions { WriteIndented = true });
+                            File.WriteAllText(_localTranslationsPath, updatedJson);
+                        }
+                        return;
+                    }
+                }
+
+                // 3. If no external file exists, use embedded and save it to AppData
+                _translations = embeddedData;
+                if (_translations.Count > 0)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(_localTranslationsPath)!);
+                    string json = JsonSerializer.Serialize(_translations, new JsonSerializerOptions { WriteIndented = true });
+                    File.WriteAllText(_localTranslationsPath, json);
                 }
             }
             catch (Exception ex)

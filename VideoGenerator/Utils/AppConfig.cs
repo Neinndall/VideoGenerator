@@ -20,6 +20,8 @@ namespace VideoGenerator.Models
         public static readonly string BackgroundPath = Path.Combine(ResourcesDir, "DefaultBackground.jpg");
         public static readonly string ConfigDir = Path.Combine(AppDataDir, "Config");
         public static readonly string TranslationsPath = Path.Combine(ConfigDir, "translations.json");
+        public static readonly string MonstersPath = Path.Combine(ConfigDir, "monsters.json");
+        public static readonly string StructuresPath = Path.Combine(ConfigDir, "structures.json");
 
         // URLs
         public static readonly string MonsterWikiUrl = "https://leagueoflegends.fandom.com/wiki/Monster";

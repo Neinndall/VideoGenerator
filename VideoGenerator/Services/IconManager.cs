@@ -108,12 +108,51 @@ namespace VideoGenerator.Services
 
         public async Task<string> GetItemIconAsync(string itemNameOrId)
         {
+            if (string.IsNullOrEmpty(itemNameOrId)) return null;
+
+            // 1. If numeric (ID), try Community Dragon & DDragon
             if (int.TryParse(itemNameOrId, out int itemId))
             {
+                // Try Community Dragon first
                 string url = $"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/items/icons2d/{itemId}.png";
-                return await _dataFetcher.DownloadIconAsync(url, "item");
+                string path = await _dataFetcher.DownloadIconAsync(url, "item");
+                if (!string.IsNullOrEmpty(path)) return path;
+
+                // Fallback to DDragon (using stable version fallback or latest)
+                string latestVersion = await _dataFetcher.GetLatestLolVersionAsync();
+                string ddragonUrl = $"https://ddragon.leagueoflegends.com/cdn/{latestVersion}/img/item/{itemId}.png";
+                path = await _dataFetcher.DownloadIconAsync(ddragonUrl, "item");
+                if (!string.IsNullOrEmpty(path)) return path;
             }
-            return null;
+
+            // 2. If it's a name, or if numeric lookup failed, download from Fandom Wiki
+            // Convert e.g., "EssenceReaver" or "Essence Reaver" to "Essence_Reaver_item.png"
+            string formattedName = itemNameOrId;
+            // Add space before capitals if it's CamelCase and doesn't have spaces
+            if (!formattedName.Contains(" ") && !formattedName.Contains("_"))
+            {
+                formattedName = System.Text.RegularExpressions.Regex.Replace(formattedName, @"(?<!^)(?=[A-Z])", " ");
+            }
+            string wikiFileName = formattedName.Trim().Replace(" ", "_") + "_item.png";
+
+            // Special cases/typos mapping
+            if (wikiFileName.Equals("ZhonyasHourglass_item.png", StringComparison.OrdinalIgnoreCase) || 
+                wikiFileName.Equals("ZhongyasHourglass_item.png", StringComparison.OrdinalIgnoreCase))
+            {
+                wikiFileName = "Zhonya%27s_Hourglass_item.png";
+            }
+            else if (wikiFileName.Equals("LordDominiksRegards_item.png", StringComparison.OrdinalIgnoreCase))
+            {
+                wikiFileName = "Lord_Dominik%27s_Regards_item.png";
+            }
+
+            string fandomUrl = _dataFetcher.GetFandomImageUrl(wikiFileName);
+            string localFileName = wikiFileName.Replace("%27", "'");
+            string localPath = Path.Combine(AppConfig.IconCacheDir, "item", localFileName);
+            
+            if (File.Exists(localPath)) return localPath;
+
+            return await _dataFetcher.DownloadIconAsync(fandomUrl, "item", localFileName);
         }
 
         public async Task<string> GetMonsterIconAsync(string monsterNameFormatted)
@@ -177,6 +216,33 @@ namespace VideoGenerator.Services
             string url = await _dataFetcher.GetMonsterIconUrlAsync(monsterNameFormatted);
             if (url == null) return null;
             return await _dataFetcher.DownloadIconAsync(url, "monster", localFileName);
+        }
+
+        public async Task<string> GetStructureIconAsync(string structureNameFormatted)
+        {
+            if (string.IsNullOrEmpty(structureNameFormatted)) return null;
+
+            string wikiFileName = "Blue_Turret_icon.png";
+            if (structureNameFormatted.Contains("Turret", StringComparison.OrdinalIgnoreCase) || 
+                structureNameFormatted.Contains("Tower", StringComparison.OrdinalIgnoreCase))
+            {
+                wikiFileName = "Blue_Turret_icon.png";
+            }
+            else if (structureNameFormatted.Contains("Inhibitor", StringComparison.OrdinalIgnoreCase))
+            {
+                wikiFileName = "Blue_Inhibitor_icon.png";
+            }
+            else if (structureNameFormatted.Contains("Nexus", StringComparison.OrdinalIgnoreCase))
+            {
+                wikiFileName = "Blue_Nexus_icon.png";
+            }
+
+            string localPath = Path.Combine(AppConfig.IconCacheDir, "structure", wikiFileName);
+            
+            if (File.Exists(localPath)) return localPath;
+
+            string fandomUrl = _dataFetcher.GetFandomImageUrl(wikiFileName);
+            return await _dataFetcher.DownloadIconAsync(fandomUrl, "structure", wikiFileName);
         }
     }
 }

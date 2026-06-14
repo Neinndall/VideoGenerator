@@ -28,6 +28,9 @@ namespace VideoGenerator.Views
             IconTypeBox.SelectedIndex = 0;
             RuleTypeBox.SelectedIndex = 0;
             GroupCategoryBox.SelectedIndex = 0;
+            LoadMonsters();
+            LoadStructures();
+            NewStructureTargetBox.SelectedIndex = 0;
         }
 
         public RuleManager RuleManager => _ruleManager;
@@ -60,15 +63,21 @@ namespace VideoGenerator.Views
                 return;
             }
 
-            _ruleManager.Rules.Insert(0, new EventRule
+            var newRule = new EventRule
             {
                 Keyword = keyword,
                 TranslationKey = translationKey,
                 IconType = iconType,
                 Type = ruleType,
                 ExtractsTarget = ruleType != RuleType.Simple
-            });
+            };
 
+            int insertIndex = 0;
+            while (insertIndex < _ruleManager.Rules.Count && string.Compare(_ruleManager.Rules[insertIndex].Keyword, keyword, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                insertIndex++;
+            }
+            _ruleManager.Rules.Insert(insertIndex, newRule);
             _ruleManager.SaveRules();
 
             KeywordBox.Text = "";
@@ -115,7 +124,22 @@ namespace VideoGenerator.Views
                 IsOfficial = false
             };
 
-            _groupManager.Groups.Insert(0, newGroup);
+            int insertIndex = 0;
+            while (insertIndex < _groupManager.Groups.Count)
+            {
+                var current = _groupManager.Groups[insertIndex];
+                int catCompare = string.Compare(current.Category, category, StringComparison.OrdinalIgnoreCase);
+                if (catCompare > 0)
+                {
+                    break;
+                }
+                if (catCompare == 0 && string.Compare(current.Name, name, StringComparison.OrdinalIgnoreCase) > 0)
+                {
+                    break;
+                }
+                insertIndex++;
+            }
+            _groupManager.Groups.Insert(insertIndex, newGroup);
             _groupManager.SaveGroups();
 
             GroupNameBox.Text = "";
@@ -145,10 +169,15 @@ namespace VideoGenerator.Views
             string display = AliasDisplayBox.Text.Trim();
             string internalName = AliasInternalBox.Text.Trim();
 
-            if (string.IsNullOrEmpty(display) || string.IsNullOrEmpty(internalName))
+            if (string.IsNullOrEmpty(display))
             {
-                MessageBox.Show("Both Display Name and Internal Name are required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Champion Name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
+ 
+            if (string.IsNullOrEmpty(internalName))
+            {
+                internalName = display.Replace(" ", "").Replace("'", "").Replace(".", "").Replace("-", "");
             }
 
             // Duplicate Prevention
@@ -158,12 +187,19 @@ namespace VideoGenerator.Views
                 return;
             }
 
-            _aliasManager.Aliases.Insert(0, new ChampionAlias
+            var newAlias = new ChampionAlias
             {
                 DisplayName = display,
                 InternalName = internalName,
                 IsOfficial = false
-            });
+            };
+
+            int insertIndex = 0;
+            while (insertIndex < _aliasManager.Aliases.Count && string.Compare(_aliasManager.Aliases[insertIndex].DisplayName, display, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                insertIndex++;
+            }
+            _aliasManager.Aliases.Insert(insertIndex, newAlias);
             _aliasManager.SaveAliases();
 
             AliasDisplayBox.Text = "";
@@ -181,6 +217,179 @@ namespace VideoGenerator.Views
                 }
                 _aliasManager.Aliases.Remove(alias);
                 _aliasManager.SaveAliases();
+            }
+        }
+
+        // --- Monsters Logic ---
+
+        public System.Collections.ObjectModel.ObservableCollection<string> MonsterList { get; } = new();
+
+        private void LoadMonsters()
+        {
+            MonsterList.Clear();
+            var defaults = new System.Collections.Generic.List<string> {
+                "Baron", "Nashor", "Dragon", "Drake", "Herald", "Sentinel", "Brambleback", 
+                "Voidgrub", "Scuttle", "Crab", "Krug", "Wolf", "Wolves", "Murkwolf", 
+                "Raptor", "Raptors", "Gromp", "Vilemaw", "Atakhan"
+            };
+
+            try
+            {
+                string path = AppConfig.MonstersPath;
+                if (System.IO.File.Exists(path))
+                {
+                    string json = System.IO.File.ReadAllText(path);
+                    var list = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(json);
+                    if (list != null)
+                    {
+                        foreach (var m in list) MonsterList.Add(m);
+                        return;
+                    }
+                }
+            }
+            catch { }
+
+            foreach (var m in defaults) MonsterList.Add(m);
+            SaveMonsters();
+        }
+
+        private void SaveMonsters()
+        {
+            try
+            {
+                string path = AppConfig.MonstersPath;
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+                string json = System.Text.Json.JsonSerializer.Serialize(MonsterList.ToList(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                System.IO.File.WriteAllText(path, json);
+            }
+            catch { }
+        }
+
+        private void AddMonster_Click(object sender, RoutedEventArgs e)
+        {
+            string name = NewMonsterBox.Text.Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                MessageBox.Show("Monster name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (MonsterList.Contains(name, StringComparer.OrdinalIgnoreCase))
+            {
+                MessageBox.Show($"'{name}' is already in the monster list.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Find insert index alphabetically
+            int insertIndex = 0;
+            while (insertIndex < MonsterList.Count && string.Compare(MonsterList[insertIndex], name, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                insertIndex++;
+            }
+
+            MonsterList.Insert(insertIndex, name);
+            SaveMonsters();
+            NewMonsterBox.Text = "";
+        }
+
+        private void DeleteMonster_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.CommandParameter is string monsterName)
+            {
+                MonsterList.Remove(monsterName);
+                SaveMonsters();
+            }
+        }
+
+        // --- Structures Logic ---
+
+        public System.Collections.ObjectModel.ObservableCollection<StructureMapping> StructureList { get; } = new();
+
+        private void LoadStructures()
+        {
+            StructureList.Clear();
+            var defaults = new System.Collections.Generic.List<StructureMapping> {
+                new StructureMapping { Keyword = "Turret", TargetName = "Turret" },
+                new StructureMapping { Keyword = "Tower", TargetName = "Turret" },
+                new StructureMapping { Keyword = "Inhibitor", TargetName = "Inhibitor" },
+                new StructureMapping { Keyword = "Nexus", TargetName = "Nexus" }
+            };
+
+            try
+            {
+                string path = AppConfig.StructuresPath;
+                if (System.IO.File.Exists(path))
+                {
+                    string json = System.IO.File.ReadAllText(path);
+                    var list = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<StructureMapping>>(json);
+                    if (list != null)
+                    {
+                        foreach (var s in list) StructureList.Add(s);
+                        return;
+                    }
+                }
+            }
+            catch { }
+
+            foreach (var s in defaults) StructureList.Add(s);
+            SaveStructures();
+        }
+
+        private void SaveStructures()
+        {
+            try
+            {
+                string path = AppConfig.StructuresPath;
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+                string json = System.Text.Json.JsonSerializer.Serialize(StructureList.ToList(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                System.IO.File.WriteAllText(path, json);
+            }
+            catch { }
+        }
+
+        private void AddStructure_Click(object sender, RoutedEventArgs e)
+        {
+            string keyword = NewStructureKeywordBox.Text.Trim();
+            string targetName = NewStructureTargetBox.SelectedItem?.ToString() ?? "Turret";
+
+            if (string.IsNullOrEmpty(keyword))
+            {
+                MessageBox.Show("Structure keyword is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (StructureList.Any(s => s.Keyword.Equals(keyword, StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageBox.Show($"A structure mapping with keyword '{keyword}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var newMapping = new StructureMapping
+            {
+                Keyword = keyword,
+                TargetName = targetName
+            };
+
+            // Insert alphabetically by keyword
+            int insertIndex = 0;
+            while (insertIndex < StructureList.Count && string.Compare(StructureList[insertIndex].Keyword, keyword, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                insertIndex++;
+            }
+
+            StructureList.Insert(insertIndex, newMapping);
+            SaveStructures();
+
+            NewStructureKeywordBox.Text = "";
+            NewStructureTargetBox.SelectedIndex = 0;
+        }
+
+        private void DeleteStructure_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.DataContext is StructureMapping mapping)
+            {
+                StructureList.Remove(mapping);
+                SaveStructures();
             }
         }
     }

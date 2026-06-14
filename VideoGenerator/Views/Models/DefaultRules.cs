@@ -12,8 +12,10 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "FirstEncounter", TranslationKey = "interaction_first_encounter_one", IconType = "champion", Type = RuleType.Interaction, ExtractsTarget = true },
                 new EventRule { Keyword = "SecondEncounter", TranslationKey = "interaction_second_encounter_one", IconType = "champion", Type = RuleType.Interaction, ExtractsTarget = true },
                 new EventRule { Keyword = "MoveFirstAlly", TranslationKey = "interaction_move_first_ally", IconType = "champion", Type = RuleType.Interaction, ExtractsTarget = true },
+                new EventRule { Keyword = "MoveFirstEnemy", TranslationKey = "interaction_move_first_enemy", IconType = "champion", Type = RuleType.Interaction, ExtractsTarget = true },
+                new EventRule { Keyword = "MoveFirst", TranslationKey = "interaction_move_first_target", IconType = "champion", Type = RuleType.Target, ExtractsTarget = true },
                 new EventRule { Keyword = "MoveLongAllSwords", TranslationKey = "event_move_long_all_swords", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "MoveFirst", TranslationKey = "event_move_first", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "MoveFirstGeneral", TranslationKey = "event_move_first", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveLong", TranslationKey = "event_move_long", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveStandard", TranslationKey = "event_move_standard", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
 
@@ -29,6 +31,7 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "KillFirst", TranslationKey = "event_first_blood", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillPenta", TranslationKey = "event_penta_kill", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Kill", TranslationKey = "interaction_kill_one", IconType = "champion", Type = RuleType.Target, ExtractsTarget = true },
+                new EventRule { Keyword = "KillTurret", TranslationKey = "event_turret_takedown", IconType = "structure", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Assist", TranslationKey = "interaction_assist_one", IconType = "champion", Type = RuleType.Target, ExtractsTarget = true },
                 
                 // 4. Simple generic rules
@@ -41,6 +44,9 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "Attack", TranslationKey = "event_attack", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Ping", TranslationKey = "event_ping", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Spell", TranslationKey = "event_spell", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "SpellBuffReceive", TranslationKey = "event_buff_receive_general", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Spell2DRRankOne", TranslationKey = "event_spell_r_rank_one", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Spell2DRankUp", TranslationKey = "event_spell_rank_up", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 
                 new EventRule { Keyword = "Shop2DOpen", TranslationKey = "event_open_shop", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Shop3DOpen", TranslationKey = "event_open_shop", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },

@@ -6,14 +6,40 @@
     <Style x:Key="VirtualizedListBoxStyle" TargetType="ListBox">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
-        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="VirtualizingStackPanel.IsVirtualizing" Value="True"/>
         <Setter Property="VirtualizingStackPanel.VirtualizationMode" Value="Recycling"/>
         <Setter Property="VirtualizingStackPanel.ScrollUnit" Value="Pixel"/>
-        <Setter Property="utils:ScrollHelper.BubbleMouseWheel" Value="True"/>
+        <Setter Property="utils:ScrollHelper.BubbleMouseWheel" Value="False"/>
         
+        <!-- Custom Template for ListBox to completely remove any Material Design margins on the internal ScrollViewer -->
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBox">
+                    <Border x:Name="Bd" 
+                            Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            Padding="0" 
+                            SnapsToDevicePixels="True">
+                        <!-- ScrollViewer is placed with 0 margin and 0 padding to align flush with borders -->
+                        <ScrollViewer x:Name="SearchableTextScrollViewer" 
+                                      Style="{DynamicResource ModernScrollViewer}"
+                                      Focusable="False" 
+                                      Padding="0"
+                                      Margin="0"
+                                      VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                      HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}">
+                            <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                        </ScrollViewer>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="ListBoxItem">

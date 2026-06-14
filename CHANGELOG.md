@@ -1,3 +1,26 @@
+VideoGenerator - Patch Notes | v1.2.1.0
+
+MEDIUM UPDATE
+This version focuses on dynamic monster and structure visual mappings, modular event parser architecture, localization robustness, and UI reliability.
+
+New Features
+  - Mapping Engine / Monsters & Structures Tabs: Added dedicated graphical management tables in the Event Rules tab to easily add, delete, and save custom monsters and structure lookup names in persistent configuration JSON files.
+  - Core / Dynamic Mapping Integration: Re-routed monster and structure checks in the parsing engine to dynamically load configurations from local `monsters.json` and `structures.json` with fallback defaults.
+
+Improvements
+  - Parser / Modular Architecture: Refactored `NameParser.cs` into specialized event sub-parsers (`IEventParser`, `ItemEventParser`, `MonsterEventParser`, `SkinInteractionParser`, `GroupInteractionParser`, `SpellOrAttackParser`, `DynamicRuleParser`) inside `Services/Parsers` to ensure cleanly isolated parsing logic.
+  - Parser / Case Normalization: Added case-insensitive normalization to map `Darking` correctly to the `Darkin` region.
+  - Localization / Non-destructive Translation Merging: Improved `TranslationService` to load embedded default translations and safely merge any missing keys to the local `translations.json` file without overwriting existing user-customized translations.
+  - Icons / Structure Visual Resolution: Mapped structure icons to standard match history icons on League Fandom Wiki (`Blue_Turret_icon.png`, `Blue_Inhibitor_icon.png`, `Blue_Nexus_icon.png`) to ensure reliable downloads and visual clarity.
+  - UI / Structure Type Selection: Enabled selecting "structure" in the Dashboard Quick Edit dropdown to correctly update structure types.
+
+Bug Fixes
+  - Parser / Fixed Prefix Stripping in Rules Matching: Resolved a bug where champion prefixes (e.g. `Play_vo_AhriSkin89_`) prevented general actions (such as `Shop2DOpen`, `Recall3DGeneral`, `Death3D`) from matching rules in `DynamicRuleParser`, forcing them to fall back to raw folder names.
+  - UI / Reverted Generic Event Icons: Reverted generic fallback icon path assignment to `null` so actions classified as generic do not display a champion's face icon in the dashboard list or video compilation.
+  - Core / Expanded Champion Roster: Added missing roster champions (`KSante`, `BelVeth`, `Hwei`, `Ambessa`, `Mel`, etc.) to DefaultGroups and AliasManager dictionaries.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.0.0
 
 MAJOR UPDATE

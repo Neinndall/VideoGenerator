@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -46,6 +47,30 @@ namespace VideoGenerator.Services
             try
             {
                 string cachePath = Path.Combine(AppConfig.CacheDir, "skins_data.json");
+                Directory.CreateDirectory(Path.GetDirectoryName(cachePath));
+
+                var request = new HttpRequestMessage(HttpMethod.Get, AppConfig.SkinsDataUrl);
+                if (File.Exists(cachePath))
+                {
+                    request.Headers.IfModifiedSince = File.GetLastWriteTimeUtc(cachePath);
+                }
+
+                var response = await _httpClient.SendAsync(request);
+                if (response.StatusCode == HttpStatusCode.NotModified && File.Exists(cachePath))
+                {
+                    string cachedJson = await File.ReadAllTextAsync(cachePath);
+                    _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
+                    return _skinsCache ?? new Dictionary<string, JsonElement>();
+                }
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    await File.WriteAllTextAsync(cachePath, json);
+                    _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
+                    return _skinsCache ?? new Dictionary<string, JsonElement>();
+                }
+
                 if (File.Exists(cachePath))
                 {
                     string cachedJson = await File.ReadAllTextAsync(cachePath);
@@ -53,15 +78,22 @@ namespace VideoGenerator.Services
                     return _skinsCache ?? new Dictionary<string, JsonElement>();
                 }
 
-                var response = await _httpClient.GetStringAsync(AppConfig.SkinsDataUrl);
-                await File.WriteAllTextAsync(cachePath, response);
-                
-                _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(response);
-                return _skinsCache ?? new Dictionary<string, JsonElement>();
+                return new Dictionary<string, JsonElement>();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting skins data: {ex.Message}");
+                try
+                {
+                    string cachePath = Path.Combine(AppConfig.CacheDir, "skins_data.json");
+                    if (File.Exists(cachePath))
+                    {
+                        string cachedJson = await File.ReadAllTextAsync(cachePath);
+                        _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
+                        return _skinsCache ?? new Dictionary<string, JsonElement>();
+                    }
+                }
+                catch { }
                 return new Dictionary<string, JsonElement>();
             }
         }
@@ -73,6 +105,30 @@ namespace VideoGenerator.Services
             try
             {
                 string cachePath = Path.Combine(AppConfig.CacheDir, "skinlines_data.json");
+                Directory.CreateDirectory(Path.GetDirectoryName(cachePath));
+
+                var request = new HttpRequestMessage(HttpMethod.Get, AppConfig.SkinLinesUrl);
+                if (File.Exists(cachePath))
+                {
+                    request.Headers.IfModifiedSince = File.GetLastWriteTimeUtc(cachePath);
+                }
+
+                var response = await _httpClient.SendAsync(request);
+                if (response.StatusCode == HttpStatusCode.NotModified && File.Exists(cachePath))
+                {
+                    string cachedJson = await File.ReadAllTextAsync(cachePath);
+                    _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(cachedJson);
+                    return _skinLinesCache ?? new List<JsonElement>();
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    await File.WriteAllTextAsync(cachePath, json);
+                    _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(json);
+                    return _skinLinesCache ?? new List<JsonElement>();
+                }
+
                 if (File.Exists(cachePath))
                 {
                     string cachedJson = await File.ReadAllTextAsync(cachePath);
@@ -80,15 +136,22 @@ namespace VideoGenerator.Services
                     return _skinLinesCache ?? new List<JsonElement>();
                 }
 
-                var response = await _httpClient.GetStringAsync(AppConfig.SkinLinesUrl);
-                await File.WriteAllTextAsync(cachePath, response);
-                
-                _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(response);
-                return _skinLinesCache ?? new List<JsonElement>();
+                return new List<JsonElement>();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting skinlines data: {ex.Message}");
+                try
+                {
+                    string cachePath = Path.Combine(AppConfig.CacheDir, "skinlines_data.json");
+                    if (File.Exists(cachePath))
+                    {
+                        string cachedJson = await File.ReadAllTextAsync(cachePath);
+                        _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(cachedJson);
+                        return _skinLinesCache ?? new List<JsonElement>();
+                    }
+                }
+                catch { }
                 return new List<JsonElement>();
             }
         }
