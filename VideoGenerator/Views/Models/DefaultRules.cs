@@ -27,7 +27,9 @@ namespace VideoGenerator.Views.Models
 
                 // 3. Prefixed rules (Target extraction)
                 new EventRule { Keyword = "KillAllyAhead", TranslationKey = "event_kill_ally_ahead", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillAheadAllyTeam", TranslationKey = "event_kill_ally_ahead", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillAllyBehind", TranslationKey = "event_kill_ally_behind", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillBehindAllyTeam", TranslationKey = "event_kill_ally_behind", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillFirst", TranslationKey = "event_first_blood", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillPenta", TranslationKey = "event_penta_kill", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Kill", TranslationKey = "interaction_kill_one", IconType = "champion", Type = RuleType.Target, ExtractsTarget = true },
