@@ -310,6 +310,7 @@
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">item</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">monster</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">structure</System:String>
+                            <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">region</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">generic</System:String>
                         </ComboBox>
 

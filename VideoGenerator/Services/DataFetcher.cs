@@ -242,9 +242,12 @@ namespace VideoGenerator.Services
                 searchName = "Chemtech_Drake";
             else if (monsterNameFormatted.Contains("Elder", StringComparison.OrdinalIgnoreCase)) 
                 searchName = "Elder_Dragon";
-            else if (monsterNameFormatted.Contains("Dragon", StringComparison.OrdinalIgnoreCase)) 
+            else if (monsterNameFormatted.Contains("Dragon", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Drake", StringComparison.OrdinalIgnoreCase)) 
                 searchName = "Dragon";
-            else if (monsterNameFormatted.Contains("Baron", StringComparison.OrdinalIgnoreCase)) 
+            else if (monsterNameFormatted.Contains("Baron", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Epic_Monster", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("EpicMonster", StringComparison.OrdinalIgnoreCase)) 
                 searchName = "Baron_Nashor";
             else if (monsterNameFormatted.Contains("Herald", StringComparison.OrdinalIgnoreCase)) 
                 searchName = "Rift_Herald";
@@ -264,7 +267,7 @@ namespace VideoGenerator.Services
             else if (monsterNameFormatted.Contains("Wolf", StringComparison.OrdinalIgnoreCase) || 
                      monsterNameFormatted.Contains("Wolves", StringComparison.OrdinalIgnoreCase) || 
                      monsterNameFormatted.Contains("Murkwolf", StringComparison.OrdinalIgnoreCase))
-                searchName = "Greater_Murkwolf";
+                searchName = "Greater_Murk_Wolf";
             else if (monsterNameFormatted.Contains("Raptor", StringComparison.OrdinalIgnoreCase) || 
                      monsterNameFormatted.Contains("Raptors", StringComparison.OrdinalIgnoreCase))
                 searchName = "Crimson_Raptor";

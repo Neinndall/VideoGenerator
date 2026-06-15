@@ -24,6 +24,8 @@ namespace VideoGenerator.Views.Models
                 new ThematicGroup { Name = "Kinkou", Category = "Region", ChampionsRaw = "Shen, Akali, Kennen" },
                 new ThematicGroup { Name = "Shurima", Category = "Region", ChampionsRaw = "Akshan, Amumu, Sivir, Renekton, Taliyah, Nasus, Rammus, KSante, Azir, Xerath" },
                 new ThematicGroup { Name = "Targon", Category = "Region", ChampionsRaw = "Leona, Diana, Pantheon, Taric, Zoe, Aphelios, Aurelion Sol, Soraka" },
+                new ThematicGroup { Name = "Lunari", Category = "Region", ChampionsRaw = "Diana, Aphelios" },
+                new ThematicGroup { Name = "Solari", Category = "Region", ChampionsRaw = "Leona" },
                 new ThematicGroup { Name = "Freljord", Category = "Region", ChampionsRaw = "Ashe, Sejuani, Lissandra, Braum, Olaf, Tryndamere, Volibear, Anivia, Ornn, Gnar, Nunu, Gragas, Trundle, Udyr, Aurora" },
                 new ThematicGroup { Name = "Shadow Isles", Category = "Region", ChampionsRaw = "Viego, Thresh, Hecarim, Kalista, Karthus, Yorick, Gwen, Senna, Maokai, Elise" },
                 new ThematicGroup { Name = "Piltover", Category = "Region", ChampionsRaw = "Jayce, Caitlyn, Vi, Ezreal, Heimerdinger, Orianna, Seraphine, Camille, Mel" },

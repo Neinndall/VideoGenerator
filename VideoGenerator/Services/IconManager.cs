@@ -47,12 +47,56 @@ namespace VideoGenerator.Services
             return await _dataFetcher.DownloadIconAsync(url, "champion");
         }
 
+        private string GetRegionCrestFileName(string regionName)
+        {
+            string name = regionName.Trim();
+            if (name.Equals("Darkin", StringComparison.OrdinalIgnoreCase) || 
+                name.Equals("Ascended Darkin", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Darkin_icon.png";
+            }
+            if (name.Equals("Vastaya", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Vastaya_icon.png";
+            }
+            if (name.Equals("Demon", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Demon_icon.png";
+            }
+            if (name.Equals("Ascended", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Shurima_Crest_icon.png";
+            }
+            if (name.Equals("Kinkou", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Ionia_Crest_icon.png";
+            }
+            if (name.Equals("Lunari", StringComparison.OrdinalIgnoreCase) || 
+                name.Equals("Solari", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Targon_Crest_icon.png";
+            }
+
+            return $"{name}_Crest_icon.png".Replace(" ", "_");
+        }
+
         private async Task<string> ResolveThematicOrRegionAsync(string target, string lolVersion)
         {
             // Check dynamic groups from GroupManager
             var matchedGroup = _groupManager.Groups.FirstOrDefault(g => g.Name.Equals(target, StringComparison.OrdinalIgnoreCase));
             if (matchedGroup != null)
             {
+                if (matchedGroup.Category.Equals("Region", StringComparison.OrdinalIgnoreCase))
+                {
+                    string fileName = GetRegionCrestFileName(matchedGroup.Name);
+                    string localPath = Path.Combine(AppConfig.IconCacheDir, "region", fileName);
+                    if (File.Exists(localPath)) return localPath;
+
+                    string fandomUrl = _dataFetcher.GetFandomImageUrl(fileName);
+                    string downloaded = await _dataFetcher.DownloadIconAsync(fandomUrl, "region", fileName);
+                    if (!string.IsNullOrEmpty(downloaded)) return downloaded;
+                }
+
                 var candidates = matchedGroup.GetChampionsList();
                 if (candidates.Count > 0)
                 {
@@ -182,9 +226,12 @@ namespace VideoGenerator.Services
                 searchName = "Chemtech_Drake";
             else if (monsterNameFormatted.Contains("Elder", StringComparison.OrdinalIgnoreCase)) 
                 searchName = "Elder_Dragon";
-            else if (monsterNameFormatted.Contains("Dragon", StringComparison.OrdinalIgnoreCase)) 
+            else if (monsterNameFormatted.Contains("Dragon", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Drake", StringComparison.OrdinalIgnoreCase)) 
                 searchName = "Dragon";
-            else if (monsterNameFormatted.Contains("Baron", StringComparison.OrdinalIgnoreCase)) 
+            else if (monsterNameFormatted.Contains("Baron", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("Epic_Monster", StringComparison.OrdinalIgnoreCase) || 
+                     monsterNameFormatted.Contains("EpicMonster", StringComparison.OrdinalIgnoreCase)) 
                 searchName = "Baron_Nashor";
             else if (monsterNameFormatted.Contains("Herald", StringComparison.OrdinalIgnoreCase)) 
                 searchName = "Rift_Herald";
@@ -204,7 +251,7 @@ namespace VideoGenerator.Services
             else if (monsterNameFormatted.Contains("Wolf", StringComparison.OrdinalIgnoreCase) || 
                      monsterNameFormatted.Contains("Wolves", StringComparison.OrdinalIgnoreCase) || 
                      monsterNameFormatted.Contains("Murkwolf", StringComparison.OrdinalIgnoreCase))
-                searchName = "Greater_Murkwolf";
+                searchName = "Greater_Murk_Wolf";
             else if (monsterNameFormatted.Contains("Raptor", StringComparison.OrdinalIgnoreCase) || 
                      monsterNameFormatted.Contains("Raptors", StringComparison.OrdinalIgnoreCase))
                 searchName = "Crimson_Raptor";

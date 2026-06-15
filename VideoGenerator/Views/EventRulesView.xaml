@@ -53,6 +53,7 @@
                             
                             <TextBox x:Name="KeywordBox" materialDesign:HintAssist.Hint="Folder Keyword" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
                             <TextBox x:Name="TranslationKeyBox" materialDesign:HintAssist.Hint="Dict Key" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
+                            <TextBox x:Name="IconLookupBox" materialDesign:HintAssist.Hint="Icon Lookup (Optional)" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
                             
                             <Grid Margin="0,0,0,24">
                                 <Grid.ColumnDefinitions>
@@ -65,6 +66,7 @@
                                     <sys:String>item</sys:String>
                                     <sys:String>monster</sys:String>
                                     <sys:String>structure</sys:String>
+                                    <sys:String>region</sys:String>
                                 </ComboBox>
                                 <ComboBox x:Name="RuleTypeBox" Grid.Column="1" materialDesign:HintAssist.Hint="Behavior" Style="{StaticResource ModernComboBoxStyle}">
                                     <sys:String>Simple</sys:String>
@@ -103,7 +105,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="KEYWORD" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
                                     <TextBlock Grid.Column="1" Text="DICT KEY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
-                                    <TextBlock Grid.Column="2" Text="ICON" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
+                                    <TextBlock Grid.Column="2" Text="ICON / LOOKUP" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
                                     <TextBlock Grid.Column="3" Text="TYPE" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" HorizontalAlignment="Center"/>
                                 </Grid>
                             </Border>
@@ -124,7 +126,10 @@
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding Keyword}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding TranslationKey}" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding IconType}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" FontFamily="Consolas" FontSize="11"/>
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding IconType}" Foreground="{StaticResource TextSecondaryBrush}" FontFamily="Consolas" FontSize="11"/>
+                                                    <TextBlock Text="{Binding IconLookup}" Foreground="{StaticResource TextMutedBrush}" FontSize="10" Margin="0,2,0,0" Opacity="0.7"/>
+                                                </StackPanel>
                                                 <Border Grid.Column="3" Style="{StaticResource HUDBorder}" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Type}" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextSecondaryBrush}"/>
                                                 </Border>

@@ -8,6 +8,13 @@ namespace VideoGenerator.Services.Parsers
 {
     public class SpellOrAttackParser : IEventParser
     {
+        private readonly TranslationService _translationService;
+
+        public SpellOrAttackParser(TranslationService translationService)
+        {
+            _translationService = translationService;
+        }
+
         public bool CanParse(string folderName)
         {
             string workingFolder = StripOwnerPrefix(folderName);
@@ -21,18 +28,45 @@ namespace VideoGenerator.Services.Parsers
         {
             string workingFolder = StripOwnerPrefix(folderName);
             string cleanName = NormalizeFolderName(workingFolder);
-            cleanName = Regex.Replace(cleanName, @"(?<!^)(?=[A-Z])", " ");
-            cleanName = cleanName.Replace("_", " ");
-            
-            var words = cleanName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                                 .Select(w => char.ToUpper(w[0]) + w.Substring(1));
-            
-            string formattedText = string.Join(" ", words);
+
+            // Attempt to resolve translation key from translations.json first
+            string key1 = "event_" + cleanName;
+            string key2 = "event_" + workingFolder;
+
+            string displayText = null;
+            if (_translationService != null)
+            {
+                string trans = _translationService.GetText(language, key2);
+                if (trans != key2)
+                {
+                    displayText = trans;
+                }
+                else
+                {
+                    trans = _translationService.GetText(language, key1);
+                    if (trans != key1)
+                    {
+                        displayText = trans;
+                    }
+                }
+            }
+
+            if (displayText == null)
+            {
+                // Dynamic English formatting fallback
+                string formattedText = Regex.Replace(cleanName, @"(?<!^)(?=[A-Z])", " ");
+                formattedText = formattedText.Replace("_", " ");
+                
+                var words = formattedText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                                     .Select(w => char.ToUpper(w[0]) + w.Substring(1));
+                
+                displayText = string.Join(" ", words);
+            }
 
             return Task.FromResult(new ParsedEvent
             {
                 OriginalFolder = folderName,
-                DisplayText = formattedText,
+                DisplayText = displayText,
                 IconLookupName = "Generic",
                 IconType = "generic"
             });

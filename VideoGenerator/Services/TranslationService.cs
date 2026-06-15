@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using VideoGenerator.Models;
 
 namespace VideoGenerator.Services
@@ -93,7 +95,11 @@ namespace VideoGenerator.Services
                         if (mergedAny)
                         {
                             // Save updated local translations back
-                            string updatedJson = JsonSerializer.Serialize(_translations, new JsonSerializerOptions { WriteIndented = true });
+                            string updatedJson = JsonSerializer.Serialize(_translations, new JsonSerializerOptions 
+                            { 
+                                WriteIndented = true,
+                                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                            });
                             File.WriteAllText(_localTranslationsPath, updatedJson);
                         }
                         return;
@@ -105,7 +111,11 @@ namespace VideoGenerator.Services
                 if (_translations.Count > 0)
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(_localTranslationsPath)!);
-                    string json = JsonSerializer.Serialize(_translations, new JsonSerializerOptions { WriteIndented = true });
+                    string json = JsonSerializer.Serialize(_translations, new JsonSerializerOptions 
+                    { 
+                        WriteIndented = true,
+                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                    });
                     File.WriteAllText(_localTranslationsPath, json);
                 }
             }
@@ -169,7 +179,11 @@ namespace VideoGenerator.Services
 
             try
             {
-                string json = JsonSerializer.Serialize(_translations, new JsonSerializerOptions { WriteIndented = true });
+                string json = JsonSerializer.Serialize(_translations, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
                 File.WriteAllText(_localTranslationsPath, json);
             }
             catch (Exception ex)

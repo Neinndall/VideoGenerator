@@ -90,8 +90,8 @@ namespace VideoGenerator.Services.Parsers
                     simpleDisplayText = $"{simpleDisplayText}{suffix}";
                 }
 
-                string iconLookup = "Generic";
-                if (rule.IconType == "structure")
+                string iconLookup = !string.IsNullOrEmpty(rule.IconLookup) ? rule.IconLookup : "Generic";
+                if (string.IsNullOrEmpty(rule.IconLookup) && rule.IconType == "structure")
                 {
                     if (normalizedFolder.Contains("Turret", StringComparison.OrdinalIgnoreCase) || 
                         normalizedFolder.Contains("Tower", StringComparison.OrdinalIgnoreCase))
@@ -169,9 +169,17 @@ namespace VideoGenerator.Services.Parsers
                 var matchedGroup = _groupManager.Groups.FirstOrDefault(g => g.Name.Equals(displayTargetName, StringComparison.OrdinalIgnoreCase));
                 if (matchedGroup != null)
                 {
-                    var candidates = matchedGroup.GetChampionsList();
-                    iconTarget = candidates.Count > 0 ? championsRandomLookup(candidates) : "General";
-                    iconType = "champion";
+                    if (matchedGroup.Category.Equals("Region", StringComparison.OrdinalIgnoreCase))
+                    {
+                        iconTarget = displayTargetName;
+                        iconType = "champion";
+                    }
+                    else
+                    {
+                        var candidates = matchedGroup.GetChampionsList();
+                        iconTarget = candidates.Count > 0 ? championsRandomLookup(candidates) : "General";
+                        iconType = "champion";
+                    }
 
                     string themeKey = $"{matchedGroup.Category.ToLower()}_{displayTargetName.ToLower().Replace(" ", "_")}";
                     string themeDisplayName = _translationService.GetText(language, themeKey);
@@ -222,7 +230,7 @@ namespace VideoGenerator.Services.Parsers
             {
                 OriginalFolder = folderName,
                 DisplayText = displayText,
-                IconLookupName = iconTarget,
+                IconLookupName = !string.IsNullOrEmpty(rule.IconLookup) ? rule.IconLookup : iconTarget,
                 IconType = iconType
             };
         }

@@ -43,6 +43,7 @@ namespace VideoGenerator.Views
         {
             string keyword = KeywordBox.Text.Trim();
             string translationKey = TranslationKeyBox.Text.Trim();
+            string iconLookup = IconLookupBox.Text.Trim();
             string iconType = IconTypeBox.SelectedItem?.ToString() ?? "generic";
             
             if (!Enum.TryParse<RuleType>(RuleTypeBox.SelectedItem?.ToString(), out var ruleType))
@@ -68,6 +69,7 @@ namespace VideoGenerator.Views
                 Keyword = keyword,
                 TranslationKey = translationKey,
                 IconType = iconType,
+                IconLookup = iconLookup,
                 Type = ruleType,
                 ExtractsTarget = ruleType != RuleType.Simple
             };
@@ -82,6 +84,7 @@ namespace VideoGenerator.Views
 
             KeywordBox.Text = "";
             TranslationKeyBox.Text = "";
+            IconLookupBox.Text = "";
             IconTypeBox.SelectedIndex = 0;
             RuleTypeBox.SelectedIndex = 0;
         }

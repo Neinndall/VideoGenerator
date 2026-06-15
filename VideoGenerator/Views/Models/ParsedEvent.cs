@@ -5,7 +5,7 @@ namespace VideoGenerator.Models
         public string OriginalFolder { get; set; } = string.Empty;
         public string DisplayText { get; set; } = string.Empty;
         public string IconLookupName { get; set; } = string.Empty;
-        public string IconType { get; set; } = "generic"; // champion, item, monster, generic
+        public string IconType { get; set; } = "generic"; // champion, item, monster, generic, region, structure
         public string IconPath { get; set; }
     }
 }

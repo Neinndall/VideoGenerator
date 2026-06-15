@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
 using UserControl = System.Windows.Controls.UserControl;
@@ -161,7 +163,11 @@ namespace VideoGenerator.Views
                     dict[entry.Language][entry.Key] = entry.Value ?? "";
                 }
 
-                string newJson = JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true });
+                string newJson = JsonSerializer.Serialize(dict, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
                 _translationService.SaveRawJson(newJson);
                 _model.StatusMessage = "✓ Dictionary saved successfully.";
             }
