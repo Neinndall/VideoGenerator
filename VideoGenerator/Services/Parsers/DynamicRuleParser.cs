@@ -44,11 +44,11 @@ namespace VideoGenerator.Services.Parsers
         {
             string cleanFolder = StripOwnerPrefix(folderName);
             string normalizedFolder = NormalizeFolderName(cleanFolder);
-            
+
             foreach (var rule in _ruleManager.Rules.OrderByDescending(r => r.Keyword.Length))
             {
                 string normalizedKeyword = NormalizeFolderName(rule.Keyword);
-                
+
                 if (rule.Type == RuleType.Simple)
                 {
                     bool isExactMatch = normalizedFolder.Equals(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
@@ -57,7 +57,12 @@ namespace VideoGenerator.Services.Parsers
                                           normalizedFolder.Equals(normalizedKeyword + "3DGeneral", StringComparison.OrdinalIgnoreCase) ||
                                           normalizedFolder.Equals(normalizedKeyword + "2DGeneral", StringComparison.OrdinalIgnoreCase);
 
-                    if (!isExactMatch && !isGeneralMatch) continue;
+                    bool isPrefixedGeneralMatch = !isExactMatch && !isGeneralMatch &&
+                        (normalizedFolder.EndsWith("General", StringComparison.OrdinalIgnoreCase) ||
+                         normalizedFolder.EndsWith("inGeneral", StringComparison.OrdinalIgnoreCase)) &&
+                        Regex.IsMatch(normalizedFolder, $@"(^|_){Regex.Escape(normalizedKeyword)}(?=_|$|General|inGeneral)", RegexOptions.IgnoreCase);
+
+                    if (!isExactMatch && !isGeneralMatch && !isPrefixedGeneralMatch) continue;
                 }
                 else
                 {

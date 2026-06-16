@@ -360,7 +360,7 @@
                 <RichTextBox Grid.Row="1" 
                              Style="{StaticResource ModernRichTextBox}"
                              services:LogExtensions.RichLogSource="{Binding LogService.Logs}"
-                             FontSize="10" Padding="12"/>
+                             FontSize="10" Padding="6"/>
             </Grid>
         </Border>
 
