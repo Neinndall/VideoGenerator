@@ -150,16 +150,6 @@ namespace VideoGenerator.Views
             string transKey = $"event_{keyword.ToLower().Replace(" ", "_")}";
             if (ruleType != RuleType.Simple) transKey = transKey.Replace("event_", "interaction_");
 
-            // 2. Handle Unified Translations (Quick registration)
-            string enVal = TransENBox.Text.Trim();
-            string esVal = TransESBox.Text.Trim();
-            string trVal = TransTRBox.Text.Trim();
-
-            if (!string.IsNullOrEmpty(enVal) || !string.IsNullOrEmpty(esVal) || !string.IsNullOrEmpty(trVal))
-            {
-                _translationService.UpdateTranslations(transKey, enVal, esVal, trVal);
-            }
-
             // Duplicate Prevention
             if (_ruleManager.Rules.Any(r => r.Keyword.Equals(keyword, StringComparison.OrdinalIgnoreCase)))
             {
@@ -189,9 +179,6 @@ namespace VideoGenerator.Views
             // Clear UI
             KeywordBox.Text = "";
             IconLookupBox.Text = "";
-            TransENBox.Text = "";
-            TransESBox.Text = "";
-            TransTRBox.Text = "";
             IconTypeBox.SelectedIndex = 0;
             RuleTypeBox.SelectedIndex = 0;
             RuleSectionBox.SelectedIndex = 0;

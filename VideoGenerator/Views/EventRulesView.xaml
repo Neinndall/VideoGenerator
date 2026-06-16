@@ -97,19 +97,7 @@
                                         </ComboBox>
                                     </Grid>
 
-                                    <!-- ATOMIC TRANSLATIONS SECTION -->
-                                    <Border Background="{StaticResource SecondaryBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Margin="-20,0,-20,20" Padding="20,16">
-                                        <StackPanel x:Name="UnifiedCreatorPanel">
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                                <materialDesign:PackIcon Kind="Translate" Foreground="{StaticResource AccentBrush}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                <TextBlock Text="QUICK TRANSLATIONS" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                            
-                                            <TextBox x:Name="TransENBox" materialDesign:HintAssist.Hint="English Label" Style="{StaticResource ModernTextBox}" Margin="0,0,0,12"/>
-                                            <TextBox x:Name="TransESBox" materialDesign:HintAssist.Hint="Spanish Label" Style="{StaticResource ModernTextBox}" Margin="0,0,0,12"/>
-                                            <TextBox x:Name="TransTRBox" materialDesign:HintAssist.Hint="Turkish Label" Style="{StaticResource ModernTextBox}" Margin="0"/>
-                                        </StackPanel>
-                                    </Border>
+
                                 </StackPanel>
                             </ScrollViewer>
 
