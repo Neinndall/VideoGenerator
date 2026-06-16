@@ -15,10 +15,10 @@
 
     <Grid Margin="32,24,32,16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition x:Name="HeaderRow" Height="Auto"/>
+            <RowDefinition x:Name="ConfigRow" Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition x:Name="LogsRow" Height="Auto"/>
         </Grid.RowDefinitions>
  
         <!-- 1. CINEMATIC HEADER -->
@@ -104,8 +104,8 @@
         <!-- 3. MAIN WORKSPACE: LIST & PREVIEW -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="380" MinWidth="250" MaxWidth="700"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition x:Name="PipelineColumn" Width="380" MinWidth="250" MaxWidth="700"/>
+                <ColumnDefinition x:Name="SplitterColumn" Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -220,40 +220,32 @@
                           Cursor="SizeWE"/>
 
             <!-- RIGHT: LIVE RENDERING PREVIEW & QUICK EDIT -->
-            <Grid Grid.Column="2" Margin="12,0,0,0">
+            <Grid x:Name="PreviewContainerGrid" Grid.Column="2" Margin="12,0,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition x:Name="QuickEditRow" Height="Auto"/>
+                    <RowDefinition x:Name="ProgressRow" Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <Border Grid.Row="0" Style="{StaticResource ModernContainer}" Padding="0" Background="#050505" ClipToBounds="True">
                     <Grid>
-                        <!-- Technician Grid Background -->
-                        <Border Opacity="0.03" IsHitTestVisible="False">
-                            <Border.Background>
-                                <VisualBrush TileMode="Tile" Viewport="0,0,40,40" ViewportUnits="Absolute">
-                                    <VisualBrush.Visual>
-                                        <Grid Width="40" Height="40">
-                                            <Path Data="M 40 0 L 0 0 0 40" Stroke="White" StrokeThickness="1"/>
-                                        </Grid>
-                                    </VisualBrush.Visual>
-                                </VisualBrush>
-                            </Border.Background>
-                        </Border>
-
                         <Viewbox Stretch="Uniform" VerticalAlignment="Center" Margin="24">
                             <Grid Width="1920" Height="1080" Background="#0D0D0F">
-                                <Image Source="{Binding DashboardModel.PreviewImagePath, Converter={StaticResource NonLockingImageConverter}}" Stretch="UniformToFill"/>
+                                <Image Source="{Binding DashboardModel.PreviewImageSource}" 
+                                       Stretch="Uniform" 
+                                       UseLayoutRounding="True"
+                                       SnapsToDevicePixels="True"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       Cursor="Hand"
+                                       MouseDown="PreviewImage_MouseDown"
+                                       ToolTip="Click to toggle maximize mode (hides/shows event pipeline sidebar)"/>
                                 
                                 <!-- Empty State -->
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" 
-                                             Visibility="{Binding DashboardModel.PreviewImagePath, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}">
+                                             Visibility="{Binding DashboardModel.PreviewImageSource, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}">
                                     <materialDesign:PackIcon Kind="ImageSearchOutline" Width="120" Height="120" HorizontalAlignment="Center" Opacity="0.1" Foreground="White"/>
                                     <TextBlock Text="SELECT AN EVENT TO PREVIEW" FontWeight="Black" FontSize="32" Opacity="0.1" Foreground="White" Margin="0,24,0,0"/>
                                 </StackPanel>
-
-                                <Border BorderBrush="White" BorderThickness="1" Opacity="0.2"/>
                             </Grid>
                         </Viewbox>
 
@@ -267,30 +259,35 @@
                 </Border>
 
                 <!-- QUICK EDIT PANEL (Collapsible, shown when an event is selected) -->
-                <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Margin="0,12,0,0" Padding="16"
+                <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Margin="0,12,0,0"
                         Visibility="{Binding DashboardModel.SelectedEvent, Converter={StaticResource NullToVisibilityConverter}}">
-                    <Grid>
+                    <Border Background="{StaticResource SurfaceBrush}" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
+                        <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2*"/>
                             <ColumnDefinition Width="140"/>
                             <ColumnDefinition Width="130"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         
                         <!-- Text Input -->
-                        <TextBox x:Name="QuickEditDisplayText" Grid.Column="0"
-                                 Text="{Binding DashboardModel.SelectedEvent.ParsedData.DisplayText, UpdateSourceTrigger=PropertyChanged}"
-                                 materialDesign:HintAssist.Hint="Text shown in HUD"
-                                 ToolTip="Text that appears on the generated image/video"
-                                 Style="{StaticResource CompactModernTextBox}"
-                                 Margin="0,0,12,0"/>
+                        <TextBox x:Name="QuickEditDisplayText" Grid.Column="0" Grid.Row="0"
+                                  Text="{Binding DashboardModel.SelectedEvent.ParsedData.DisplayText, UpdateSourceTrigger=PropertyChanged}"
+                                  materialDesign:HintAssist.Hint="Text shown in HUD"
+                                  ToolTip="Text that appears on the generated image/video"
+                                  Style="{StaticResource CompactModernTextBox}"
+                                  Margin="0,0,12,12"/>
 
                         <!-- Icon Lookup Name Input -->
-                        <TextBox x:Name="QuickEditIconLookup" Grid.Column="1"
-                                 Text="{Binding DashboardModel.SelectedEvent.ParsedData.IconLookupName, UpdateSourceTrigger=PropertyChanged}"
-                                 materialDesign:HintAssist.Hint="Icon name or ID"
-                                 ToolTip="For items you can type a fragment like 'Infinity' and it resolves to the official ID"
-                                 Margin="0,0,12,0">
+                        <TextBox x:Name="QuickEditIconLookup" Grid.Column="1" Grid.Row="0"
+                                  Text="{Binding DashboardModel.SelectedEvent.ParsedData.IconLookupName, UpdateSourceTrigger=PropertyChanged}"
+                                  materialDesign:HintAssist.Hint="Icon name or ID"
+                                  ToolTip="For items you can type a fragment like 'Infinity' and it resolves to the official ID"
+                                  Margin="0,0,12,12">
                             <TextBox.Style>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource CompactModernTextBox}">
                                     <Style.Triggers>
@@ -303,12 +300,12 @@
                         </TextBox>
 
                         <!-- Icon Type Combo -->
-                        <ComboBox x:Name="QuickEditIconType" Grid.Column="2"
+                        <ComboBox x:Name="QuickEditIconType" Grid.Column="2" Grid.Row="0"
                                   SelectedValue="{Binding DashboardModel.SelectedEvent.ParsedData.IconType, UpdateSourceTrigger=PropertyChanged}"
                                   materialDesign:HintAssist.Hint="Icon category"
                                   ToolTip="Select the type of icon to look up"
                                   Style="{StaticResource ModernComboBoxStyle}"
-                                  Height="40" Margin="0,0,12,0">
+                                  Height="40" Margin="0,0,12,12">
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">champion</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">item</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">monster</System:String>
@@ -319,16 +316,40 @@
                         </ComboBox>
 
                         <!-- Save changes button -->
-                        <Button Grid.Column="3" Click="ApplyQuickEdit_Click"
+                        <Button Grid.Column="3" Grid.Row="0" Click="ApplyQuickEdit_Click"
                                 Style="{StaticResource ModernPrimaryButton}"
-                                Height="40" Padding="16,0">
+                                Height="40" Padding="16,0" Margin="0,0,0,12">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="ContentSaveOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
                                 <TextBlock Text="APPLY CHANGES" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
                             </StackPanel>
                         </Button>
+
+                        <!-- Dialogue Subtitle Row -->
+                        <Grid Grid.Row="1" Grid.ColumnSpan="4" Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="QuickEditDialogue" Grid.Column="0"
+                                      Text="{Binding DashboardModel.SelectedEvent.Dialogue, UpdateSourceTrigger=PropertyChanged}"
+                                      materialDesign:HintAssist.Hint="Dialogue Subtitle (Optional, burned into video)"
+                                      IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}"
+                                      ToolTip="Type the spoken voiceover dialogue or click Auto-Transcribe to use Whisper"
+                                      Style="{StaticResource CompactModernTextBox}" Margin="0,0,12,0"/>
+                            <Button Grid.Column="1" Click="Transcribe_Click"
+                                    IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}"
+                                    Style="{StaticResource ModernPrimaryButton}" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                    Height="40" Padding="16,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Microphone" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
+                                    <TextBlock Text="AUTO-TRANSCRIBE" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
                     </Grid>
                 </Border>
+            </Border>
 
                 <!-- FINAL ACTION -->
                 <Button Grid.Row="2" 
@@ -363,6 +384,5 @@
                              FontSize="10" Padding="6"/>
             </Grid>
         </Border>
-
     </Grid>
 </UserControl>

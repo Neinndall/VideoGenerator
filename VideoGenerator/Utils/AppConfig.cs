@@ -17,10 +17,11 @@ namespace VideoGenerator.Models
         public static readonly string OutputImagesDir = Path.Combine(OutputDir, "Images");
         public static readonly string OutputVideosDir = Path.Combine(OutputDir, "Media");
 
-        public static readonly string BackgroundPath = Path.Combine(ResourcesDir, "DefaultBackground.jpg");
+        public static readonly string BackgroundPath = Path.Combine(ResourcesDir, "DefaultBackground.png");
         public static readonly string ConfigDir = Path.Combine(AppDataDir, "Config");
         // Config Files
         public static readonly string TranslationsPath = Path.Combine(ConfigDir, "translations.json");
+        public static readonly string DialoguesPath = Path.Combine(ConfigDir, "dialogues.json");
         public static readonly string GroupsPath = Path.Combine(ConfigDir, "groups.json");
         public static readonly string MonstersPath = Path.Combine(ConfigDir, "monsters.json");
         public static readonly string StructuresPath = Path.Combine(ConfigDir, "structures.json");

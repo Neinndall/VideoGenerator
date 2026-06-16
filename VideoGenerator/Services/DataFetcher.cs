@@ -35,18 +35,22 @@ namespace VideoGenerator.Services
             _httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
         }
 
+        private string _cachedVersion;
+
         public async Task<string> GetLatestLolVersionAsync()
         {
+            if (!string.IsNullOrEmpty(_cachedVersion)) return _cachedVersion;
             try
             {
                 var response = await _httpClient.GetStringAsync(AppConfig.VersionsUrl);
                 var versions = JsonSerializer.Deserialize<List<string>>(response);
-                return versions?.FirstOrDefault() ?? "14.1.1";
+                _cachedVersion = versions?.FirstOrDefault() ?? "14.1.1";
+                return _cachedVersion;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting LoL version: {ex.Message}");
-                return "14.1.1";
+                return _cachedVersion ?? "14.1.1";
             }
         }
 

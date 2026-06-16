@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Windows.Media;
 
 namespace VideoGenerator.Views.Models
 {
@@ -29,7 +30,7 @@ namespace VideoGenerator.Views.Models
         private PreviewEventModel _selectedEvent;
 
         [ObservableProperty]
-        private string _previewImagePath;
+        private ImageSource _previewImageSource;
 
         [ObservableProperty]
         private string _selectedFilter = "ALL"; // ALL, ERRORS, PENDING

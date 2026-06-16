@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Encodings.Web;
+using System.Threading;
 
 namespace VideoGenerator.Services
 {
@@ -12,6 +13,9 @@ namespace VideoGenerator.Services
     {
         private static AppSettings _instance;
         private static readonly string _settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoGenerator", "Config", "settings.json");
+
+        private static Timer _saveTimer;
+        private static readonly object _saveLock = new();
 
         [JsonIgnore]
         public static AppSettings Instance
@@ -33,7 +37,7 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _customBackgroundPath, value))
-                    SaveSettings();
+                    QueueSave();
             }
         }
 
@@ -44,7 +48,7 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _mediaSourceDirectory, value))
-                    SaveSettings();
+                    QueueSave();
             }
         }
 
@@ -55,7 +59,7 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _textVerticalOffset, value))
-                    SaveSettings();
+                    QueueSave();
             }
         }
 
@@ -66,7 +70,7 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _iconAlignment, value))
-                    SaveSettings();
+                    QueueSave();
             }
         }
 
@@ -77,7 +81,7 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _iconVerticalOffset, value))
-                    SaveSettings();
+                    QueueSave();
             }
         }
 
@@ -88,7 +92,7 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _selectedFontName, value))
-                    SaveSettings();
+                    QueueSave();
             }
         }
 
@@ -99,7 +103,7 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _silenceDuration, value))
-                    SaveSettings();
+                    QueueSave();
             }
         }
 
@@ -110,7 +114,62 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _defaultDictionaryLanguage, value))
-                    SaveSettings();
+                    QueueSave();
+            }
+        }
+
+        private bool _enableTranscriptions = true;
+        public bool EnableTranscriptions
+        {
+            get => _enableTranscriptions;
+            set
+            {
+                if (SetProperty(ref _enableTranscriptions, value))
+                    QueueSave();
+            }
+        }
+
+        private float _bubbleTextSize = 22f;
+        public float BubbleTextSize
+        {
+            get => _bubbleTextSize;
+            set
+            {
+                if (SetProperty(ref _bubbleTextSize, value))
+                    QueueSave();
+            }
+        }
+
+        private float _bubbleHeight = 120f;
+        public float BubbleHeight
+        {
+            get => _bubbleHeight;
+            set
+            {
+                if (SetProperty(ref _bubbleHeight, value))
+                    QueueSave();
+            }
+        }
+
+        private float _bubbleOpacity = 0.85f;
+        public float BubbleOpacity
+        {
+            get => _bubbleOpacity;
+            set
+            {
+                if (SetProperty(ref _bubbleOpacity, value))
+                    QueueSave();
+            }
+        }
+
+        private float _bubbleVerticalOffset = 0f;
+        public float BubbleVerticalOffset
+        {
+            get => _bubbleVerticalOffset;
+            set
+            {
+                if (SetProperty(ref _bubbleVerticalOffset, value))
+                    QueueSave();
             }
         }
 
@@ -133,21 +192,44 @@ namespace VideoGenerator.Services
             return new AppSettings();
         }
 
-        private void SaveSettings()
+        private void QueueSave()
         {
-            try
+            lock (_saveLock)
             {
-                string dir = Path.GetDirectoryName(_settingsPath);
-                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-
-                string json = JsonSerializer.Serialize(this, new JsonSerializerOptions 
-                { 
-                    WriteIndented = true,
-                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                });
-                File.WriteAllText(_settingsPath, json, Encoding.UTF8);
+                if (_saveTimer == null)
+                {
+                    _saveTimer = new Timer(SaveCallback, null, 500, Timeout.Infinite);
+                }
+                else
+                {
+                    _saveTimer.Change(500, Timeout.Infinite);
+                }
             }
-            catch { }
+        }
+
+        private void SaveCallback(object state)
+        {
+            SaveSettings();
+        }
+
+        public void SaveSettings()
+        {
+            lock (_saveLock)
+            {
+                try
+                {
+                    string dir = Path.GetDirectoryName(_settingsPath);
+                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+
+                    string json = JsonSerializer.Serialize(this, new JsonSerializerOptions 
+                    { 
+                        WriteIndented = true,
+                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                    });
+                    File.WriteAllText(_settingsPath, json, Encoding.UTF8);
+                }
+                catch { }
+            }
         }
     }
 }

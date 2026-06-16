@@ -10,6 +10,7 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
 using VideoGenerator.Models;
+using SixLabors.ImageSharp;
 
 namespace VideoGenerator.Views
 {
@@ -71,7 +72,11 @@ namespace VideoGenerator.Views
                     e.PropertyName == nameof(AppSettings.TextVerticalOffset) ||
                     e.PropertyName == nameof(AppSettings.IconAlignment) ||
                     e.PropertyName == nameof(AppSettings.IconVerticalOffset) ||
-                    e.PropertyName == nameof(AppSettings.SelectedFontName))
+                    e.PropertyName == nameof(AppSettings.SelectedFontName) ||
+                    e.PropertyName == nameof(AppSettings.BubbleTextSize) ||
+                    e.PropertyName == nameof(AppSettings.BubbleHeight) ||
+                    e.PropertyName == nameof(AppSettings.BubbleOpacity) ||
+                    e.PropertyName == nameof(AppSettings.BubbleVerticalOffset))
                 {
                     if (e.PropertyName == nameof(AppSettings.SelectedFontName) && _model.SelectedFontName != AppSettings.Instance.SelectedFontName)
                     {
@@ -172,11 +177,28 @@ namespace VideoGenerator.Views
         {
             try
             {
+                // Ensure a dummy icon exists in the local cache for the designer preview
+                string dummyIconPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoGenerator", "Cache", "preview_icon_placeholder.png");
+                if (!File.Exists(dummyIconPath))
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(dummyIconPath));
+                        using (var img = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(180, 180, SixLabors.ImageSharp.Color.ParseHex("#8B5CF6")))
+                        {
+                            img.SaveAsPng(dummyIconPath);
+                        }
+                    }
+                    catch { }
+                }
+
                 var mockEvent = new ParsedEvent
                 {
                     DisplayText = _model.PreviewText,
-                    IconType = "generic", // Force placeholder in preview for speed and layout check
-                    IconLookupName = "Placeholder"
+                    IconType = "champion",
+                    IconLookupName = "Placeholder",
+                    IconPath = File.Exists(dummyIconPath) ? dummyIconPath : null,
+                    Dialogue = "Sample dialogue subtitle text to preview Hextech speech bubble style customization."
                 };
 
                 // Perform generation in background thread
@@ -198,6 +220,15 @@ namespace VideoGenerator.Views
                 }
             }
             catch { }
+        }
+        private bool _isMaximized = false;
+        private void RenderCanvas_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == System.Windows.Input.MouseButton.Left)
+            {
+                _isMaximized = !_isMaximized;
+                InspectorColumn.Width = _isMaximized ? new GridLength(0) : new GridLength(380);
+            }
         }
     }
 }

@@ -71,6 +71,8 @@ namespace VideoGenerator
             services.AddSingleton<NameParser>();
             services.AddSingleton<ImageGenerator>();
             services.AddSingleton<VideoService>();
+            services.AddSingleton<TranscriptionService>();
+            services.AddSingleton<DialogueService>();
 
             // --- Views (Singletons for state preservation) ---
             services.AddSingleton<MainWindow>();
