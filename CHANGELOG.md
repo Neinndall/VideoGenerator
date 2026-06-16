@@ -1,3 +1,40 @@
+VideoGenerator - Patch Notes | v1.2.1.3
+
+PATCH UPDATE & BUG FIXES
+This version focuses on parser robustness, icon resolution reliability, and analysis performance.
+
+New Features
+  - Core / Skinline Manager: Introduced `SkinlineManager` to load and cache official skinlines dynamically from CommunityDragon, keeping regions/classes separate from thematic skin collections.
+
+Improvements
+  - UI / Simplified Form Labels: Renamed Quick Edit and Event Rules fields for clarity ("Text shown in HUD", "Icon name or ID", "Icon category", "Behavior category", "Rule type").
+  - UI / Event Category Tooltips: Added descriptive tooltips to every behavior category in the Event Rules dropdown so users know what each category means.
+  - UI / Auto-Detect Event Category: Event Rules now automatically suggests a behavior category (COMBAT, EMOTES, MOVEMENT, ITEMS, PINGS, ABILITIES, INTERACTIONS, SYSTEM, OTHER) based on the folder keyword while typing.
+  - Performance / Deferred Icon Resolution: Folder analysis no longer blocks on icon downloads. Icons are resolved concurrently in the background after the folder scan completes, drastically improving perceived analysis speed.
+  - Icons / Skinline Icons Use Thematic Skins: `SkinlineManager` now stores the specific skin ID for each champion in a skinline. Events like `Kill3DAnimaSquad` now display the champion wearing the actual Anima Squad skin instead of the base splash art.
+  - Core / Centralized Data Synchronization: Moved all CommunityDragon downloads (skins, skinlines, items) into `DatabaseBuilder`, leaving `DataFetcher` as a pure cache reader. Both services now share a single `HttpClient` instance.
+  - Core / CommunityDragon Item Cache: Item name-to-ID resolution now uses a locally cached `items_data.json` from CommunityDragon (with `If-Modified-Since` refresh) before falling back to the DDragon database, reducing API calls and improving item lookup reliability.
+
+Bug Fixes
+  - Icons / Generic Dragon Target: Fixed `Attack2DDragon` resolving to `Elder Dragon`; generic "Dragon" / "Drake" targets now keep their lookup name so `IconManager` downloads the generic `DragonSquare.png` asset from Fandom instead of the late-game epic objective.
+  - UI / Engine Status Progress Bar: Fixed progress reporting so the bar reaches 100% smoothly and remains visible briefly before returning to idle.
+  - Icons / Fandom Cloudflare Block: Replaced direct Fandom `Special:FilePath` downloads (now blocked by Cloudflare) with MediaWiki API queries to obtain real image URLs for monsters, structures, system icons, and region crests.
+  - Icons / Region Emblem Crest Resolution: Re-routed regional thematic groups (like Void, Demacia, Noxus, Shurima) in IconManager to automatically resolve to their official wiki crest file name (e.g. `Void_Crest_icon.png`) instead of selecting a random champion from the group.
+  - Icons / Epic Monster Mapping: Mapped generic `EpicMonster` / `Epic_Monster` targets to `Baron_NashorSquare.png` so attack events against epic monsters show the correct icon.
+  - Parser / Item Suffix Stripping: Added cleanup of trailing single uppercase letter suffixes in item event folder names (e.g. `UseItem3DGuardianAngelR` -> `GuardianAngel`) so item icons resolve correctly.
+  - Parser / Champion-With-Skin Interactions: Fixed `RivenSkin44`-style folders being captured by `DynamicRuleParser`; they now route through `SkinInteractionParser` for correct display text and icon.
+  - Parser / Skinline Prefix Cleanup: Added stripping of embedded `Skinline` tokens in folder names (e.g. `FirstEncounterSkinlineAnimaSquad`) so skinline names resolve correctly.
+  - Parser / Skin Name Resolution for Apostrophes: Fixed `SkinInteractionParser` so champions with apostrophes in their display name (e.g. `Bel'Veth`, `K'Sante`, `Cho'Gath`) correctly resolve their skin names from CommunityDragon instead of falling back to raw `(Skin X)` text.
+  - Parser / "In General" Suffix on Specific Rules: Fixed `DynamicRuleParser` so specific simple rules like `KillPenta` no longer incorrectly append "in General" when the folder name does not contain `General`.
+  - Core / Official Group Sync: Synchronized official group metadata on load so region categories (e.g. `Void`) remain correctly classified even when local files predate category fixes.
+  - Core / Translation Service Robustness: Added fallback resource loading from the executing assembly so `TranslationService` works correctly in non-WPF hosts (e.g. console analyzers/tests).
+
+Code Cleanup
+  - Removed hardcoded item name-to-ID dictionary from `ItemEventParser`; item resolution now fully relies on the cached `items_data.json` from CommunityDragon.
+  - Removed hardcoded monster-to-icon mappings from `IconManager`. Monster icon resolution now uses the categorized `monsters.json` (Epic / Large) synced from Fandom, with fuzzy substring matching and automatic representatives for generic targets like `EpicMonster` or `LargeMonster`.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.1.2
 
 MINOR UPDATE & LOCALIZATION FIXES

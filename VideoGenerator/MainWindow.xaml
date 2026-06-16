@@ -120,7 +120,7 @@
                                    Foreground="{StaticResource TextSecondaryBrush}"/>
                         <!-- ModernProgressBar Component -->
                         <local:ModernProgressBar Value="{Binding EngineProgressBarValue, Mode=OneWay}"
-                                                 IsIndeterminate="{Binding IsEngineBusy, Mode=OneWay}"
+                                                 IsIndeterminate="{Binding IsEngineIndeterminate, Mode=OneWay}"
                                                  Visibility="{Binding IsEngineBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                  Margin="0,4,0,4"/>
                         <TextBlock Margin="0,8,0,0"

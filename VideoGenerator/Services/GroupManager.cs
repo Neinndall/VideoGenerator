@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using VideoGenerator.Models;
 using VideoGenerator.Views.Models;
@@ -11,51 +12,69 @@ namespace VideoGenerator.Services
 {
     public class GroupManager
     {
-        private readonly string _configPath;
         public ObservableCollection<ThematicGroup> Groups { get; } = new();
+        private readonly string _configPath;
 
         public GroupManager()
         {
-            _configPath = Path.Combine(AppConfig.ConfigDir, "thematic_groups.json");
+            _configPath = AppConfig.GroupsPath;
             LoadGroups();
         }
 
-        public void LoadGroups()
+        private void LoadGroups()
         {
             Groups.Clear();
-            List<ThematicGroup> loadedGroups = new();
+            var defaults = DefaultGroups.Get();
 
             if (File.Exists(_configPath))
             {
                 try
                 {
                     string json = File.ReadAllText(_configPath);
-                    loadedGroups = JsonSerializer.Deserialize<List<ThematicGroup>>(json) ?? new();
+                    var localGroups = JsonSerializer.Deserialize<List<ThematicGroup>>(json);
+                    
+                    if (localGroups != null)
+                    {
+                        bool mergedAny = false;
+                        foreach (var def in defaults)
+                        {
+                            var existing = localGroups.FirstOrDefault(g => g.Name.Equals(def.Name, StringComparison.OrdinalIgnoreCase));
+                            if (existing == null)
+                            {
+                                localGroups.Add(def);
+                                mergedAny = true;
+                            }
+                            else if (def.IsOfficial)
+                            {
+                                // Keep official group metadata in sync so regions/classes stay correctly categorized
+                                if (!existing.Category.Equals(def.Category, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    existing.Category = def.Category;
+                                    mergedAny = true;
+                                }
+                                existing.IsOfficial = true;
+                            }
+                        }
+
+                        // Remove legacy hardcoded skinlines so they are managed by SkinlineManager instead
+                        localGroups.RemoveAll(g => g.IsOfficial && g.Category.Equals("Skinline", StringComparison.OrdinalIgnoreCase));
+
+                        foreach (var g in localGroups.OrderBy(x => x.Category).ThenBy(x => x.Name))
+                        {
+                            Groups.Add(g);
+                        }
+
+                        if (mergedAny) SaveGroups();
+                        return;
+                    }
                 }
                 catch { }
             }
 
-            // Merge with Official Default Groups from Data Model
-            var officialGroups = DefaultGroups.Get();
-            foreach (var official in officialGroups)
+            foreach (var g in defaults.OrderBy(x => x.Category).ThenBy(x => x.Name))
             {
-                var existing = loadedGroups.FirstOrDefault(g => g.Name.Equals(official.Name, StringComparison.OrdinalIgnoreCase));
-                if (existing == null)
-                {
-                    official.IsOfficial = true;
-                    loadedGroups.Add(official);
-                }
-                else
-                {
-                    existing.IsOfficial = true;
-                }
+                Groups.Add(g);
             }
-
-            foreach (var group in loadedGroups.OrderBy(g => g.Category).ThenBy(g => g.Name))
-            {
-                Groups.Add(group);
-            }
-
             SaveGroups();
         }
 
@@ -63,11 +82,18 @@ namespace VideoGenerator.Services
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_configPath));
-                string json = JsonSerializer.Serialize(Groups.ToList(), new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(_configPath, json);
+                Directory.CreateDirectory(Path.GetDirectoryName(_configPath)!);
+                string json = JsonSerializer.Serialize(Groups.ToList(), new JsonSerializerOptions 
+                { 
+                    WriteIndented = true, 
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+                });
+                File.WriteAllText(_configPath, json, Encoding.UTF8);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving groups: {ex.Message}");
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Text.Encodings.Web;
@@ -37,7 +39,7 @@ namespace VideoGenerator.Services
             var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(jsonContent);
             if (data != null)
             {
-                File.WriteAllText(_localTranslationsPath, jsonContent);
+                File.WriteAllText(_localTranslationsPath, jsonContent, Encoding.UTF8);
                 _translations = data;
             }
         }
@@ -48,17 +50,41 @@ namespace VideoGenerator.Services
             {
                 // 1. Load from embedded resource first (acts as default / fallback source)
                 Dictionary<string, Dictionary<string, string>> embeddedData = new();
-                var uri = new Uri("pack://application:,,,/Resources/translations.json");
-                var resourceStream = System.Windows.Application.GetResourceStream(uri);
-
-                if (resourceStream != null)
+                try
                 {
-                    using var reader = new StreamReader(resourceStream.Stream);
-                    string json = reader.ReadToEnd();
-                    var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
-                    if (data != null)
+                    var uri = new Uri("pack://application:,,,/Resources/translations.json");
+                    var resourceStream = System.Windows.Application.GetResourceStream(uri);
+
+                    if (resourceStream != null)
                     {
-                        embeddedData = data;
+                        using var reader = new StreamReader(resourceStream.Stream);
+                        string json = reader.ReadToEnd();
+                        var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
+                        if (data != null)
+                        {
+                            embeddedData = data;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Fallback for non-WPF hosts (e.g. console analyzers): load embedded resource directly from assembly
+                    var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                    var resourceName = assembly.GetManifestResourceNames()
+                        .FirstOrDefault(n => n.EndsWith("translations.json", StringComparison.OrdinalIgnoreCase));
+                    if (resourceName != null)
+                    {
+                        using var stream = assembly.GetManifestResourceStream(resourceName);
+                        if (stream != null)
+                        {
+                            using var reader = new StreamReader(stream);
+                            string json = reader.ReadToEnd();
+                            var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
+                            if (data != null)
+                            {
+                                embeddedData = data;
+                            }
+                        }
                     }
                 }
 
@@ -100,7 +126,7 @@ namespace VideoGenerator.Services
                                 WriteIndented = true,
                                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                             });
-                            File.WriteAllText(_localTranslationsPath, updatedJson);
+                            File.WriteAllText(_localTranslationsPath, updatedJson, Encoding.UTF8);
                         }
                         return;
                     }
@@ -116,7 +142,7 @@ namespace VideoGenerator.Services
                         WriteIndented = true,
                         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     });
-                    File.WriteAllText(_localTranslationsPath, json);
+                    File.WriteAllText(_localTranslationsPath, json, Encoding.UTF8);
                 }
             }
             catch (Exception ex)
@@ -166,6 +192,40 @@ namespace VideoGenerator.Services
             }
             return text;
         }
+        public bool KeyExists(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return false;
+            // Check in EN as the base language
+            return _translations.ContainsKey("EN") && _translations["EN"].ContainsKey(key);
+        }
+
+        public void UpdateTranslations(string key, string enValue, string esValue, string trValue)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+
+            if (!_translations.ContainsKey("EN")) _translations["EN"] = new Dictionary<string, string>();
+            if (!_translations.ContainsKey("ES")) _translations["ES"] = new Dictionary<string, string>();
+            if (!_translations.ContainsKey("TR")) _translations["TR"] = new Dictionary<string, string>();
+
+            _translations["EN"][key] = enValue;
+            _translations["ES"][key] = esValue;
+            _translations["TR"][key] = trValue;
+
+            try
+            {
+                string json = JsonSerializer.Serialize(_translations, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
+                File.WriteAllText(_localTranslationsPath, json, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving batch translations: {ex.Message}");
+            }
+        }
+
         public void UpdateTranslation(string language, string key, string value)
         {
             if (string.IsNullOrEmpty(language) || string.IsNullOrEmpty(key)) return;
@@ -184,7 +244,7 @@ namespace VideoGenerator.Services
                     WriteIndented = true,
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 });
-                File.WriteAllText(_localTranslationsPath, json);
+                File.WriteAllText(_localTranslationsPath, json, Encoding.UTF8);
             }
             catch (Exception ex)
             {

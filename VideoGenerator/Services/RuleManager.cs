@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using VideoGenerator.Models;
 using VideoGenerator.Views.Models;
@@ -25,8 +26,12 @@ namespace VideoGenerator.Services
             try
             {
                 Directory.CreateDirectory(AppConfig.ConfigDir);
-                string json = JsonSerializer.Serialize(Rules, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(_rulesFilePath, json);
+                string json = JsonSerializer.Serialize(Rules, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true, 
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+                });
+                File.WriteAllText(_rulesFilePath, json, Encoding.UTF8);
             }
             catch { }
         }

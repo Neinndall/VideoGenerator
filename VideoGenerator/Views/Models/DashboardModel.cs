@@ -23,6 +23,9 @@ namespace VideoGenerator.Views.Models
         private bool _isAnalyzed = false;
 
         [ObservableProperty]
+        private double _progressValue = 0;
+
+        [ObservableProperty]
         private PreviewEventModel _selectedEvent;
 
         [ObservableProperty]

@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using VideoGenerator.Models;
 using VideoGenerator.Views.Models;
@@ -16,7 +18,7 @@ namespace VideoGenerator.Services.Parsers
         private readonly RuleManager _ruleManager;
         private readonly GroupManager _groupManager;
         private readonly AliasManager _aliasManager;
-        private readonly DataFetcher _dataFetcher;
+        private readonly SkinlineManager _skinlineManager;
         private static readonly Random _random = new();
 
         public DynamicRuleParser(
@@ -24,18 +26,17 @@ namespace VideoGenerator.Services.Parsers
             RuleManager ruleManager,
             GroupManager groupManager,
             AliasManager aliasManager,
-            DataFetcher dataFetcher)
+            SkinlineManager skinlineManager)
         {
             _translationService = translationService;
             _ruleManager = ruleManager;
             _groupManager = groupManager;
             _aliasManager = aliasManager;
-            _dataFetcher = dataFetcher;
+            _skinlineManager = skinlineManager;
         }
 
         public bool CanParse(string folderName)
         {
-            // Always run check dynamically inside ParseAsync or greedily match
             return true;
         }
 
@@ -48,8 +49,6 @@ namespace VideoGenerator.Services.Parsers
             {
                 string normalizedKeyword = NormalizeFolderName(rule.Keyword);
                 
-                // Simple rules must match exactly (or with General/inGeneral suffixes) 
-                // so they don't greedily swallow complex sub-events (e.g. SpellREndNoKill shouldn't match simple Spell)
                 if (rule.Type == RuleType.Simple)
                 {
                     bool isExactMatch = normalizedFolder.Equals(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
@@ -58,17 +57,11 @@ namespace VideoGenerator.Services.Parsers
                                           normalizedFolder.Equals(normalizedKeyword + "3DGeneral", StringComparison.OrdinalIgnoreCase) ||
                                           normalizedFolder.Equals(normalizedKeyword + "2DGeneral", StringComparison.OrdinalIgnoreCase);
 
-                    if (!isExactMatch && !isGeneralMatch)
-                    {
-                        continue;
-                    }
+                    if (!isExactMatch && !isGeneralMatch) continue;
                 }
                 else
                 {
-                    if (!normalizedFolder.Contains(normalizedKeyword, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
+                    if (!normalizedFolder.Contains(normalizedKeyword, StringComparison.OrdinalIgnoreCase)) continue;
                 }
 
                 var parsed = await ProcessRuleEventAsync(folderName, rule, normalizedFolder, normalizedKeyword, language);
@@ -80,44 +73,9 @@ namespace VideoGenerator.Services.Parsers
 
         private async Task<ParsedEvent> ProcessRuleEventAsync(string folderName, EventRule rule, string normalizedFolder, string normalizedKeyword, string language)
         {
-            if (rule.Type == RuleType.Simple)
-            {
-                string simpleDisplayText = _translationService.GetText(language, rule.TranslationKey);
-                if (normalizedFolder.EndsWith("General", StringComparison.OrdinalIgnoreCase) || 
-                    normalizedFolder.EndsWith("inGeneral", StringComparison.OrdinalIgnoreCase))
-                {
-                    string suffix = _translationService.GetText(language, "suffix_in_general");
-                    simpleDisplayText = $"{simpleDisplayText}{suffix}";
-                }
-
-                string iconLookup = !string.IsNullOrEmpty(rule.IconLookup) ? rule.IconLookup : "Generic";
-                if (string.IsNullOrEmpty(rule.IconLookup) && rule.IconType == "structure")
-                {
-                    if (normalizedFolder.Contains("Turret", StringComparison.OrdinalIgnoreCase) || 
-                        normalizedFolder.Contains("Tower", StringComparison.OrdinalIgnoreCase))
-                    {
-                        iconLookup = "Turret";
-                    }
-                    else if (normalizedFolder.Contains("Inhibitor", StringComparison.OrdinalIgnoreCase))
-                    {
-                        iconLookup = "Inhibitor";
-                    }
-                    else if (normalizedFolder.Contains("Nexus", StringComparison.OrdinalIgnoreCase))
-                    {
-                        iconLookup = "Nexus";
-                    }
-                }
-
-                return new ParsedEvent
-                {
-                    OriginalFolder = folderName,
-                    DisplayText = simpleDisplayText,
-                    IconLookupName = iconLookup,
-                    IconType = rule.IconType
-                };
-            }
-
-            // Extraction logic for interaction targets
+            string rawWithoutPrefix = StripOwnerPrefix(folderName);
+            
+            // 1. Extraction logic for targets
             int index = normalizedFolder.IndexOf(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
             string targetName = "";
             if (index >= 0)
@@ -125,10 +83,43 @@ namespace VideoGenerator.Services.Parsers
                 targetName = normalizedFolder.Substring(index + normalizedKeyword.Length);
             }
 
-            string iconTarget = string.IsNullOrEmpty(targetName) ? "General" : targetName;
+            // Fallback for shifted indices
+            if (string.IsNullOrEmpty(targetName) && rawWithoutPrefix.Contains(rule.Keyword, StringComparison.OrdinalIgnoreCase))
+            {
+                int rawIndex = rawWithoutPrefix.IndexOf(rule.Keyword, StringComparison.OrdinalIgnoreCase);
+                targetName = rawWithoutPrefix.Substring(rawIndex + rule.Keyword.Length);
+            }
+
+            // Clean target name
+            targetName = Regex.Replace(targetName, @"^(2D|3D|_)+", "", RegexOptions.IgnoreCase).Trim('_');
+            // Remove the explicit "Skinline" token so AnimaSquad/Primordian resolve as real skinlines
+            targetName = Regex.Replace(targetName, @"^(SkinLine|Skinline|skinline)+_?", "", RegexOptions.IgnoreCase).Trim('_');
+            // Strip a trailing single uppercase letter suffix that Riot adds to item event folder names
+            // (e.g. UseItem3DGuardianAngelR -> GuardianAngel)
+            if (rule.IconType.Equals("item", StringComparison.OrdinalIgnoreCase) &&
+                targetName.Length > 1 &&
+                char.IsUpper(targetName[^1]) &&
+                targetName[..^1].Any(char.IsLower))
+            {
+                targetName = targetName[..^1];
+            }
+
+            // --- IMPORTANT: Priority to Rule's IconLookup ---
+            // If the rule already defines a specific icon (like 'Gold' or 'Assist Me'), we use it.
+            string iconTarget;
+            if (!string.IsNullOrEmpty(rule.IconLookup))
+            {
+                iconTarget = rule.IconLookup;
+            }
+            else
+            {
+                iconTarget = string.IsNullOrEmpty(targetName) ? "General" : targetName;
+            }
+
             if (iconTarget.Equals("inGeneral", StringComparison.OrdinalIgnoreCase) || 
                 iconTarget.Equals("3DGeneral", StringComparison.OrdinalIgnoreCase) || 
-                iconTarget.Equals("2DGeneral", StringComparison.OrdinalIgnoreCase))
+                iconTarget.Equals("2DGeneral", StringComparison.OrdinalIgnoreCase) ||
+                iconTarget.Equals("General", StringComparison.OrdinalIgnoreCase))
             {
                 iconTarget = "General";
             }
@@ -136,103 +127,114 @@ namespace VideoGenerator.Services.Parsers
             string iconType = rule.IconType;
             string displayText;
 
-            if (iconTarget.Equals("General", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(iconTarget))
+            // --- CASE A: GENERAL EVENT ---
+            if (iconTarget.Equals("General", StringComparison.OrdinalIgnoreCase))
             {
-                iconType = "generic";
-                iconTarget = "Generic";
+                if (iconType != "system" && iconType != "item") iconType = "generic";
+                
+                iconTarget = string.IsNullOrEmpty(rule.IconLookup) ? "Generic" : rule.IconLookup;
+
+                bool isTrulyGeneral = folderName.Contains("General", StringComparison.OrdinalIgnoreCase) ||
+                                      folderName.Contains("inGeneral", StringComparison.OrdinalIgnoreCase);
 
                 if (rule.Keyword.Equals("FirstEncounter", StringComparison.OrdinalIgnoreCase))
-                {
                     displayText = _translationService.GetText(language, "event_first_encounter_general");
-                }
                 else if (rule.Keyword.Equals("Kill", StringComparison.OrdinalIgnoreCase))
-                {
                     displayText = _translationService.GetText(language, "event_kill_general");
-                }
                 else if (rule.Keyword.Equals("MoveFirst", StringComparison.OrdinalIgnoreCase))
-                {
                     displayText = _translationService.GetText(language, "event_move_first");
-                }
-                else
+                else if (isTrulyGeneral)
                 {
                     string baseText = _translationService.GetText(language, rule.TranslationKey);
                     string suffix = _translationService.GetText(language, "suffix_in_general");
                     displayText = $"{baseText}{suffix}";
                 }
+                else
+                {
+                    displayText = _translationService.GetText(language, rule.TranslationKey);
+                }
             }
+            // --- CASE B: SPECIFIC TARGET ---
             else
             {
-                // Format targetName for display (e.g., "TahmKench" -> "Tahm Kench")
-                string displayTargetName = Regex.Replace(iconTarget, @"(?<!^)(?=[A-Z])", " ").Trim();
+                // If the target is another champion with a specific skin (e.g. RivenSkin44),
+                // let SkinInteractionParser handle the full interaction instead.
+                if (Regex.IsMatch(iconTarget, @"^[A-Za-z]+Skin\d+$", RegexOptions.IgnoreCase))
+                {
+                    return null;
+                }
 
-                // Check dynamic groups from GroupManager
+                string displayTargetName = Regex.Replace(iconTarget, @"(?<!^)(?=[A-Z])", " ").Trim();
+                string cleanDisplayName = Regex.Replace(displayTargetName, @"Skin\d+", "", RegexOptions.IgnoreCase).Trim();
+
                 var matchedGroup = _groupManager.Groups.FirstOrDefault(g => g.Name.Equals(displayTargetName, StringComparison.OrdinalIgnoreCase));
+                
                 if (matchedGroup != null)
                 {
                     if (matchedGroup.Category.Equals("Region", StringComparison.OrdinalIgnoreCase))
                     {
                         iconTarget = displayTargetName;
-                        iconType = "champion";
+                        iconType = "region";
                     }
                     else
                     {
                         var candidates = matchedGroup.GetChampionsList();
-                        iconTarget = candidates.Count > 0 ? championsRandomLookup(candidates) : "General";
+                        iconTarget = candidates.Count > 0 ? candidates[_random.Next(candidates.Count)] : "General";
                         iconType = "champion";
                     }
 
                     string themeKey = $"{matchedGroup.Category.ToLower()}_{displayTargetName.ToLower().Replace(" ", "_")}";
                     string themeDisplayName = _translationService.GetText(language, themeKey);
-                    displayText = _translationService.GetText(language, rule.TranslationKey, themeDisplayName);
+                    string specificRuleKey = rule.TranslationKey.Replace("_one", $"_{matchedGroup.Category.ToLower()}");
+                    string specificDisplayText = _translationService.GetText(language, specificRuleKey, themeDisplayName);
+
+                    displayText = (specificDisplayText != specificRuleKey) ? specificDisplayText : _translationService.GetText(language, rule.TranslationKey, themeDisplayName);
                 }
-                else if (await IsCommunityDragonSkinlineAsync(displayTargetName))
+                else if (_skinlineManager.IsKnownSkinline(displayTargetName))
                 {
-                    var candidates = await GetCommunityDragonSkinlineChampionsAsync(displayTargetName);
-                    iconTarget = candidates.Count > 0 ? championsRandomLookup(candidates) : "General";
+                    var candidates = _skinlineManager.GetChampionsWithSkin(displayTargetName);
+                    var chosen = candidates.Count > 0 ? candidates[_random.Next(candidates.Count)] : null;
+                    iconTarget = chosen != null ? chosen.ToString() : "General";
                     iconType = "champion";
 
                     string themeKey = $"skinline_{displayTargetName.ToLower().Replace(" ", "_")}";
                     string themeDisplayName = _translationService.GetText(language, themeKey);
+                    if (themeDisplayName == themeKey)
+                    {
+                        // No localized name available: use the official skinline name
+                        themeDisplayName = _skinlineManager.GetDisplayName(displayTargetName);
+                    }
                     displayText = _translationService.GetText(language, rule.TranslationKey, themeDisplayName);
                 }
                 else
                 {
-                    // Clean target through AliasManager if champion
-                    if (rule.IconType == "champion")
+                    if (_aliasManager.IsValidChampion(iconTarget))
                     {
-                        if (_aliasManager.IsValidChampion(iconTarget))
-                        {
-                            iconTarget = _aliasManager.GetInternalName(iconTarget);
-                            displayTargetName = Regex.Replace(iconTarget, @"(?<!^)(?=[A-Z])", " ").Trim();
-                        }
-                        else if (IsMonster(iconTarget))
-                        {
-                            iconType = "monster";
-                            displayTargetName = Regex.Replace(iconTarget, @"(?<!^)(?=[A-Z])", " ").Trim();
-                        }
-                        else if (IsStructure(iconTarget))
-                        {
-                            iconType = "structure";
-                            iconTarget = GetStructureLookupName(iconTarget);
-                            displayTargetName = iconTarget;
-                        }
-                        else
-                        {
-                            iconType = "generic";
-                            iconTarget = "Generic";
-                        }
+                        iconTarget = _aliasManager.GetInternalName(iconTarget);
+                        iconType = "champion";
+                        displayTargetName = cleanDisplayName;
                     }
+                    else if (IsMonster(iconTarget))
+                    {
+                        iconType = "monster";
+                        displayTargetName = Regex.Replace(iconTarget, @"(?<!^)(?=[A-Z])", " ").Trim();
+                    }
+                    else if (IsStructure(iconTarget))
+                    {
+                        iconType = "structure";
+                        iconTarget = GetStructureLookupName(iconTarget);
+                        displayTargetName = iconTarget;
+                    }
+                    else if (iconType != "system" && iconType != "item")
+                    {
+                        iconType = "generic";
+                    }
+
                     displayText = _translationService.GetText(language, rule.TranslationKey, displayTargetName);
                 }
             }
 
-            return new ParsedEvent
-            {
-                OriginalFolder = folderName,
-                DisplayText = displayText,
-                IconLookupName = !string.IsNullOrEmpty(rule.IconLookup) ? rule.IconLookup : iconTarget,
-                IconType = iconType
-            };
+            return new ParsedEvent { OriginalFolder = folderName, DisplayText = displayText, IconLookupName = iconTarget, IconType = iconType };
         }
 
         private List<StructureMapping> _cachedStructures;
@@ -240,30 +242,15 @@ namespace VideoGenerator.Services.Parsers
 
         private bool IsStructure(string target)
         {
-            if (string.IsNullOrEmpty(target)) return false;
-
             EnsureStructuresLoaded();
-
-            foreach (var mapping in _cachedStructures)
-            {
-                if (target.Contains(mapping.Keyword, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
+            return _cachedStructures.Any(s => target.Contains(s.Keyword, StringComparison.OrdinalIgnoreCase));
         }
 
         private string GetStructureLookupName(string target)
         {
-            if (string.IsNullOrEmpty(target)) return "Turret";
-
             EnsureStructuresLoaded();
-
-            foreach (var mapping in _cachedStructures)
-            {
-                if (target.Contains(mapping.Keyword, StringComparison.OrdinalIgnoreCase))
-                    return mapping.TargetName;
-            }
-            return "Turret";
+            var match = _cachedStructures.FirstOrDefault(s => target.Contains(s.Keyword, StringComparison.OrdinalIgnoreCase));
+            return match?.TargetName ?? "Turret";
         }
 
         private void EnsureStructuresLoaded()
@@ -272,45 +259,27 @@ namespace VideoGenerator.Services.Parsers
             {
                 lock (_structureLock)
                 {
-                    if (_cachedStructures == null)
-                    {
-                        _cachedStructures = LoadStructuresList();
-                    }
+                    if (_cachedStructures == null) _cachedStructures = LoadStructuresList();
                 }
             }
         }
 
         private List<StructureMapping> LoadStructuresList()
         {
-            var defaults = new List<StructureMapping> {
-                new StructureMapping { Keyword = "Turret", TargetName = "Turret" },
-                new StructureMapping { Keyword = "Tower", TargetName = "Turret" },
-                new StructureMapping { Keyword = "Inhibitor", TargetName = "Inhibitor" },
-                new StructureMapping { Keyword = "Nexus", TargetName = "Nexus" }
-            };
-
             try
             {
                 string path = AppConfig.StructuresPath;
                 if (File.Exists(path))
                 {
-                    string json = File.ReadAllText(path);
-                    var list = JsonSerializer.Deserialize<List<StructureMapping>>(json);
-                    if (list != null && list.Count > 0)
-                    {
-                        return list;
-                    }
-                }
-                else
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                    string json = JsonSerializer.Serialize(defaults, new JsonSerializerOptions { WriteIndented = true });
-                    File.WriteAllText(path, json);
+                    // Use FileStream with ReadWrite share to avoid "File in use" errors during sync
+                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var reader = new StreamReader(stream);
+                    string json = reader.ReadToEnd();
+                    return JsonSerializer.Deserialize<List<StructureMapping>>(json) ?? new List<StructureMapping>();
                 }
             }
             catch { }
-
-            return defaults;
+            return new List<StructureMapping>();
         }
 
         private List<string> _cachedMonsters;
@@ -319,148 +288,66 @@ namespace VideoGenerator.Services.Parsers
         private bool IsMonster(string target)
         {
             if (string.IsNullOrEmpty(target)) return false;
-
             if (_cachedMonsters == null)
             {
                 lock (_monsterLock)
                 {
-                    if (_cachedMonsters == null)
-                    {
-                        _cachedMonsters = LoadMonstersList();
-                    }
+                    if (_cachedMonsters == null) _cachedMonsters = LoadMonstersList();
                 }
             }
-
-            foreach (var kw in _cachedMonsters)
-            {
-                if (target.Contains(kw, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
+            return _cachedMonsters.Any(kw => target.Contains(kw, StringComparison.OrdinalIgnoreCase));
         }
 
         private List<string> LoadMonstersList()
         {
-            var defaults = new List<string> {
-                "Baron", "Nashor", "Dragon", "Drake", "Herald", "Sentinel", "Brambleback", 
-                "Voidgrub", "Scuttle", "Crab", "Krug", "Wolf", "Wolves", "Murkwolf", 
-                "Raptor", "Raptors", "Gromp", "Vilemaw", "Atakhan"
-            };
-
             try
             {
                 string path = AppConfig.MonstersPath;
                 if (File.Exists(path))
                 {
-                    string json = File.ReadAllText(path);
-                    var list = JsonSerializer.Deserialize<List<string>>(json);
-                    if (list != null && list.Count > 0)
-                    {
-                        return list;
-                    }
+                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var reader = new StreamReader(stream);
+                    string json = reader.ReadToEnd();
+                    var db = JsonSerializer.Deserialize<MonsterDatabase>(json);
+                    if (db != null) return db.All;
                 }
-                else
-                {
-                    // Create the default file so the user can easily see and edit it
-                    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                    string json = JsonSerializer.Serialize(defaults, new JsonSerializerOptions { WriteIndented = true });
-                    File.WriteAllText(path, json);
-                }
-            }
-            catch { }
-
-            return defaults;
-        }
-
-        private async Task<bool> IsCommunityDragonSkinlineAsync(string targetName)
-        {
-            try
-            {
-                var skinLines = await _dataFetcher.GetSkinLinesAsync();
-                return skinLines.Any(sl => 
-                    sl.GetProperty("name").GetString().Equals(targetName, StringComparison.OrdinalIgnoreCase));
             }
             catch
             {
-                return false;
-            }
-        }
-
-        private async Task<List<string>> GetCommunityDragonSkinlineChampionsAsync(string targetName)
-        {
-            var champions = new List<string>();
-            try
-            {
-                var skinLines = await _dataFetcher.GetSkinLinesAsync();
-                var matchingLines = skinLines.Where(sl => 
-                    sl.GetProperty("name").GetString().Equals(targetName, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                if (matchingLines.Count > 0)
+                // Fallback to legacy flat list format
+                try
                 {
-                    var lineIds = matchingLines.Select(ml => ml.GetProperty("id").GetInt32()).ToList();
-                    var allSkins = await _dataFetcher.GetSkinsDataAsync();
-
-                    var thematicSkins = allSkins.Values.Where(skin => 
-                        skin.TryGetProperty("skinLines", out var slProp) && 
-                        slProp.ValueKind == JsonValueKind.Array &&
-                        slProp.EnumerateArray().Any(idObj => lineIds.Contains(idObj.GetProperty("id").GetInt32()))
-                    ).ToList();
-
-                    foreach (var skin in thematicSkins)
+                    string path = AppConfig.MonstersPath;
+                    if (File.Exists(path))
                     {
-                        if (skin.TryGetProperty("splashPath", out var splashProp))
-                        {
-                            string splashPath = splashProp.GetString() ?? "";
-                            var nameMatch = Regex.Match(splashPath, @"Characters/([^/]+)/");
-                            if (nameMatch.Success)
-                            {
-                                string champName = nameMatch.Groups[1].Value;
-                                string cleanName = _aliasManager.GetInternalName(champName);
-                                if (!champions.Contains(cleanName) && _aliasManager.IsValidChampion(cleanName))
-                                {
-                                    champions.Add(cleanName);
-                                }
-                            }
-                        }
+                        string json = File.ReadAllText(path);
+                        return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
                     }
                 }
+                catch { }
             }
-            catch { }
-            return champions;
-        }
-
-        private string championsRandomLookup(List<string> candidates)
-        {
-            return candidates[_random.Next(candidates.Count)];
+            return new List<string>();
         }
 
         private string NormalizeFolderName(string folderName)
         {
             if (string.IsNullOrEmpty(folderName)) return string.Empty;
-
-            // Remove 2D / 3D Insensitively
             string normalized = Regex.Replace(folderName, @"\b(2D|3D)\b", "", RegexOptions.IgnoreCase);
             normalized = Regex.Replace(normalized, @"2D|3D", "", RegexOptions.IgnoreCase);
-            
-            // Normalize "Darking" typo to "Darkin"
+            // Strip the "Skinline" prefix that Riot embeds before thematic names (e.g. FirstEncounterSkinlineAnimaSquad)
+            normalized = Regex.Replace(normalized, @"\b(SkinLine|Skinline|skinline)\b", "", RegexOptions.IgnoreCase);
+            normalized = Regex.Replace(normalized, @"SkinLine|Skinline|skinline", "", RegexOptions.IgnoreCase);
             normalized = Regex.Replace(normalized, "Darking", "Darkin", RegexOptions.IgnoreCase);
-
-            // Normalize double underscores or trailing/leading underscores
             normalized = Regex.Replace(normalized, @"_+", "_");
-            normalized = normalized.Trim('_');
-
-            return normalized;
+            return normalized.Trim('_');
         }
 
         private string StripOwnerPrefix(string folderName)
         {
             if (string.IsNullOrEmpty(folderName)) return string.Empty;
-            var prefixMatch = Regex.Match(folderName, @"^(Play_vo_|Play_)([A-Za-z0-9]+?)(Skin\d+)?_", RegexOptions.IgnoreCase);
-            if (prefixMatch.Success)
-            {
-                return folderName.Substring(prefixMatch.Length);
-            }
-            return folderName;
+            string pattern = @"^(_)?(Play_vo_|Play_|vo_|Play_vo_)([A-Za-z0-9]+?)(Skin\d+)?_";
+            string stripped = Regex.Replace(folderName, pattern, "", RegexOptions.IgnoreCase);
+            return stripped.TrimStart('_');
         }
     }
 }

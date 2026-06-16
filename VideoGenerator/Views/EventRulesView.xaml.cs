@@ -1,12 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Text.RegularExpressions;
 using VideoGenerator.Models;
 using VideoGenerator.Views.Models;
 using VideoGenerator.Services;
 using UserControl = System.Windows.Controls.UserControl;
 using Button = System.Windows.Controls.Button;
 using MessageBox = System.Windows.MessageBox;
+using ComboBoxItem = System.Windows.Controls.ComboBoxItem;
 
 namespace VideoGenerator.Views
 {
@@ -15,22 +19,91 @@ namespace VideoGenerator.Views
         private readonly RuleManager _ruleManager;
         private readonly GroupManager _groupManager;
         private readonly AliasManager _aliasManager;
+        private readonly TranslationService _translationService;
 
-        public EventRulesView(RuleManager ruleManager, GroupManager groupManager, AliasManager aliasManager)
+        public EventRulesView(RuleManager ruleManager, GroupManager groupManager, AliasManager aliasManager, TranslationService translationService)
         {
             InitializeComponent();
             _ruleManager = ruleManager;
             _groupManager = groupManager;
             _aliasManager = aliasManager;
+            _translationService = translationService;
             
             DataContext = this;
             
+            // Setup dynamic filtering for the Rules Repository
+            _rulesView = System.Windows.Data.CollectionViewSource.GetDefaultView(_ruleManager.Rules);
+            _rulesView.Filter = FilterRulesByCategory;
+
             IconTypeBox.SelectedIndex = 0;
             RuleTypeBox.SelectedIndex = 0;
             GroupCategoryBox.SelectedIndex = 0;
             LoadMonsters();
             LoadStructures();
             NewStructureTargetBox.SelectedIndex = 0;
+
+            // Trigger filter refresh when category changes
+            RuleSectionBox.SelectionChanged += (s, e) => _rulesView.Refresh();
+
+            KeywordBox.TextChanged += (s, e) => SuggestCategoryFromKeyword();
+        }
+
+        private void SuggestCategoryFromKeyword()
+        {
+            string keyword = KeywordBox.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(keyword)) return;
+
+            string suggested = DetectCategory(keyword);
+            if (string.IsNullOrEmpty(suggested)) return;
+
+            for (int i = 0; i < RuleSectionBox.Items.Count; i++)
+            {
+                if (RuleSectionBox.Items[i] is ComboBoxItem item &&
+                    string.Equals(item.Content?.ToString(), suggested, StringComparison.OrdinalIgnoreCase))
+                {
+                    RuleSectionBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        private static string DetectCategory(string keyword)
+        {
+            string k = keyword.ToLowerInvariant();
+            var map = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["COMBAT"] = new[] { "kill", "death", "dead", "assist", "ace", "slay", "combat", "killstreak", "multikill", "firstblood", "execute", "shutdown" },
+                ["EMOTES"] = new[] { "joke", "taunt", "laugh", "dance", "emote" },
+                ["MOVEMENT"] = new[] { "teleport", "recall", "run", "dash", "move", "movespeed", "walk", "blink" },
+                ["ITEMS"] = new[] { "item", "buy", "shop", "purchase", "sell", "gold", "spend" },
+                ["PINGS"] = new[] { "ping", "mia", "omw", "danger", "retreat", "assist", "caution", "enemymissing" },
+                ["ABILITIES"] = new[] { "spell", "cast", "hit", "ability", "q", "w", "e", "r", "passive", "skill" },
+                ["INTERACTIONS"] = new[] { "encounter", "interact", "skin", "firstencounter", "firstmeet", "banter" },
+                ["SYSTEM"] = new[] { "system", "shopopen", "shopclose", "end", "surrender", "start", "lockin", "hud", "menu", "pause" }
+            };
+
+            foreach (var pair in map)
+            {
+                foreach (var token in pair.Value)
+                {
+                    if (k.Contains(token))
+                        return pair.Key;
+                }
+            }
+
+            return "OTHER";
+        }
+
+        private readonly System.ComponentModel.ICollectionView _rulesView;
+
+        private bool FilterRulesByCategory(object obj)
+        {
+            if (obj is not EventRule rule) return false;
+            
+            string selectedCategory = (RuleSectionBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "ALL";
+            if (selectedCategory == "ALL" || string.IsNullOrEmpty(selectedCategory)) return true;
+
+            return rule.Section != null && rule.Section.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase);
         }
 
         public RuleManager RuleManager => _ruleManager;
@@ -39,10 +112,26 @@ namespace VideoGenerator.Views
 
         // --- Event Rules Logic ---
 
+        public void PreFillFromDashboard(string folderName)
+        {
+            // Simple logic: remove prefixes to guess the keyword
+            string clean = folderName;
+            if (clean.StartsWith("_")) clean = clean.Substring(1);
+            if (clean.StartsWith("Play_vo_")) clean = clean.Replace("Play_vo_", "");
+            
+            // Try to separate the action (e.g., Teleport3DGeneral -> Teleport)
+            var match = Regex.Match(clean, @"^([A-Za-z]+?)(2D|3D|General|inGeneral|Skin\d+)");
+            KeywordBox.Text = match.Success ? match.Groups[1].Value : clean;
+            
+            string suggested = DetectCategory(KeywordBox.Text);
+            SuggestCategoryFromKeyword();
+            IconTypeBox.SelectedIndex = 0; // Default to generic
+        }
+
         private void AddRule_Click(object sender, RoutedEventArgs e)
         {
             string keyword = KeywordBox.Text.Trim();
-            string translationKey = TranslationKeyBox.Text.Trim();
+            string section = (RuleSectionBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "OTHER";
             string iconLookup = IconLookupBox.Text.Trim();
             string iconType = IconTypeBox.SelectedItem?.ToString() ?? "generic";
             
@@ -51,10 +140,24 @@ namespace VideoGenerator.Views
                 ruleType = RuleType.Simple;
             }
 
-            if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(translationKey))
+            if (string.IsNullOrEmpty(keyword))
             {
-                MessageBox.Show("Keyword and Dictionary Key are required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Keyword is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
+
+            // 1. Generate Translation Key automatically
+            string transKey = $"event_{keyword.ToLower().Replace(" ", "_")}";
+            if (ruleType != RuleType.Simple) transKey = transKey.Replace("event_", "interaction_");
+
+            // 2. Handle Unified Translations (Quick registration)
+            string enVal = TransENBox.Text.Trim();
+            string esVal = TransESBox.Text.Trim();
+            string trVal = TransTRBox.Text.Trim();
+
+            if (!string.IsNullOrEmpty(enVal) || !string.IsNullOrEmpty(esVal) || !string.IsNullOrEmpty(trVal))
+            {
+                _translationService.UpdateTranslations(transKey, enVal, esVal, trVal);
             }
 
             // Duplicate Prevention
@@ -67,7 +170,8 @@ namespace VideoGenerator.Views
             var newRule = new EventRule
             {
                 Keyword = keyword,
-                TranslationKey = translationKey,
+                Section = section,
+                TranslationKey = transKey,
                 IconType = iconType,
                 IconLookup = iconLookup,
                 Type = ruleType,
@@ -82,11 +186,15 @@ namespace VideoGenerator.Views
             _ruleManager.Rules.Insert(insertIndex, newRule);
             _ruleManager.SaveRules();
 
+            // Clear UI
             KeywordBox.Text = "";
-            TranslationKeyBox.Text = "";
             IconLookupBox.Text = "";
+            TransENBox.Text = "";
+            TransESBox.Text = "";
+            TransTRBox.Text = "";
             IconTypeBox.SelectedIndex = 0;
             RuleTypeBox.SelectedIndex = 0;
+            RuleSectionBox.SelectedIndex = 0;
         }
 
         private void DeleteRule_Click(object sender, RoutedEventArgs e)
@@ -115,7 +223,7 @@ namespace VideoGenerator.Views
             // Duplicate Prevention
             if (_groupManager.Groups.Any(g => g.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
             {
-                MessageBox.Show($"A thematic group named '{name}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"A group named '{name}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -225,16 +333,12 @@ namespace VideoGenerator.Views
 
         // --- Monsters Logic ---
 
-        public System.Collections.ObjectModel.ObservableCollection<string> MonsterList { get; } = new();
+        public ObservableCollection<string> MonsterList { get; } = new();
 
         private void LoadMonsters()
         {
             MonsterList.Clear();
-            var defaults = new System.Collections.Generic.List<string> {
-                "Baron", "Nashor", "Dragon", "Drake", "Herald", "Sentinel", "Brambleback", 
-                "Voidgrub", "Scuttle", "Crab", "Krug", "Wolf", "Wolves", "Murkwolf", 
-                "Raptor", "Raptors", "Gromp", "Vilemaw", "Atakhan"
-            };
+            var db = new MonsterDatabase();
 
             try
             {
@@ -242,18 +346,27 @@ namespace VideoGenerator.Views
                 if (System.IO.File.Exists(path))
                 {
                     string json = System.IO.File.ReadAllText(path);
-                    var list = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(json);
-                    if (list != null)
-                    {
-                        foreach (var m in list) MonsterList.Add(m);
-                        return;
-                    }
+                    var loaded = System.Text.Json.JsonSerializer.Deserialize<MonsterDatabase>(json);
+                    if (loaded != null) db = loaded;
                 }
             }
-            catch { }
+            catch
+            {
+                // Legacy flat list fallback
+                try
+                {
+                    string path = AppConfig.MonstersPath;
+                    if (System.IO.File.Exists(path))
+                    {
+                        string json = System.IO.File.ReadAllText(path);
+                        var list = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json);
+                        if (list != null) db.Large = list;
+                    }
+                }
+                catch { }
+            }
 
-            foreach (var m in defaults) MonsterList.Add(m);
-            SaveMonsters();
+            foreach (var m in db.All) MonsterList.Add(m);
         }
 
         private void SaveMonsters()
@@ -262,7 +375,23 @@ namespace VideoGenerator.Views
             {
                 string path = AppConfig.MonstersPath;
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
-                string json = System.Text.Json.JsonSerializer.Serialize(MonsterList.ToList(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+                var db = new MonsterDatabase();
+                foreach (var m in MonsterList)
+                {
+                    // Heuristic: dragons/heralds/baron/voidgrub go to Epic, the rest to Large
+                    bool isEpic = m.Contains("Baron", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Contains("Dragon", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Contains("Drake", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Contains("Herald", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Contains("Voidgrub", StringComparison.OrdinalIgnoreCase);
+
+                    var targetList = isEpic ? db.Epic : db.Large;
+                    if (!targetList.Contains(m, StringComparer.OrdinalIgnoreCase))
+                        targetList.Add(m);
+                }
+
+                string json = System.Text.Json.JsonSerializer.Serialize(db, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                 System.IO.File.WriteAllText(path, json);
             }
             catch { }
@@ -306,36 +435,45 @@ namespace VideoGenerator.Views
 
         // --- Structures Logic ---
 
-        public System.Collections.ObjectModel.ObservableCollection<StructureMapping> StructureList { get; } = new();
+        public ObservableCollection<StructureMapping> StructureList { get; } = new();
 
         private void LoadStructures()
         {
             StructureList.Clear();
-            var defaults = new System.Collections.Generic.List<StructureMapping> {
+            var defaults = new List<StructureMapping> {
                 new StructureMapping { Keyword = "Turret", TargetName = "Turret" },
                 new StructureMapping { Keyword = "Tower", TargetName = "Turret" },
                 new StructureMapping { Keyword = "Inhibitor", TargetName = "Inhibitor" },
                 new StructureMapping { Keyword = "Nexus", TargetName = "Nexus" }
             };
 
+            List<StructureMapping> loadedList = new();
             try
             {
                 string path = AppConfig.StructuresPath;
                 if (System.IO.File.Exists(path))
                 {
                     string json = System.IO.File.ReadAllText(path);
-                    var list = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<StructureMapping>>(json);
-                    if (list != null)
-                    {
-                        foreach (var s in list) StructureList.Add(s);
-                        return;
-                    }
+                    var list = System.Text.Json.JsonSerializer.Deserialize<List<StructureMapping>>(json);
+                    if (list != null) loadedList = list;
                 }
             }
             catch { }
 
-            foreach (var s in defaults) StructureList.Add(s);
-            SaveStructures();
+            // Smart Merge
+            bool anyMerged = false;
+            foreach (var d in defaults)
+            {
+                if (!loadedList.Any(s => s.Keyword.Equals(d.Keyword, StringComparison.OrdinalIgnoreCase)))
+                {
+                    loadedList.Add(d);
+                    anyMerged = true;
+                }
+            }
+
+            foreach (var s in loadedList.OrderBy(x => x.Keyword)) StructureList.Add(s);
+            
+            if (anyMerged || StructureList.Count == 0) SaveStructures();
         }
 
         private void SaveStructures()

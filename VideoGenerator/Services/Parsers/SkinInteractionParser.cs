@@ -79,10 +79,10 @@ namespace VideoGenerator.Services.Parsers
                 string skinName = await FindSkinNameAsync(actualChampionName, skinId);
                 if (skinName != null)
                 {
-                    string displaySkinTheme = GetDisplaySkinName(actualChampionName, skinName);
-                    processedChampions.Add(!string.IsNullOrEmpty(displaySkinTheme) 
-                        ? $"{actualChampionName} {displaySkinTheme}" 
-                        : actualChampionName);
+                    string displayName = GetDisplaySkinName(actualChampionName, skinName, out string officialChampionName);
+                    processedChampions.Add(!string.IsNullOrEmpty(displayName)
+                        ? displayName
+                        : (officialChampionName ?? actualChampionName));
                 }
                 else
                 {
@@ -162,39 +162,54 @@ namespace VideoGenerator.Services.Parsers
             var skinsData = await _dataFetcher.GetSkinsDataAsync();
             if (skinsData == null) return null;
 
+            string Normalize(string input) => input?.Replace("'", "").Replace(" ", "").Replace("_", "").ToLowerInvariant() ?? "";
+            string normalizedChampion = Normalize(championName);
+
             foreach (var skin in skinsData.Values)
             {
-                string skinName = skin.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? "" : "";
-                if (skinName.Contains(championName, StringComparison.OrdinalIgnoreCase))
+                string splashPath = skin.TryGetProperty("splashPath", out var splashProp) ? splashProp.GetString() ?? "" : "";
+                var match = Regex.Match(splashPath, @"Skin(\d+)");
+                if (!match.Success || int.Parse(match.Groups[1].Value) != skinId) continue;
+
+                // Primary: splash path contains the champion internal name (e.g. /Belveth/Skins/Skin19/)
+                if (splashPath.Contains(championName, StringComparison.OrdinalIgnoreCase))
                 {
-                    string splashPath = skin.TryGetProperty("splashPath", out var splashProp) ? splashProp.GetString() ?? "" : "";
-                    var match = Regex.Match(splashPath, @"Skin(\d+)");
-                    if (match.Success && int.Parse(match.Groups[1].Value) == skinId)
-                    {
-                        return skinName;
-                    }
+                    return skin.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? "" : "";
+                }
+
+                // Fallback: normalize both names to handle apostrophes / spaces (e.g. Bel'Veth vs Belveth)
+                string skinName = skin.TryGetProperty("name", out var nameProp2) ? nameProp2.GetString() ?? "" : "";
+                if (Normalize(skinName).Contains(normalizedChampion))
+                {
+                    return skinName;
                 }
             }
             return null;
         }
 
-        private string GetDisplaySkinName(string championName, string fullSkinName)
+        private string GetDisplaySkinName(string championName, string fullSkinName, out string officialChampionName)
         {
+            officialChampionName = null;
             string name = fullSkinName;
             if (name.StartsWith("After Hours ", StringComparison.OrdinalIgnoreCase))
             {
                 name = name.Substring("After Hours ".Length).Trim();
             }
 
-            if (name.EndsWith(championName, StringComparison.OrdinalIgnoreCase))
+            string Normalize(string input) => input?.Replace("'", "").Replace(" ", "").ToLowerInvariant() ?? "";
+
+            // Base skin: the skin name is just the champion's official name (e.g. "Bel'Veth")
+            if (Normalize(name) == Normalize(championName))
             {
-                string themeName = name.Substring(0, name.Length - championName.Length).Trim();
-                if (string.Equals(themeName, "base", StringComparison.OrdinalIgnoreCase)) return "";
-                if (themeName == "Spirit Blossom Springs") return "Springs Spirit Blossom";
-                return themeName;
+                officialChampionName = name;
+                return "";
             }
 
-            if (string.Equals(name, championName, StringComparison.OrdinalIgnoreCase)) return "";
+            // Special case mappings for weird skin naming
+            if (name.Equals("Spirit Blossom Springs Sett", StringComparison.OrdinalIgnoreCase))
+                return "Springs Spirit Blossom Sett";
+
+            // Return the full skin name as-is (e.g. "Primordian Bel'Veth")
             return name;
         }
     }

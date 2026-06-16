@@ -49,7 +49,33 @@ namespace VideoGenerator.Views
             }
         }
 
-        public double EngineProgressBarValue => IsEngineBusy ? 100 : 0;
+        private double _engineProgressBarValue = 0;
+        public double EngineProgressBarValue
+        {
+            get => _engineProgressBarValue;
+            set
+            {
+                if (_engineProgressBarValue != value)
+                {
+                    _engineProgressBarValue = value;
+                    OnPropertyChanged(nameof(EngineProgressBarValue));
+                }
+            }
+        }
+
+        private bool _isEngineIndeterminate = true;
+        public bool IsEngineIndeterminate
+        {
+            get => _isEngineIndeterminate;
+            set
+            {
+                if (_isEngineIndeterminate != value)
+                {
+                    _isEngineIndeterminate = value;
+                    OnPropertyChanged(nameof(IsEngineIndeterminate));
+                }
+            }
+        }
 
         public MainWindow(IServiceProvider serviceProvider, LogService logService)
         {
@@ -81,6 +107,11 @@ namespace VideoGenerator.Views
                     {
                         UpdateEngineStatus(dashboardView.DashboardModel.IsProcessing);
                     }
+                    else if (e.PropertyName == nameof(dashboardView.DashboardModel.ProgressValue))
+                    {
+                        EngineProgressBarValue = dashboardView.DashboardModel.ProgressValue;
+                        IsEngineIndeterminate = EngineProgressBarValue <= 0;
+                    }
                 };
                 // Initial update
                 UpdateEngineStatus(dashboardView.DashboardModel.IsProcessing);
@@ -93,11 +124,15 @@ namespace VideoGenerator.Views
             {
                 EngineStatusText = "PROCESSING MEDIA...";
                 IsEngineBusy = true;
+                EngineProgressBarValue = 0;
+                IsEngineIndeterminate = false;
             }
             else
             {
                 EngineStatusText = "STABLE - READY";
                 IsEngineBusy = false;
+                EngineProgressBarValue = 0;
+                IsEngineIndeterminate = true;
             }
         }
 

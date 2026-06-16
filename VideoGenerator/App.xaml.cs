@@ -3,6 +3,8 @@ using System.IO;
 using System;
 using System.Reflection;
 using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using VideoGenerator.Services;
 using VideoGenerator.Views;
@@ -24,10 +26,29 @@ namespace VideoGenerator
             ConfigureServices(serviceCollection);
             ServiceProvider = serviceCollection.BuildServiceProvider();
 
-            // 3. WPF Startup
+            // 3. Auto-Sync Databases in background (Fire and forget)
+            Task.Run(async () => 
+            {
+                try 
+                {
+                    var dbBuilder = ServiceProvider.GetRequiredService<DatabaseBuilder>();
+                    var dataFetcher = ServiceProvider.GetRequiredService<DataFetcher>();
+                    string version = await dataFetcher.GetLatestLolVersionAsync();
+                    await dbBuilder.InitializeDatabasesAsync(version);
+                    var logger = ServiceProvider.GetService<LogService>();
+                    logger?.LogInfo("Local databases synchronized successfully.");
+                }
+                catch (Exception ex)
+                {
+                    var logger = ServiceProvider.GetService<LogService>();
+                    logger?.LogError("Failed to synchronize local databases", ex);
+                }
+            });
+
+            // 4. WPF Startup
             base.OnStartup(e);
 
-            // 4. Show Main Window
+            // 5. Show Main Window
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
             mainWindow.Activate();
@@ -37,20 +58,17 @@ namespace VideoGenerator
         private void ConfigureServices(IServiceCollection services)
         {
             // --- Core Services (Singletons) ---
+            services.AddSingleton<HttpClient>();
             services.AddSingleton<LogService>();
+            services.AddSingleton<DatabaseBuilder>();
             services.AddSingleton<DataFetcher>();
             services.AddSingleton<TranslationService>();
             services.AddSingleton<RuleManager>();
+            services.AddSingleton<SkinlineManager>();
             services.AddSingleton<GroupManager>();
             services.AddSingleton<AliasManager>();
             services.AddSingleton<IconManager>();
-            services.AddSingleton<NameParser>(provider => new NameParser(
-                provider.GetRequiredService<TranslationService>(),
-                provider.GetRequiredService<DataFetcher>(),
-                provider.GetRequiredService<RuleManager>(),
-                provider.GetRequiredService<GroupManager>(),
-                provider.GetRequiredService<AliasManager>()
-            ));
+            services.AddSingleton<NameParser>();
             services.AddSingleton<ImageGenerator>();
             services.AddSingleton<VideoService>();
 
@@ -58,7 +76,12 @@ namespace VideoGenerator
             services.AddSingleton<MainWindow>();
             services.AddSingleton<DashboardView>();
             services.AddSingleton<BackgroundDesignView>();
-            services.AddSingleton<EventRulesView>();
+            services.AddSingleton<EventRulesView>(provider => new EventRulesView(
+                provider.GetRequiredService<RuleManager>(),
+                provider.GetRequiredService<GroupManager>(),
+                provider.GetRequiredService<AliasManager>(),
+                provider.GetRequiredService<TranslationService>()
+            ));
             services.AddSingleton<TranslationsView>();
             services.AddSingleton<SettingsView>();
         }

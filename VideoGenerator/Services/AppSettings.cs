@@ -1,8 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Encodings.Web;
 
 namespace VideoGenerator.Services
 {
@@ -138,8 +140,12 @@ namespace VideoGenerator.Services
                 string dir = Path.GetDirectoryName(_settingsPath);
                 if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
-                string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(_settingsPath, json);
+                string json = JsonSerializer.Serialize(this, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
+                File.WriteAllText(_settingsPath, json, Encoding.UTF8);
             }
             catch { }
         }

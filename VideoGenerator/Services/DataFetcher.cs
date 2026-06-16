@@ -4,10 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VideoGenerator.Models;
+using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Services
 {
@@ -16,10 +18,18 @@ namespace VideoGenerator.Services
         private readonly HttpClient _httpClient;
         private Dictionary<string, JsonElement> _skinsCache;
         private List<JsonElement> _skinLinesCache;
+        private Dictionary<int, ItemData> _itemsCache;
 
-        public DataFetcher()
+        private class ItemData
         {
-            _httpClient = new HttpClient();
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public string NameSlug { get; set; }
+        }
+
+        public DataFetcher(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             _httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8");
             _httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
@@ -44,116 +54,95 @@ namespace VideoGenerator.Services
         {
             if (_skinsCache != null) return _skinsCache;
 
-            try
+            string cachePath = Path.Combine(AppConfig.CacheDir, "skins_data.json");
+            if (File.Exists(cachePath))
             {
-                string cachePath = Path.Combine(AppConfig.CacheDir, "skins_data.json");
-                Directory.CreateDirectory(Path.GetDirectoryName(cachePath));
-
-                var request = new HttpRequestMessage(HttpMethod.Get, AppConfig.SkinsDataUrl);
-                if (File.Exists(cachePath))
-                {
-                    request.Headers.IfModifiedSince = File.GetLastWriteTimeUtc(cachePath);
-                }
-
-                var response = await _httpClient.SendAsync(request);
-                if (response.StatusCode == HttpStatusCode.NotModified && File.Exists(cachePath))
-                {
-                    string cachedJson = await File.ReadAllTextAsync(cachePath);
-                    _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
-                    return _skinsCache ?? new Dictionary<string, JsonElement>();
-                }
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    await File.WriteAllTextAsync(cachePath, json);
-                    _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
-                    return _skinsCache ?? new Dictionary<string, JsonElement>();
-                }
-
-                if (File.Exists(cachePath))
-                {
-                    string cachedJson = await File.ReadAllTextAsync(cachePath);
-                    _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
-                    return _skinsCache ?? new Dictionary<string, JsonElement>();
-                }
-
-                return new Dictionary<string, JsonElement>();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error getting skins data: {ex.Message}");
                 try
                 {
-                    string cachePath = Path.Combine(AppConfig.CacheDir, "skins_data.json");
-                    if (File.Exists(cachePath))
-                    {
-                        string cachedJson = await File.ReadAllTextAsync(cachePath);
-                        _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
-                        return _skinsCache ?? new Dictionary<string, JsonElement>();
-                    }
+                    string cachedJson = await File.ReadAllTextAsync(cachePath);
+                    _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
+                    return _skinsCache ?? new Dictionary<string, JsonElement>();
                 }
-                catch { }
-                return new Dictionary<string, JsonElement>();
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading skins cache: {ex.Message}");
+                }
             }
+
+            return new Dictionary<string, JsonElement>();
         }
 
         public async Task<List<JsonElement>> GetSkinLinesAsync()
         {
             if (_skinLinesCache != null) return _skinLinesCache;
 
+            string cachePath = Path.Combine(AppConfig.CacheDir, "skinlines_data.json");
+            if (File.Exists(cachePath))
+            {
+                try
+                {
+                    string cachedJson = await File.ReadAllTextAsync(cachePath);
+                    _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(cachedJson);
+                    return _skinLinesCache ?? new List<JsonElement>();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading skinlines cache: {ex.Message}");
+                }
+            }
+
+            return new List<JsonElement>();
+        }
+
+        private async Task<Dictionary<int, ItemData>> GetItemsDataAsync()
+        {
+            if (_itemsCache != null) return _itemsCache;
+
+            string cachePath = Path.Combine(AppConfig.CacheDir, "items_data.json");
+            if (File.Exists(cachePath))
+            {
+                try
+                {
+                    string cachedJson = await File.ReadAllTextAsync(cachePath);
+                    _itemsCache = ParseItemsJson(cachedJson);
+                    return _itemsCache ?? new Dictionary<int, ItemData>();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading items cache: {ex.Message}");
+                }
+            }
+
+            return new Dictionary<int, ItemData>();
+        }
+
+        private Dictionary<int, ItemData> ParseItemsJson(string json)
+        {
+            var result = new Dictionary<int, ItemData>();
             try
             {
-                string cachePath = Path.Combine(AppConfig.CacheDir, "skinlines_data.json");
-                Directory.CreateDirectory(Path.GetDirectoryName(cachePath));
-
-                var request = new HttpRequestMessage(HttpMethod.Get, AppConfig.SkinLinesUrl);
-                if (File.Exists(cachePath))
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
                 {
-                    request.Headers.IfModifiedSince = File.GetLastWriteTimeUtc(cachePath);
+                    foreach (var item in doc.RootElement.EnumerateArray())
+                    {
+                        if (item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.Number)
+                        {
+                            var data = new ItemData { Id = idProp.GetInt32() };
+                            if (item.TryGetProperty("name", out var nameProp) && nameProp.ValueKind == JsonValueKind.String)
+                                data.Name = nameProp.GetString();
+                            if (item.TryGetProperty("nameSlug", out var slugProp) && slugProp.ValueKind == JsonValueKind.String)
+                                data.NameSlug = slugProp.GetString();
+                            result[data.Id] = data;
+                        }
+                    }
                 }
-
-                var response = await _httpClient.SendAsync(request);
-                if (response.StatusCode == HttpStatusCode.NotModified && File.Exists(cachePath))
-                {
-                    string cachedJson = await File.ReadAllTextAsync(cachePath);
-                    _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(cachedJson);
-                    return _skinLinesCache ?? new List<JsonElement>();
-                }
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    await File.WriteAllTextAsync(cachePath, json);
-                    _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(json);
-                    return _skinLinesCache ?? new List<JsonElement>();
-                }
-
-                if (File.Exists(cachePath))
-                {
-                    string cachedJson = await File.ReadAllTextAsync(cachePath);
-                    _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(cachedJson);
-                    return _skinLinesCache ?? new List<JsonElement>();
-                }
-
-                return new List<JsonElement>();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error getting skinlines data: {ex.Message}");
-                try
-                {
-                    string cachePath = Path.Combine(AppConfig.CacheDir, "skinlines_data.json");
-                    if (File.Exists(cachePath))
-                    {
-                        string cachedJson = await File.ReadAllTextAsync(cachePath);
-                        _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(cachedJson);
-                        return _skinLinesCache ?? new List<JsonElement>();
-                    }
-                }
-                catch { }
-                return new List<JsonElement>();
+                Console.WriteLine($"Error parsing items data: {ex.Message}");
             }
+            return result;
         }
 
         public async Task<string> DownloadIconAsync(string url, string category, string customFileName = null)
@@ -204,115 +193,197 @@ namespace VideoGenerator.Services
 
         public string GetFandomImageUrl(string filename)
         {
-            string cleanName = filename.Replace(" ", "_");
-            using (var md5 = System.Security.Cryptography.MD5.Create())
-            {
-                byte[] inputBytes = System.Text.Encoding.UTF8.GetBytes(cleanName);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
-                
-                var sb = new System.Text.StringBuilder();
-                for (int i = 0; i < 2; i++)
-                {
-                    sb.Append(hashBytes[i].ToString("x2"));
-                }
-                string hex = sb.ToString();
-                char a = hex[0];
-                string ab = hex.Substring(0, 2);
-                
-                return $"https://static.wikia.nocookie.net/leagueoflegends/images/{a}/{ab}/{cleanName}";
-            }
+            // Legacy direct redirect path; kept for compatibility.
+            // Prefer ResolveFandomImageUrlAsync which uses the MediaWiki API to bypass Cloudflare.
+            string encodedName = Uri.EscapeDataString(filename.Replace(" ", "_"));
+            return $"https://leagueoflegends.fandom.com/wiki/Special:FilePath/{encodedName}";
         }
 
-        public async Task<string> GetMonsterIconUrlAsync(string monsterNameFormatted)
+        public async Task<string> ResolveFandomImageUrlAsync(string filename)
         {
-            // Replaced HTML scraping with direct, robust Fandom CDN URL generation via MD5 hashing
-            string searchName = monsterNameFormatted.Replace(" ", "_");
-            
-            if (monsterNameFormatted.Contains("Cloud", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Cloud_Drake";
-            else if (monsterNameFormatted.Contains("Hextech", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Hextech_Drake";
-            else if (monsterNameFormatted.Contains("Infernal", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Infernal_Drake";
-            else if (monsterNameFormatted.Contains("Mountain", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Mountain_Drake";
-            else if (monsterNameFormatted.Contains("Ocean", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Ocean_Drake";
-            else if (monsterNameFormatted.Contains("Chemtech", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Chemtech_Drake";
-            else if (monsterNameFormatted.Contains("Elder", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Elder_Dragon";
-            else if (monsterNameFormatted.Contains("Dragon", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Drake", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Dragon";
-            else if (monsterNameFormatted.Contains("Baron", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Epic_Monster", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("EpicMonster", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Baron_Nashor";
-            else if (monsterNameFormatted.Contains("Herald", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Rift_Herald";
-            else if (monsterNameFormatted.Contains("Sentinel", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Blue", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Blue_Sentinel";
-            else if (monsterNameFormatted.Contains("Brambleback", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Red", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Red_Brambleback";
-            else if (monsterNameFormatted.Contains("Voidgrub", StringComparison.OrdinalIgnoreCase))
-                searchName = "Voidgrub";
-            else if (monsterNameFormatted.Contains("Scuttle", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Crab", StringComparison.OrdinalIgnoreCase))
-                searchName = "Rift_Scuttler";
-            else if (monsterNameFormatted.Contains("Krug", StringComparison.OrdinalIgnoreCase))
-                searchName = "Ancient_Krug";
-            else if (monsterNameFormatted.Contains("Wolf", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Wolves", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Murkwolf", StringComparison.OrdinalIgnoreCase))
-                searchName = "Greater_Murk_Wolf";
-            else if (monsterNameFormatted.Contains("Raptor", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Raptors", StringComparison.OrdinalIgnoreCase))
-                searchName = "Crimson_Raptor";
-            else if (monsterNameFormatted.Contains("Gromp", StringComparison.OrdinalIgnoreCase))
-                searchName = "Gromp";
-            else if (monsterNameFormatted.Contains("Vilemaw", StringComparison.OrdinalIgnoreCase))
-                searchName = "Vilemaw";
+            try
+            {
+                string encodedTitle = Uri.EscapeDataString("File:" + filename.Replace(" ", "_"));
+                string apiUrl = $"https://leagueoflegends.fandom.com/api.php?action=query&titles={encodedTitle}&prop=imageinfo&iiprop=url&format=json";
+                string json = await _httpClient.GetStringAsync(apiUrl);
 
-            string fileName = $"{searchName}Square.png";
-            return await Task.FromResult(GetFandomImageUrl(fileName));
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("query", out var query) &&
+                    query.TryGetProperty("pages", out var pages))
+                {
+                    foreach (var page in pages.EnumerateObject())
+                    {
+                        if (page.Value.TryGetProperty("missing", out _)) continue;
+                        if (page.Value.TryGetProperty("imageinfo", out var imageInfo) &&
+                            imageInfo.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var info in imageInfo.EnumerateArray())
+                            {
+                                if (info.TryGetProperty("url", out var urlProp))
+                                {
+                                    string resolved = urlProp.GetString();
+                                    if (!string.IsNullOrEmpty(resolved)) return resolved;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error resolving Fandom image URL for {filename}: {ex.Message}");
+            }
+            return null;
         }
 
         private Dictionary<string, string> _itemNameIdCache;
         private readonly object _itemCacheLock = new();
+        private Dictionary<string, int> _communityItemNameToIdCache;
+
+        private async Task<Dictionary<string, int>> GetCommunityItemNameToIdMapAsync()
+        {
+            if (_communityItemNameToIdCache != null) return _communityItemNameToIdCache;
+
+            var itemsData = await GetItemsDataAsync();
+            var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in itemsData.Values)
+            {
+                var namesToTry = new List<string>();
+                if (!string.IsNullOrEmpty(item.Name))
+                    namesToTry.Add(item.Name);
+                if (!string.IsNullOrEmpty(item.NameSlug))
+                    namesToTry.Add(item.NameSlug);
+
+                foreach (var name in namesToTry.Where(n => !string.IsNullOrEmpty(n)))
+                {
+                    map[name] = item.Id;
+                    string normalized = Regex.Replace(name, @"[^A-Za-z0-9]", "");
+                    if (!map.ContainsKey(normalized))
+                        map[normalized] = item.Id;
+                }
+            }
+
+            _communityItemNameToIdCache = map;
+            return map;
+        }
+
+        public MonsterDatabase LoadMonsterDatabase()
+        {
+            try
+            {
+                if (File.Exists(AppConfig.MonstersPath))
+                {
+                    string json = File.ReadAllText(AppConfig.MonstersPath);
+                    var db = JsonSerializer.Deserialize<MonsterDatabase>(json);
+                    if (db != null) return db;
+                }
+            }
+            catch
+            {
+                // Legacy flat list fallback
+                try
+                {
+                    if (File.Exists(AppConfig.MonstersPath))
+                    {
+                        string json = File.ReadAllText(AppConfig.MonstersPath);
+                        var list = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+                        return new MonsterDatabase { Large = list };
+                    }
+                }
+                catch { }
+            }
+            return new MonsterDatabase();
+        }
+
+        public async Task<(int Id, string Name)?> GetItemInfoAsync(string itemName)
+        {
+            if (string.IsNullOrEmpty(itemName)) return null;
+
+            var itemsData = await GetItemsDataAsync();
+            if (itemsData == null || itemsData.Count == 0) return null;
+
+            // Direct numeric ID
+            if (int.TryParse(itemName, out int numericId) && itemsData.TryGetValue(numericId, out var numericItem))
+            {
+                return (numericId, numericItem.Name ?? numericItem.NameSlug ?? itemName);
+            }
+
+            var nameToIdMap = await GetCommunityItemNameToIdMapAsync();
+            if (nameToIdMap == null || nameToIdMap.Count == 0) return null;
+
+            // Exact or normalized match
+            if (nameToIdMap.TryGetValue(itemName, out int id))
+            {
+                if (itemsData.TryGetValue(id, out var item))
+                    return (id, item.Name ?? item.NameSlug ?? itemName);
+            }
+
+            string cleanSearch = Regex.Replace(itemName, @"[^A-Za-z0-9]", "");
+            if (nameToIdMap.TryGetValue(cleanSearch, out id))
+            {
+                if (itemsData.TryGetValue(id, out var item))
+                    return (id, item.Name ?? item.NameSlug ?? itemName);
+            }
+
+            // Partial match
+            var bestMatch = nameToIdMap.Keys.FirstOrDefault(k => k.Contains(itemName, StringComparison.OrdinalIgnoreCase));
+            if (bestMatch != null)
+            {
+                id = nameToIdMap[bestMatch];
+                if (itemsData.TryGetValue(id, out var item))
+                    return (id, item.Name ?? item.NameSlug ?? itemName);
+            }
+
+            var bestMatchClean = nameToIdMap.Keys.FirstOrDefault(k => k.Contains(cleanSearch, StringComparison.OrdinalIgnoreCase));
+            if (bestMatchClean != null)
+            {
+                id = nameToIdMap[bestMatchClean];
+                if (itemsData.TryGetValue(id, out var item))
+                    return (id, item.Name ?? item.NameSlug ?? itemName);
+            }
+
+            return null;
+        }
 
         public async Task<string> ResolveItemNameToIdAsync(string itemName)
         {
             if (string.IsNullOrEmpty(itemName)) return null;
             if (int.TryParse(itemName, out _)) return itemName; // already an ID
 
+            // 1. Try CommunityDragon items data first (cached locally in Cache/items_data.json)
+            try
+            {
+                var info = await GetItemInfoAsync(itemName);
+                if (info.HasValue)
+                    return info.Value.Id.ToString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error resolving item via CommunityDragon: {ex.Message}");
+            }
+
+            // 2. Fallback to local DDragon items db
             if (_itemNameIdCache == null)
             {
                 try
                 {
-                    string version = await GetLatestLolVersionAsync();
-                    string url = $"https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/item.json";
-                    string jsonStr = await _httpClient.GetStringAsync(url);
-                    using (JsonDocument doc = JsonDocument.Parse(jsonStr))
+                    if (File.Exists(AppConfig.ItemsPath))
                     {
-                        var dataProp = doc.RootElement.GetProperty("data");
+                        string jsonStr = await File.ReadAllTextAsync(AppConfig.ItemsPath);
+                        var baseMap = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonStr) ?? new Dictionary<string, string>();
+                        
                         var tempMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                        foreach (var itemProp in dataProp.EnumerateObject())
+                        foreach (var kvp in baseMap)
                         {
-                            string id = itemProp.Name;
-                            string name = itemProp.Value.GetProperty("name").GetString();
-                            if (!string.IsNullOrEmpty(name))
+                            tempMap[kvp.Key] = kvp.Value;
+                            string normalized = Regex.Replace(kvp.Key, @"[^A-Za-z0-9]", "");
+                            if (!tempMap.ContainsKey(normalized))
                             {
-                                tempMap[name] = id;
-                                string normalized = Regex.Replace(name, @"[^A-Za-z0-9]", "");
-                                if (!tempMap.ContainsKey(normalized))
-                                {
-                                    tempMap[normalized] = id;
-                                }
+                                tempMap[normalized] = kvp.Value;
                             }
                         }
+
                         lock (_itemCacheLock)
                         {
                             _itemNameIdCache = tempMap;
@@ -321,7 +392,7 @@ namespace VideoGenerator.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error fetching DDragon items: {ex.Message}");
+                    Console.WriteLine($"Error loading local items db: {ex.Message}");
                     return null;
                 }
             }

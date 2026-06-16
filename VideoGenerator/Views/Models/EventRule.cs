@@ -18,7 +18,10 @@ namespace VideoGenerator.Views.Models
         private string _translationKey = "";
 
         [ObservableProperty]
-        private string _iconType = "generic"; // generic, champion, item, monster, region, structure
+        private string _section = "OTHER"; // Categorization (e.g. COMBAT, MAP, SOCIAL)
+
+        [ObservableProperty]
+        private string _iconType = "generic"; // generic, champion, item, monster, region, structure, system
 
         [ObservableProperty]
         private string _iconLookup = "";

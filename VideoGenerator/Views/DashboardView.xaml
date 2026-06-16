@@ -280,14 +280,16 @@
                         <!-- Text Input -->
                         <TextBox x:Name="QuickEditDisplayText" Grid.Column="0"
                                  Text="{Binding DashboardModel.SelectedEvent.ParsedData.DisplayText, UpdateSourceTrigger=PropertyChanged}"
-                                 materialDesign:HintAssist.Hint="Edit Display Text"
+                                 materialDesign:HintAssist.Hint="Text shown in HUD"
+                                 ToolTip="Text that appears on the generated image/video"
                                  Style="{StaticResource CompactModernTextBox}"
                                  Margin="0,0,12,0"/>
 
                         <!-- Icon Lookup Name Input -->
                         <TextBox x:Name="QuickEditIconLookup" Grid.Column="1"
                                  Text="{Binding DashboardModel.SelectedEvent.ParsedData.IconLookupName, UpdateSourceTrigger=PropertyChanged}"
-                                 materialDesign:HintAssist.Hint="Icon Lookup Name"
+                                 materialDesign:HintAssist.Hint="Icon name or ID"
+                                 ToolTip="For items you can type a fragment like 'Infinity' and it resolves to the official ID"
                                  Margin="0,0,12,0">
                             <TextBox.Style>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource CompactModernTextBox}">
@@ -303,7 +305,8 @@
                         <!-- Icon Type Combo -->
                         <ComboBox x:Name="QuickEditIconType" Grid.Column="2"
                                   SelectedValue="{Binding DashboardModel.SelectedEvent.ParsedData.IconType, UpdateSourceTrigger=PropertyChanged}"
-                                  materialDesign:HintAssist.Hint="Icon Type"
+                                  materialDesign:HintAssist.Hint="Icon category"
+                                  ToolTip="Select the type of icon to look up"
                                   Style="{StaticResource ModernComboBoxStyle}"
                                   Height="40" Margin="0,0,12,0">
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">champion</System:String>
@@ -311,6 +314,7 @@
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">monster</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">structure</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">region</System:String>
+                            <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">system</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">generic</System:String>
                         </ComboBox>
 
