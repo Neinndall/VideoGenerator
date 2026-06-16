@@ -48,6 +48,7 @@ namespace VideoGenerator.Services.Parsers
             foreach (var rule in _ruleManager.Rules.OrderByDescending(r => r.Keyword.Length))
             {
                 string normalizedKeyword = NormalizeFolderName(rule.Keyword);
+                string prefix = "";
 
                 if (rule.Type == RuleType.Simple)
                 {
@@ -62,6 +63,15 @@ namespace VideoGenerator.Services.Parsers
                          normalizedFolder.EndsWith("inGeneral", StringComparison.OrdinalIgnoreCase)) &&
                         Regex.IsMatch(normalizedFolder, $@"(^|_){Regex.Escape(normalizedKeyword)}(?=_|$|General|inGeneral)", RegexOptions.IgnoreCase);
 
+                    if (isPrefixedGeneralMatch)
+                    {
+                        int kwIndex = normalizedFolder.IndexOf(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
+                        if (kwIndex > 0 && normalizedFolder[kwIndex - 1] == '_')
+                        {
+                            prefix = normalizedFolder.Substring(0, kwIndex - 1);
+                        }
+                    }
+
                     if (!isExactMatch && !isGeneralMatch && !isPrefixedGeneralMatch) continue;
                 }
                 else
@@ -69,14 +79,14 @@ namespace VideoGenerator.Services.Parsers
                     if (!normalizedFolder.Contains(normalizedKeyword, StringComparison.OrdinalIgnoreCase)) continue;
                 }
 
-                var parsed = await ProcessRuleEventAsync(folderName, rule, normalizedFolder, normalizedKeyword, language);
+                var parsed = await ProcessRuleEventAsync(folderName, rule, normalizedFolder, normalizedKeyword, language, prefix);
                 if (parsed != null) return parsed;
             }
 
             return null;
         }
 
-        private async Task<ParsedEvent> ProcessRuleEventAsync(string folderName, EventRule rule, string normalizedFolder, string normalizedKeyword, string language)
+        private async Task<ParsedEvent> ProcessRuleEventAsync(string folderName, EventRule rule, string normalizedFolder, string normalizedKeyword, string language, string prefix = "")
         {
             string rawWithoutPrefix = StripOwnerPrefix(folderName);
             
@@ -158,6 +168,8 @@ namespace VideoGenerator.Services.Parsers
                 {
                     displayText = _translationService.GetText(language, rule.TranslationKey);
                 }
+
+                if (!string.IsNullOrEmpty(prefix)) displayText = $"{prefix}: {displayText}";
             }
             // --- CASE B: SPECIFIC TARGET ---
             else

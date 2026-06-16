@@ -22,6 +22,7 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "KillAheadAllyTeam", TranslationKey = "event_kill_ally_ahead", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillAllyBehind", TranslationKey = "event_kill_ally_behind", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillBehindAllyTeam", TranslationKey = "event_kill_ally_behind", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "DeathHuman", TranslationKey = "event_death_human", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Death", TranslationKey = "event_death", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
 
                 // ==========================================
