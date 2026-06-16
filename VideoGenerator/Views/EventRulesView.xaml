@@ -51,13 +51,20 @@
                     <Border Grid.Column="0" Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,24,0" VerticalAlignment="Stretch">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="0" Padding="20">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="PlusCircleOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
+                                    <TextBlock Text="NEW BEHAVIOR" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="1" Padding="20">
                                 <StackPanel>
-                                    <TextBlock Text="NEW BEHAVIOR" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,24"/>
                                     
                                     <TextBox x:Name="KeywordBox" materialDesign:HintAssist.Hint="Folder keyword (e.g. Teleport)" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
                                     
@@ -101,7 +108,7 @@
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
+                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Button Content="REGISTER EVENT" Click="AddRule_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                             </Border>
                         </Grid>
@@ -155,9 +162,22 @@
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding Keyword}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding TranslationKey}" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
-                                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding IconType}" Foreground="{StaticResource TextSecondaryBrush}" FontFamily="Consolas" FontSize="11"/>
-                                                    <TextBlock Text="{Binding IconLookup}" Foreground="{StaticResource TextMutedBrush}" FontSize="10" Margin="0,2,0,0" Opacity="0.7"/>
+                                                    <TextBlock Text="{Binding IconLookup}" Foreground="{StaticResource TextMutedBrush}" FontSize="10" Opacity="0.7" Margin="6,0,0,0">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IconLookup}" Value="">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IconLookup}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </StackPanel>
                                                 <Border Grid.Column="3" Style="{StaticResource HUDBorder}" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Type}" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextSecondaryBrush}"/>
