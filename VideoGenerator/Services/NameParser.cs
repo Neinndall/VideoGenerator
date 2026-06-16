@@ -15,17 +15,16 @@ namespace VideoGenerator.Services
             DataFetcher dataFetcher, 
             RuleManager ruleManager,
             GroupManager groupManager,
-            AliasManager aliasManager)
+            AliasManager aliasManager,
+            SkinlineManager skinlineManager)
         {
-            // Register all modular parsers in order of priority
             _parsers = new List<IEventParser>
             {
-                new ItemEventParser(translationService),
+                new DynamicRuleParser(translationService, ruleManager, groupManager, aliasManager, skinlineManager),
+                new ItemEventParser(translationService, dataFetcher),
                 new MonsterEventParser(translationService),
                 new SkinInteractionParser(translationService, dataFetcher, aliasManager),
-                new GroupInteractionParser(translationService, groupManager),
-                new DynamicRuleParser(translationService, ruleManager, groupManager, aliasManager, dataFetcher),
-                new SpellOrAttackParser()
+                new SpellOrAttackParser(translationService)
             };
         }
 

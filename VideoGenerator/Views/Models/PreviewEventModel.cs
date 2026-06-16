@@ -47,5 +47,12 @@ namespace VideoGenerator.Views.Models
             get => _characterName;
             set => SetProperty(ref _characterName, value);
         }
+
+        private string _dialogue;
+        public string Dialogue
+        {
+            get => _dialogue;
+            set => SetProperty(ref _dialogue, value);
+        }
     }
 }

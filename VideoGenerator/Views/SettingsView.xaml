@@ -141,6 +141,41 @@
                         </Grid>
                     </Border>
 
+                    <!-- DIVIDER -->
+                    <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
+                    <!-- SECTION: TRANSCRIPTION ENGINE -->
+                    <Border Background="{StaticResource SurfaceBrush}" 
+                            Padding="24,16" 
+                            BorderBrush="{StaticResource BorderBrush}" 
+                            BorderThickness="0,1,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Microphone" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="20" Height="20"/>
+                            <TextBlock Text="TRANSCRIPTION ENGINE PROPERTIES" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Padding="24,28">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                <TextBlock Text="Enable Subtitles &amp; Audio Transcription" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                <TextBlock Text="Automatically transcribe character voice audios using Whisper and display the speech bubble on videos and preview." 
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <ToggleButton Grid.Column="1" 
+                                          IsChecked="{Binding Settings.EnableTranscriptions, Mode=TwoWay}"
+                                          Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
                     <!-- SYSTEM INFO SECTION -->
                     <Border Background="{StaticResource SurfaceBrush}" 
                             Padding="24,16" 

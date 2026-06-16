@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VideoGenerator.Models;
@@ -9,27 +10,12 @@ namespace VideoGenerator.Services.Parsers
     public class ItemEventParser : IEventParser
     {
         private readonly TranslationService _translationService;
+        private readonly DataFetcher _dataFetcher;
 
-        private static readonly Dictionary<string, string> ItemNameToIdMap = new(StringComparer.OrdinalIgnoreCase)
-        {
-            { "EssenceReaver", "3508" },
-            { "InfinityEdge", "3031" },
-            { "KrakenSlayer", "6672" },
-            { "RapidFirecannon", "3094" },
-            { "GaleForce", "6671" },
-            { "LordDominiksRegards", "3036" },
-            { "Bloodthirster", "3072" },
-            { "MortalReminder", "3033" },
-            { "BladeOfTheRuinedKing", "3153" },
-            { "GuinsoosRageblade", "3124" },
-            { "RabadonsDeathcap", "3089" },
-            { "ZhongyasHourglass", "3157" }, // Zhonya typo
-            { "ZhonyasHourglass", "3157" }
-        };
-
-        public ItemEventParser(TranslationService translationService)
+        public ItemEventParser(TranslationService translationService, DataFetcher dataFetcher)
         {
             _translationService = translationService;
+            _dataFetcher = dataFetcher;
         }
 
         public bool CanParse(string folderName)
@@ -39,41 +25,41 @@ namespace VideoGenerator.Services.Parsers
                    folderName.Contains("UseItem", StringComparison.OrdinalIgnoreCase);
         }
 
-        public Task<ParsedEvent> ParseAsync(string folderName, string language)
+        public async Task<ParsedEvent> ParseAsync(string folderName, string language)
         {
             var match = Regex.Match(folderName, @"(BuyItem|UseItem)(2D|3D)?_?(.*)", RegexOptions.IgnoreCase);
-            if (!match.Success) return Task.FromResult<ParsedEvent>(null);
+            if (!match.Success) return null;
 
             string action = match.Groups[1].Value;
             string itemIdOrName = match.Groups[3].Value.Trim('_');
 
-            // Translate item clean name if matches our lookup
-            string resolvedLookup = itemIdOrName;
-            if (ItemNameToIdMap.TryGetValue(itemIdOrName, out string id))
+            // Strip a trailing single uppercase letter suffix that Riot adds to event folder names
+            // (e.g. UseItem3DGuardianAngelR -> GuardianAngel) without breaking real names like BFSword
+            if (itemIdOrName.Length > 1 &&
+                char.IsUpper(itemIdOrName[^1]) &&
+                itemIdOrName[..^1].Any(char.IsLower))
             {
-                resolvedLookup = id;
+                itemIdOrName = itemIdOrName[..^1];
             }
+
+            // Resolve item info from cached CommunityDragon items_data.json
+            var itemInfo = await _dataFetcher.GetItemInfoAsync(itemIdOrName);
+            string resolvedLookup = itemInfo?.Id.ToString() ?? itemIdOrName;
+            string displayItemName = itemInfo?.Name ?? Regex.Replace(itemIdOrName, @"(?<!^)(?=[A-Z])", " ");
 
             // Find key action
             string textKey = action.Equals("BuyItem", StringComparison.OrdinalIgnoreCase) ? "event_buy_item" : "event_use_item";
-            
-            // Format name to add spaces if it's text (e.g. EssenceReaver -> Essence Reaver)
-            string displayItemName = itemIdOrName;
-            if (!int.TryParse(itemIdOrName, out _))
-            {
-                displayItemName = Regex.Replace(itemIdOrName, @"(?<!^)(?=[A-Z])", " ");
-            }
 
             string displayText = _translationService.GetText(language, textKey, 
                 new Dictionary<string, string> { { "item_name", displayItemName } });
 
-            return Task.FromResult(new ParsedEvent
+            return new ParsedEvent
             {
                 OriginalFolder = folderName,
                 DisplayText = displayText,
                 IconLookupName = resolvedLookup,
                 IconType = "item"
-            });
+            };
         }
     }
 }

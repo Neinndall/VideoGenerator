@@ -15,13 +15,15 @@ namespace VideoGenerator.Services
         private readonly DataFetcher _dataFetcher;
         private readonly GroupManager _groupManager;
         private readonly AliasManager _aliasManager;
+        private readonly SkinlineManager _skinlineManager;
         private static readonly Random _random = new();
 
-        public IconManager(DataFetcher dataFetcher, GroupManager groupManager, AliasManager aliasManager)
+        public IconManager(DataFetcher dataFetcher, GroupManager groupManager, AliasManager aliasManager, SkinlineManager skinlineManager)
         {
             _dataFetcher = dataFetcher;
             _groupManager = groupManager;
             _aliasManager = aliasManager;
+            _skinlineManager = skinlineManager;
         }
 
         public async Task<string> GetChampionIconAsync(string championName, string lolVersion)
@@ -47,12 +49,59 @@ namespace VideoGenerator.Services
             return await _dataFetcher.DownloadIconAsync(url, "champion");
         }
 
+        private string GetRegionCrestFileName(string regionName)
+        {
+            string name = regionName.Trim();
+            if (name.Equals("Darkin", StringComparison.OrdinalIgnoreCase) || 
+                name.Equals("Ascended Darkin", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Darkin_icon.png";
+            }
+            if (name.Equals("Vastaya", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Vastaya_icon.png";
+            }
+            if (name.Equals("Demon", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Demon_icon.png";
+            }
+            if (name.Equals("Ascended", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Shurima_Crest_icon.png";
+            }
+            if (name.Equals("Kinkou", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Ionia_Crest_icon.png";
+            }
+            if (name.Equals("Lunari", StringComparison.OrdinalIgnoreCase) || 
+                name.Equals("Solari", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Targon_Crest_icon.png";
+            }
+
+            return $"{name}_Crest_icon.png".Replace(" ", "_");
+        }
+
         private async Task<string> ResolveThematicOrRegionAsync(string target, string lolVersion)
         {
             // Check dynamic groups from GroupManager
             var matchedGroup = _groupManager.Groups.FirstOrDefault(g => g.Name.Equals(target, StringComparison.OrdinalIgnoreCase));
             if (matchedGroup != null)
             {
+                if (matchedGroup.Category.Equals("Region", StringComparison.OrdinalIgnoreCase))
+                {
+                    string fileName = GetRegionCrestFileName(matchedGroup.Name);
+                    string localPath = Path.Combine(AppConfig.IconCacheDir, "region", fileName);
+                    if (File.Exists(localPath)) return localPath;
+
+                    string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(fileName);
+                    if (!string.IsNullOrEmpty(fandomUrl))
+                    {
+                        string downloaded = await _dataFetcher.DownloadIconAsync(fandomUrl, "region", fileName);
+                        if (!string.IsNullOrEmpty(downloaded)) return downloaded;
+                    }
+                }
+
                 var candidates = matchedGroup.GetChampionsList();
                 if (candidates.Count > 0)
                 {
@@ -61,37 +110,16 @@ namespace VideoGenerator.Services
                 }
             }
 
-            // Advanced Thematic Search (skinlines.json + skins.json)
+            // Advanced Thematic Search via SkinlineManager
             try
             {
-                var skinLines = await _dataFetcher.GetSkinLinesAsync();
-                var matchingLines = skinLines.Where(sl => 
-                    sl.GetProperty("name").GetString().Contains(target, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                if (matchingLines.Count > 0)
+                if (_skinlineManager.IsKnownSkinline(target))
                 {
-                    var lineIds = matchingLines.Select(ml => ml.GetProperty("id").GetInt32()).ToList();
-                    var allSkins = await _dataFetcher.GetSkinsDataAsync();
-
-                    var thematicSkins = allSkins.Values.Where(skin => 
-                        skin.TryGetProperty("skinLines", out var slProp) && 
-                        slProp.ValueKind == JsonValueKind.Array &&
-                        slProp.EnumerateArray().Any(idObj => lineIds.Contains(idObj.GetProperty("id").GetInt32()))
-                    ).ToList();
-
-                    if (thematicSkins.Count > 0)
+                    var candidates = _skinlineManager.GetChampionsWithSkin(target);
+                    if (candidates.Count > 0)
                     {
-                        var chosenSkin = thematicSkins[_random.Next(thematicSkins.Count)];
-                        int id = chosenSkin.GetProperty("id").GetInt32();
-                        string splashPath = chosenSkin.GetProperty("splashPath").GetString();
-                        
-                        string skinIndex = (id % 1000).ToString();
-                        
-                        // Extract Champion internal name from splashPath
-                        var nameMatch = Regex.Match(splashPath, @"Characters/([^/]+)/");
-                        string champInternalName = nameMatch.Success ? nameMatch.Groups[1].Value : "";
-
-                        return await GetSplashUrlAsync(champInternalName, skinIndex);
+                        var chosen = candidates[_random.Next(candidates.Count)];
+                        return await GetChampionIconAsync(chosen.ToString(), lolVersion);
                     }
                 }
             }
@@ -134,123 +162,221 @@ namespace VideoGenerator.Services
             }
 
             // 2. If it's a name, or if numeric lookup failed, download from Fandom Wiki
-            // Convert e.g., "EssenceReaver" or "Essence Reaver" to "Essence_Reaver_item.png"
+            // Order of attempts based on Wiki conventions: _item.png -> .png -> _icon.png
             string formattedName = itemNameOrId;
-            // Add space before capitals if it's CamelCase and doesn't have spaces
             if (!formattedName.Contains(" ") && !formattedName.Contains("_"))
             {
                 formattedName = System.Text.RegularExpressions.Regex.Replace(formattedName, @"(?<!^)(?=[A-Z])", " ");
             }
-            string wikiFileName = formattedName.Trim().Replace(" ", "_") + "_item.png";
+            string baseWikiName = formattedName.Trim().Replace(" ", "_");
 
-            // Special cases/typos mapping
-            if (wikiFileName.Equals("ZhonyasHourglass_item.png", StringComparison.OrdinalIgnoreCase) || 
-                wikiFileName.Equals("ZhongyasHourglass_item.png", StringComparison.OrdinalIgnoreCase))
+            // List of naming patterns to try on the Wiki
+            string[] patterns = { $"{baseWikiName}_item.png", $"{baseWikiName}.png", $"{baseWikiName}_icon.png", $"{baseWikiName}_ping.png" };
+
+            foreach (var wikiFileName in patterns)
             {
-                wikiFileName = "Zhonya%27s_Hourglass_item.png";
-            }
-            else if (wikiFileName.Equals("LordDominiksRegards_item.png", StringComparison.OrdinalIgnoreCase))
-            {
-                wikiFileName = "Lord_Dominik%27s_Regards_item.png";
+                // Special mapping for common outliers/typos (preserve this logic)
+                string finalFileName = wikiFileName;
+                if (finalFileName.Equals("Zhonyas_Hourglass_item.png", StringComparison.OrdinalIgnoreCase)) finalFileName = "Zhonya%27s_Hourglass_item.png";
+                if (finalFileName.Equals("Lord_Dominiks_Regards_item.png", StringComparison.OrdinalIgnoreCase)) finalFileName = "Lord_Dominik%27s_Regards_item.png";
+
+                string localFileName = finalFileName.Replace("%27", "'");
+                string localPath = Path.Combine(AppConfig.IconCacheDir, "item", localFileName);
+                if (File.Exists(localPath)) return localPath;
+
+                string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(finalFileName);
+                if (string.IsNullOrEmpty(fandomUrl)) continue;
+
+                string downloaded = await _dataFetcher.DownloadIconAsync(fandomUrl, "item", localFileName);
+                
+                if (!string.IsNullOrEmpty(downloaded)) return downloaded;
             }
 
-            string fandomUrl = _dataFetcher.GetFandomImageUrl(wikiFileName);
-            string localFileName = wikiFileName.Replace("%27", "'");
-            string localPath = Path.Combine(AppConfig.IconCacheDir, "item", localFileName);
-            
-            if (File.Exists(localPath)) return localPath;
-
-            return await _dataFetcher.DownloadIconAsync(fandomUrl, "item", localFileName);
+            return null;
         }
 
-        public async Task<string> GetMonsterIconAsync(string monsterNameFormatted)
+        public async Task<string> GetMonsterIconAsync(string monsterName)
         {
-            // Build expected filename on Fandom
-            string searchName = monsterNameFormatted.Replace(" ", "_");
-            
-            if (monsterNameFormatted.Contains("Cloud", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Cloud_Drake";
-            else if (monsterNameFormatted.Contains("Hextech", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Hextech_Drake";
-            else if (monsterNameFormatted.Contains("Infernal", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Infernal_Drake";
-            else if (monsterNameFormatted.Contains("Mountain", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Mountain_Drake";
-            else if (monsterNameFormatted.Contains("Ocean", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Ocean_Drake";
-            else if (monsterNameFormatted.Contains("Chemtech", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Chemtech_Drake";
-            else if (monsterNameFormatted.Contains("Elder", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Elder_Dragon";
-            else if (monsterNameFormatted.Contains("Dragon", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Dragon";
-            else if (monsterNameFormatted.Contains("Baron", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Baron_Nashor";
-            else if (monsterNameFormatted.Contains("Herald", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Rift_Herald";
-            else if (monsterNameFormatted.Contains("Sentinel", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Blue", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Blue_Sentinel";
-            else if (monsterNameFormatted.Contains("Brambleback", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Red", StringComparison.OrdinalIgnoreCase)) 
-                searchName = "Red_Brambleback";
-            else if (monsterNameFormatted.Contains("Voidgrub", StringComparison.OrdinalIgnoreCase))
-                searchName = "Voidgrub";
-            else if (monsterNameFormatted.Contains("Scuttle", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Crab", StringComparison.OrdinalIgnoreCase))
-                searchName = "Rift_Scuttler";
-            else if (monsterNameFormatted.Contains("Krug", StringComparison.OrdinalIgnoreCase))
-                searchName = "Ancient_Krug";
-            else if (monsterNameFormatted.Contains("Wolf", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Wolves", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Murkwolf", StringComparison.OrdinalIgnoreCase))
-                searchName = "Greater_Murkwolf";
-            else if (monsterNameFormatted.Contains("Raptor", StringComparison.OrdinalIgnoreCase) || 
-                     monsterNameFormatted.Contains("Raptors", StringComparison.OrdinalIgnoreCase))
-                searchName = "Crimson_Raptor";
-            else if (monsterNameFormatted.Contains("Gromp", StringComparison.OrdinalIgnoreCase))
-                searchName = "Gromp";
-            else if (monsterNameFormatted.Contains("Vilemaw", StringComparison.OrdinalIgnoreCase))
-                searchName = "Vilemaw";
+            if (string.IsNullOrEmpty(monsterName)) return null;
 
-            string localFileName = $"{searchName}Square.png";
-            string localPath = Path.Combine(AppConfig.IconCacheDir, "monster", localFileName);
-            
-            if (File.Exists(localPath))
+            var monsterDb = _dataFetcher.LoadMonsterDatabase();
+            string resolvedName = ResolveMonsterName(monsterName, monsterDb);
+            if (string.IsNullOrEmpty(resolvedName)) return null;
+
+            string searchName = resolvedName.Replace(" ", "_");
+
+            // Order of attempts for monster icons
+            string[] patterns = { 
+                $"{searchName}Square.png",
+                $"{searchName}_Square.png",
+                $"{searchName}.png"
+            };
+
+            foreach (var wikiFileName in patterns)
             {
-                return localPath; // Return local cache instantly and skip network call!
+                string localPath = Path.Combine(AppConfig.IconCacheDir, "monster", wikiFileName);
+                if (File.Exists(localPath)) return localPath;
+
+                string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(wikiFileName);
+                if (string.IsNullOrEmpty(fandomUrl)) continue;
+
+                string downloaded = await _dataFetcher.DownloadIconAsync(fandomUrl, "monster", wikiFileName);
+                
+                if (!string.IsNullOrEmpty(downloaded)) return downloaded;
             }
 
-            string url = await _dataFetcher.GetMonsterIconUrlAsync(monsterNameFormatted);
-            if (url == null) return null;
-            return await _dataFetcher.DownloadIconAsync(url, "monster", localFileName);
+            return null;
         }
 
-        public async Task<string> GetStructureIconAsync(string structureNameFormatted)
+        private string ResolveMonsterName(string monsterName, MonsterDatabase db)
         {
-            if (string.IsNullOrEmpty(structureNameFormatted)) return null;
-
-            string wikiFileName = "Blue_Turret_icon.png";
-            if (structureNameFormatted.Contains("Turret", StringComparison.OrdinalIgnoreCase) || 
-                structureNameFormatted.Contains("Tower", StringComparison.OrdinalIgnoreCase))
+            string normalized = monsterName;
+            if (!normalized.Contains(" ") && !normalized.Contains("_"))
             {
-                wikiFileName = "Blue_Turret_icon.png";
+                normalized = Regex.Replace(normalized, @"(?<!^)(?=[A-Z])", " ");
             }
-            else if (structureNameFormatted.Contains("Inhibitor", StringComparison.OrdinalIgnoreCase))
+            string cleanTarget = normalized.Trim();
+
+            var allMonsters = db.All;
+            if (allMonsters.Count == 0) return cleanTarget;
+
+            // 1. Exact match
+            var exact = allMonsters.FirstOrDefault(m => m.Equals(cleanTarget, StringComparison.OrdinalIgnoreCase));
+            if (exact != null) return exact;
+
+            // 1.5 Special handling for generic "Dragon" / "Drake" targets to avoid resolving to Elder Dragon.
+            // The Fandom wiki provides a generic DragonSquare.png asset, so keep the lookup name as "Dragon"
+            // instead of falling back to the only substring match ("Elder Dragon").
+            if (cleanTarget.Equals("Dragon", StringComparison.OrdinalIgnoreCase) ||
+                cleanTarget.Equals("Drake", StringComparison.OrdinalIgnoreCase))
             {
-                wikiFileName = "Blue_Inhibitor_icon.png";
-            }
-            else if (structureNameFormatted.Contains("Nexus", StringComparison.OrdinalIgnoreCase))
-            {
-                wikiFileName = "Blue_Nexus_icon.png";
+                return "Dragon";
             }
 
-            string localPath = Path.Combine(AppConfig.IconCacheDir, "structure", wikiFileName);
-            
-            if (File.Exists(localPath)) return localPath;
+            // 2. Substring matches (prefer longest = most specific)
+            var matches = allMonsters
+                .Where(m => cleanTarget.Contains(m, StringComparison.OrdinalIgnoreCase) ||
+                            m.Contains(cleanTarget, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(m => m.Length)
+                .ToList();
 
-            string fandomUrl = _dataFetcher.GetFandomImageUrl(wikiFileName);
-            return await _dataFetcher.DownloadIconAsync(fandomUrl, "structure", wikiFileName);
+            if (matches.Count > 0) return matches[0];
+
+            // 3. Generic category targets: pick a representative from the category
+            bool isEpic = cleanTarget.Contains("Epic", StringComparison.OrdinalIgnoreCase);
+            bool isLarge = cleanTarget.Contains("Large", StringComparison.OrdinalIgnoreCase) ||
+                           cleanTarget.Contains("Monster", StringComparison.OrdinalIgnoreCase);
+
+            if (isEpic && db.Epic.Count > 0)
+            {
+                // Prefer Baron as the most iconic epic monster, fallback to first
+                var baron = db.Epic.FirstOrDefault(m => m.Contains("Baron", StringComparison.OrdinalIgnoreCase));
+                return baron ?? db.Epic[0];
+            }
+
+            if (isLarge && db.Large.Count > 0)
+            {
+                return db.Large[0];
+            }
+
+            return cleanTarget;
+        }
+
+        public async Task<string> GetStructureIconAsync(string structureName)
+        {
+            if (string.IsNullOrEmpty(structureName)) return null;
+
+            string formattedName = structureName;
+            if (!formattedName.Contains(" ") && !formattedName.Contains("_"))
+            {
+                formattedName = Regex.Replace(formattedName, @"(?<!^)(?=[A-Z])", " ");
+            }
+            string baseWikiName = formattedName.Trim().Replace(" ", "_");
+
+            // Blue Turret is the default for structures
+            if (baseWikiName.Contains("Turret") || baseWikiName.Contains("Tower")) baseWikiName = "Blue_Turret";
+            else if (baseWikiName.Contains("Inhibitor")) baseWikiName = "Blue_Inhibitor";
+            else if (baseWikiName.Contains("Nexus")) baseWikiName = "Blue_Nexus";
+
+            string[] patterns = { 
+                $"{baseWikiName}_icon.png",
+                $"{baseWikiName}.png"
+            };
+
+            foreach (var wikiFileName in patterns)
+            {
+                string localPath = Path.Combine(AppConfig.IconCacheDir, "structure", wikiFileName);
+                if (File.Exists(localPath)) return localPath;
+
+                string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(wikiFileName);
+                if (string.IsNullOrEmpty(fandomUrl)) continue;
+
+                string downloaded = await _dataFetcher.DownloadIconAsync(fandomUrl, "structure", wikiFileName);
+                
+                if (!string.IsNullOrEmpty(downloaded)) return downloaded;
+            }
+
+            return null;
+        }
+
+        public async Task<string> GetSystemIconAsync(string systemName)
+        {
+            if (string.IsNullOrEmpty(systemName)) return null;
+
+            string formattedName = systemName;
+            if (!formattedName.Contains(" ") && !formattedName.Contains("_"))
+            {
+                formattedName = Regex.Replace(formattedName, @"(?<!^)(?=[A-Z])", " ");
+            }
+            string baseWikiName = formattedName.Trim().Replace(" ", "_");
+
+            // Known ping / system icon filenames on the League of Legends Fandom wiki.
+            // File names are case-sensitive on the wiki, so use the exact title.
+            var knownPingFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Assist Me"] = "Assist_Me_ping.png",
+                ["Danger"] = "Danger_ping.png",
+                ["Enemy Missing"] = "Enemy_Missing_ping.png",
+                ["On My Way"] = "On_My_Way_ping.png",
+                ["Push"] = "Push_ping.png",
+                ["Retreat"] = "Retreat_ping.png",
+                ["Bait"] = "Bait_ping.png",
+                ["Hold"] = "Hold_ping.png",
+                ["Need Vision"] = "Need_Vision_ping.png",
+                ["Vision Cleared"] = "Vision_Cleared_ping.png",
+                ["All In"] = "All_In_ping.png",
+                ["Gold"] = "Gold_icon.png"
+            };
+
+            var candidates = new List<string>();
+            if (knownPingFiles.TryGetValue(systemName, out string mappedFile))
+            {
+                candidates.Add(mappedFile);
+            }
+
+            candidates.AddRange(new[]
+            {
+                $"LoL_ping_{baseWikiName.ToLower()}.png",
+                $"{baseWikiName}_ping.png",
+                $"{baseWikiName}_icon.png",
+                $"{baseWikiName}.png",
+                $"{baseWikiName}_item.png"
+            });
+
+            foreach (var wikiFileName in candidates)
+            {
+                string localPath = Path.Combine(AppConfig.IconCacheDir, "system", wikiFileName);
+                if (File.Exists(localPath)) return localPath;
+
+                string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(wikiFileName);
+                if (string.IsNullOrEmpty(fandomUrl)) continue;
+
+                string downloaded = await _dataFetcher.DownloadIconAsync(fandomUrl, "system", wikiFileName);
+                
+                if (!string.IsNullOrEmpty(downloaded)) return downloaded;
+            }
+
+            return null;
         }
     }
 }

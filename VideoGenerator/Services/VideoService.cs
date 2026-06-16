@@ -73,12 +73,13 @@ namespace VideoGenerator.Services
             }
         }
 
-        public async Task<bool> CreateVideoAsync(string imagePath, List<string> audioPaths, string outputPath, double silenceDuration)
+        public async Task<bool> CreateVideoAsync(string imagePath, List<string> audioPaths, string outputPath, double silenceDuration, string dialogue = "")
         {
             string tempAudioPath = null;
             string silentAudioPath = null;
             string concatListPath = null;
             string finalAudioInput = null;
+            string srtPath = null;
 
             try
             {
@@ -148,6 +149,8 @@ namespace VideoGenerator.Services
 
                 if (!File.Exists(imagePath)) throw new FileNotFoundException($"Image input not found: {imagePath}");
 
+                string customArgs = "-tune stillimage -preset ultrafast -pix_fmt yuv420p -crf 28 -shortest";
+
                 var result = await FFMpegArguments
                     .FromFileInput(imagePath, true, options => options.Loop(1))
                     .AddFileInput(finalAudioInput)
@@ -156,7 +159,7 @@ namespace VideoGenerator.Services
                         .WithAudioCodec("aac")
                         .WithAudioBitrate(192)
                         .WithDuration(duration)
-                        .WithCustomArgument("-tune stillimage -preset ultrafast -pix_fmt yuv420p -crf 28 -shortest"))
+                        .WithCustomArgument(customArgs))
                     .ProcessAsynchronously();
 
                 if (result)
@@ -178,6 +181,7 @@ namespace VideoGenerator.Services
                     if (tempAudioPath != null && File.Exists(tempAudioPath)) File.Delete(tempAudioPath);
                     if (silentAudioPath != null && File.Exists(silentAudioPath)) File.Delete(silentAudioPath);
                     if (concatListPath != null && File.Exists(concatListPath)) File.Delete(concatListPath);
+                    if (srtPath != null && File.Exists(srtPath)) File.Delete(srtPath);
                 }
                 catch { }
             }
