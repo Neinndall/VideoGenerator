@@ -54,8 +54,7 @@ namespace VideoGenerator.Views
 
         private async void LoadEntriesAsync()
         {
-            if (_model.AllEntries.Count > 0) return;
-
+            _model.AllEntries.Clear();
             try
             {
                 _model.IsLoading = true;

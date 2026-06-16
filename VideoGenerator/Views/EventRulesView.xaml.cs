@@ -44,8 +44,22 @@ namespace VideoGenerator.Views
 
             // Trigger filter refresh when category changes
             RuleSectionBox.SelectionChanged += (s, e) => _rulesView.Refresh();
+            RuleTypeBox.SelectionChanged += (s, e) => SyncDictKey();
 
-            KeywordBox.TextChanged += (s, e) => SuggestCategoryFromKeyword();
+            KeywordBox.TextChanged += (s, e) => { SuggestCategoryFromKeyword(); SyncDictKey(); };
+        }
+
+        private void SyncDictKey()
+        {
+            string keyword = KeywordBox.Text.Trim();
+            string type = RuleTypeBox.SelectedItem?.ToString() ?? "Simple";
+            if (string.IsNullOrEmpty(keyword))
+            {
+                DictKeyBox.Text = "";
+                return;
+            }
+            string prefix = type == "Simple" ? "event_" : "interaction_";
+            DictKeyBox.Text = $"{prefix}{keyword.ToLower().Replace(" ", "_")}";
         }
 
         private void SuggestCategoryFromKeyword()
@@ -146,9 +160,12 @@ namespace VideoGenerator.Views
                 return;
             }
 
-            // 1. Generate Translation Key automatically
-            string transKey = $"event_{keyword.ToLower().Replace(" ", "_")}";
-            if (ruleType != RuleType.Simple) transKey = transKey.Replace("event_", "interaction_");
+            string transKey = DictKeyBox.Text.Trim();
+            if (string.IsNullOrEmpty(transKey))
+            {
+                MessageBox.Show("Dict key is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             // Duplicate Prevention
             if (_ruleManager.Rules.Any(r => r.Keyword.Equals(keyword, StringComparison.OrdinalIgnoreCase)))
@@ -176,12 +193,49 @@ namespace VideoGenerator.Views
             _ruleManager.Rules.Insert(insertIndex, newRule);
             _ruleManager.SaveRules();
 
-            // Clear UI
-            KeywordBox.Text = "";
-            IconLookupBox.Text = "";
-            IconTypeBox.SelectedIndex = 0;
-            RuleTypeBox.SelectedIndex = 0;
-            RuleSectionBox.SelectedIndex = 0;
+            // Fill composer context and show it
+            ComposerKeywordText.Text = keyword;
+            ComposerSectionText.Text = section;
+            ComposerTypeText.Text = $"{iconType} · {ruleType}";
+            TransKeyBox.Text = transKey;
+            TransENBox.Text = "";
+            TransESBox.Text = "";
+            TransTRBox.Text = "";
+            FormFieldsPanel.Visibility = Visibility.Collapsed;
+            RegisterButtonBar.Visibility = Visibility.Collapsed;
+            TranslationComposer.Visibility = Visibility.Visible;
+        }
+
+        private void SaveTranslation_Click(object sender, RoutedEventArgs e)
+        {
+            string key = TransKeyBox.Text.Trim();
+            if (string.IsNullOrEmpty(key)) return;
+
+            string enVal = TransENBox.Text.Trim();
+            string esVal = TransESBox.Text.Trim();
+            string trVal = TransTRBox.Text.Trim();
+
+            if (!string.IsNullOrEmpty(enVal) || !string.IsNullOrEmpty(esVal) || !string.IsNullOrEmpty(trVal))
+            {
+                _translationService.UpdateTranslations(key, enVal, esVal, trVal);
+            }
+
+            TranslationComposer.Visibility = Visibility.Collapsed;
+            FormFieldsPanel.Visibility = Visibility.Visible;
+            RegisterButtonBar.Visibility = Visibility.Visible;
+            TransENBox.Text = "";
+            TransESBox.Text = "";
+            TransTRBox.Text = "";
+        }
+
+        private void SkipTranslation_Click(object sender, RoutedEventArgs e)
+        {
+            TranslationComposer.Visibility = Visibility.Collapsed;
+            FormFieldsPanel.Visibility = Visibility.Visible;
+            RegisterButtonBar.Visibility = Visibility.Visible;
+            TransENBox.Text = "";
+            TransESBox.Text = "";
+            TransTRBox.Text = "";
         }
 
         private void DeleteRule_Click(object sender, RoutedEventArgs e)
