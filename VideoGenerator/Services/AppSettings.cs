@@ -129,6 +129,28 @@ namespace VideoGenerator.Services
             }
         }
 
+        private string _whisperLanguage = "auto";
+        public string WhisperLanguage
+        {
+            get => _whisperLanguage;
+            set
+            {
+                if (SetProperty(ref _whisperLanguage, value))
+                    QueueSave();
+            }
+        }
+
+        private string _whisperModel = "base";
+        public string WhisperModel
+        {
+            get => _whisperModel;
+            set
+            {
+                if (SetProperty(ref _whisperModel, value))
+                    QueueSave();
+            }
+        }
+
         private float _bubbleTextSize = 22f;
         public float BubbleTextSize
         {

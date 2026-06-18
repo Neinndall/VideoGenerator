@@ -176,6 +176,58 @@
                         </Grid>
                     </Border>
 
+                    <!-- DIVIDER -->
+                    <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
+                    <!-- Whisper Model -->
+                    <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                <TextBlock Text="Whisper Model Size" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                <TextBlock Text="Select the size of the Whisper speech-to-text model. Base is recommended. Larger models require downloading." 
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <ComboBox Grid.Column="1" 
+                                      ItemsSource="{Binding WhisperModelOptions}"
+                                      SelectedItem="{Binding Settings.WhisperModel}"
+                                      Style="{StaticResource ModernComboBoxStyle}"
+                                      materialDesign:HintAssist.Hint="Model Size"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- DIVIDER -->
+                    <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
+                    <!-- Whisper Language -->
+                    <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                <TextBlock Text="Transcription Audio Language" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                <TextBlock Text="Force Whisper to transcribe in a specific language to prevent translation errors or language confusion." 
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <ComboBox Grid.Column="1" 
+                                      ItemsSource="{Binding WhisperLanguageOptions}"
+                                      SelectedValue="{Binding Settings.WhisperLanguage, Mode=TwoWay}"
+                                      SelectedValuePath="Value"
+                                      DisplayMemberPath="Key"
+                                      Style="{StaticResource ModernComboBoxStyle}"
+                                      materialDesign:HintAssist.Hint="Language"/>
+                        </Grid>
+                    </Border>
+
                     <!-- SYSTEM INFO SECTION -->
                     <Border Background="{StaticResource SurfaceBrush}" 
                             Padding="24,16" 

@@ -1,7 +1,23 @@
-VideoGenerator - Patch Notes | v1.2.1.3
+VideoGenerator - Patch Notes | v1.2.2.1
 
-PATCH UPDATE & BUG FIXES
-This version focuses on parser robustness, icon resolution reliability, and analysis performance.
+MINOR UPDATE
+This version adds user-configurable options for the Whisper Speech-to-Text model size and target audio language to resolve translation misidentifications.
+
+New Features
+  - Settings / Whisper Model Selector: Added UI ComboBox under Settings to select Whisper model size ("tiny", "base", "small"). The default model is upgraded to "base" for higher out-of-the-box accuracy.
+  - Settings / Whisper Language Selector: Added UI ComboBox to force Whisper transcriptions into a specific target language (e.g. Turkish, Spanish, English, etc.) rather than relying on automatic detection, resolving wrong language detection issues.
+
+Improvements
+  - Core / Dynamic Whisper Download: Modified `TranscriptionService` to dynamically construct URLs and paths, automatically downloading the user-selected model from Hugging Face on demand.
+  - UI / Conditional Enablement: Whisper Model and Language settings are reactively disabled if Speech-to-Text transcriptions are toggled OFF.
+  - UI / Global ScrollViewer: Added a ScrollViewer around the main ContentArea in `MainWindow.xaml` to satisfy the central scrolling requirement and prevent options from overflowing.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+VideoGenerator - Patch Notes | v1.2.2.0
+
+MEDIUM UPDATE
+This version focuses on parser robustness, icon resolution reliability, and analysis performance with new big stuff.
 
 New Features
   - Core / Skinline Manager: Introduced `SkinlineManager` to load and cache official skinlines dynamically from CommunityDragon, keeping regions/classes separate from thematic skin collections.
@@ -11,6 +27,7 @@ New Features
   - Dashboard / Non-Obstructive Preview Maximization: Clicking on the live preview canvas in the Dashboard now toggles the visibility (Width) of the event pipeline sidebar and grid splitter, expanding the preview canvas to maximum scale within the viewport for a larger view without obstructing editing flows, mirroring the Background Design maximize mechanism.
   - Design Studio / Dialogue Speech Bubble Customization: Added a new section inside the Background Design tab to customize the subtitle speech bubble's text size, container height, background opacity (with 5% stepping steps: 0.1, 0.15, 0.2, etc.), and vertical offsets, with instant real-time live preview rendering and slider snapping.
   - Design Studio / Non-Obstructive Preview Maximization: Clicking on the live preview canvas in the Background Design studio now toggles the visibility (Width) of the inspector sidebar column, expanding the preview canvas to maximum scale within the tab viewport for a larger cinematic view without obstructing editing flows.
+  - Mapping Engine / Custom Icon Lookup in Event Rules: Added an optional `IconLookup` string property to the `EventRule` model, exposed via a new "Icon Lookup (Optional)" TextBox in the Event Rules registration panel, and integrated it into the parsing logic to allow overriding default icons with custom asset lookup names.
 
 Improvements
   - UI / Simplified Form Labels: Renamed Quick Edit and Event Rules fields for clarity ("Text shown in HUD", "Icon name or ID", "Icon category", "Behavior category", "Rule type").
@@ -26,6 +43,8 @@ Improvements
   - Performance / Image Rendering RAM Pipeline: Rewrote the preview renderer to load image bytes directly into a frozen WPF `BitmapImage` instead of executing heavy disk writes/reads.
   - Performance / Memory Asset Cache: Implemented local dictionary caches for custom backgrounds, fonts, and cropped icons inside `ImageGenerator` to avoid repetitive file reads.
   - Performance / LoL Version Caching: Cached LoL version queries in memory to avoid repetitive API requests.
+  - Parser / Dynamic Translation Lookup for Spells: Integrated TranslationService in SpellOrAttackParser to prioritize resolving translated text for spell hit/cast events (e.g. event_EMissile_hit3D) from translations.json before falling back to automatic English title formatting.
+  - Core / Raw Unicode JSON Serialization: Configured TranslationService and Dictionary View saving to write unescaped Unicode characters (á, í, ö, ü, ş, ç) directly to translations.json instead of converting them to hexadecimal escape sequences (\u00E1, \u00ED, etc.), ensuring translations are 100% readable and human-editable.
 
 Bug Fixes
   - Parser / Prefixed General Suffix Resolution: Fixed `DynamicRuleParser` to match Simple rules when the folder has an extra prefix before the keyword (e.g. `Dragon_JokeGeneral`), as long as the keyword appears as a bounded word and the folder ends with "General"/"inGeneral". The regex lookahead now accepts `(?=_|$|General|inGeneral)` to handle cases where "General" is directly appended without an underscore separator. Additionally, the matched prefix (e.g. "Dragon", "MegaGnar") is now automatically prepended to the display text, producing `"Dragon: Joke in General"` instead of just `"Joke in General"`. Folders without a prefix (e.g. `Joke3DGeneral`) remain unchanged.
@@ -36,37 +55,6 @@ Bug Fixes
   - Icons / Sticky Resolution Block: Assigned `"MISSING"` flags to unresolved icons to prevent recurring lookup retries and background network requests on subsequent element clicks.
   - UI / White Line Scaling Artifact Removal: Added an edge-masking operation to `CreateImageBytesAsync` in `ImageGenerator.cs` that draws a 2px inner black border on the canvas bounds, and updated WPF `Image` controls to use `Stretch="Uniform"`, `UseLayoutRounding="True"`, and `SnapsToDevicePixels="True"` to eliminate thin white border lines appearing when maximized.
   - Design Studio / Default Background Ribbon Alignment: Rebuilt and aligned `DefaultBackground.png` to position its pre-designed white ribbon borders at Y=898 and Y=1018, matching the code's layout coordinates and correcting the text/design vertical offset misalignment when no custom splash art is loaded.
-
-Code Cleanup
-  - Removed the old Quick Translations section (inline EN/ES/TR fields) from Event Rules registration form.
-  - Added a new Translation Composer panel that appears after registering a rule, showing the auto-generated TranslationKey and three compact EN/ES/TR fields with SAVE & NEXT / SKIP buttons.
-  - Icons / Fandom Cloudflare Block: Replaced direct Fandom `Special:FilePath` downloads (now blocked by Cloudflare) with MediaWiki API queries to obtain real image URLs for monsters, structures, system icons, and region crests.
-  - Icons / Region Emblem Crest Resolution: Re-routed regional thematic groups (like Void, Demacia, Noxus, Shurima) in IconManager to automatically resolve to their official wiki crest file name (e.g. `Void_Crest_icon.png`) instead of selecting a random champion from the group.
-  - Icons / Epic Monster Mapping: Mapped generic `EpicMonster` / `Epic_Monster` targets to `Baron_NashorSquare.png` so attack events against epic monsters show the correct icon.
-  - Parser / Item Suffix Stripping: Added cleanup of trailing single uppercase letter suffixes in item event folder names (e.g. `UseItem3DGuardianAngelR` -> `GuardianAngel`) so item icons resolve correctly.
-  - Parser / Champion-With-Skin Interactions: Fixed `RivenSkin44`-style folders being captured by `DynamicRuleParser`; they now route through `SkinInteractionParser` for correct display text and icon.
-  - Parser / Skinline Prefix Cleanup: Added stripping of embedded `Skinline` tokens in folder names (e.g. `FirstEncounterSkinlineAnimaSquad`) so skinline names resolve correctly.
-  - Parser / Skin Name Resolution for Apostrophes: Fixed `SkinInteractionParser` so champions with apostrophes in their display name (e.g. `Bel'Veth`, `K'Sante`, `Cho'Gath`) correctly resolve their skin names from CommunityDragon instead of falling back to raw `(Skin X)` text.
-  - Parser / "In General" Suffix on Specific Rules: Fixed `DynamicRuleParser` so specific simple rules like `KillPenta` no longer incorrectly append "in General" when the folder name does not contain `General`.
-  - Core / Official Group Sync: Synchronized official group metadata on load so region categories (e.g. `Void`) remain correctly classified even when local files predate category fixes.
-  - Core / Translation Service Robustness: Added fallback resource loading from the executing assembly so `TranslationService` works correctly in non-WPF hosts (e.g. console analyzers/tests).
-  - Removed hardcoded item name-to-ID dictionary from `ItemEventParser`; item resolution now fully relies on the cached `items_data.json` from CommunityDragon.
-  - Removed hardcoded monster-to-icon mappings from `IconManager`. Monster icon resolution now uses the categorized `monsters.json` (Epic / Large) synced from Fandom, with fuzzy substring matching and automatic representatives for generic targets like `EpicMonster` or `LargeMonster`.
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-VideoGenerator - Patch Notes | v1.2.1.2
-
-MINOR UPDATE & LOCALIZATION FIXES
-This version focuses on raw UTF-8 Unicode JSON serialization for localization files and dynamic translation resolution for spell hit/cast events.
-
-New Features
-  - Mapping Engine / Custom Icon Lookup in Event Rules: Added an optional `IconLookup` string property to the `EventRule` model, exposed via a new "Icon Lookup (Optional)" TextBox in the Event Rules registration panel, and integrated it into the parsing logic to allow overriding default icons with custom asset lookup names.
-
-Improvements
-  - Parser / Dynamic Translation Lookup for Spells: Integrated TranslationService in SpellOrAttackParser to prioritize resolving translated text for spell hit/cast events (e.g. event_EMissile_hit3D) from translations.json before falling back to automatic English title formatting.
-  - Core / Raw Unicode JSON Serialization: Configured TranslationService and Dictionary View saving to write unescaped Unicode characters (á, í, ö, ü, ş, ç) directly to translations.json instead of converting them to hexadecimal escape sequences (\u00E1, \u00ED, etc.), ensuring translations are 100% readable and human-editable.
-
-Bug Fixes
   - Icons / Monster Icon Resolution: Fixed the Fandom Wiki filename mapping for Murk Wolf to use "Greater_Murk_Wolf" (matching the wiki's `Greater_Murk_WolfSquare.png`) instead of the incorrect "Greater_Murkwolf". Also added mapping for the generic "Drake" keyword to resolve to "Dragon" (mapping to `DragonSquare.png`), and added automatic mapping for generic `EpicMonster` / `Epic_Monster` targets to resolve to `Baron_NashorSquare.png`.
   - Icons / Region Emblem Crest Resolution: Re-routed regional thematic groups (like Void, Demacia, Noxus, Shurima) in IconManager to automatically resolve to their official wiki crest file name (e.g. `Void_Crest_icon.png`) instead of selecting a random champion from the group.
   - Localization / JSON Unescaping for HTML-sensitive Characters: Swapped the standard Unicode JavaScriptEncoder for `UnsafeRelaxedJsonEscaping` in both TranslationService and TranslationsView to ensure apostrophes (`'`), ampersands (`&`), and other HTML-sensitive symbols write raw instead of escaping as `\u0027`, `\u0026`, etc.
