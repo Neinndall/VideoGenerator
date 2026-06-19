@@ -1,3 +1,17 @@
+VideoGenerator - Patch Notes | v1.2.4.1
+
+MINOR UPDATE
+This version introduces an automatic audio padding filter during Speech-to-Text conversion to prevent Whisper from skipping short audio files and optimizes transcription speed via model factory caching and user-configurable CPU thread allocation.
+
+Improvements
+  - Performance / Whisper Model Factory Caching: Implemented caching for the loaded `WhisperFactory` instance. The Whisper model is now loaded from disk into memory exactly once per batch instead of re-reading and reconstructing the 150MB+ neural network weights for every single audio track. This dramatically decreases CPU overhead and disk I/O, resulting in massive speed gains during batch transcription.
+  - Settings / Whisper Thread Count Selector: Added a custom slider under the Transcription Engine settings tab, allowing the user to dynamically adjust the number of CPU threads (from 1 up to their PC's maximum logical core count) utilized for Whisper speech-to-text inference. Defaults dynamically to half of the available cores to optimize performance while preserving system responsiveness.
+
+Bug Fixes & Refinements
+  - Audio / Short Audio Transcription Padding: Configured the audio conversion process to pad any short audio files (less than 3 seconds) with silence at the end using the FFmpeg `apad=whole_dur=3` filter. This ensures Whisper has enough duration to transcribe short audio fragments successfully instead of returning empty results.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.4.0
 
 MEDIUM UPDATE
