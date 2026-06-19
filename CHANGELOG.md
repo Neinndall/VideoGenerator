@@ -1,6 +1,6 @@
-VideoGenerator - Patch Notes | v1.2.2.1
+VideoGenerator - Patch Notes | v1.2.3.0
 
-MINOR UPDATE
+MEDIUM UPDATE
 This version adds user-configurable options for the Whisper Speech-to-Text model size, target audio language, advanced dialogue bubble layout/border customization, and automatic cleanup of Whisper transcription ambient tags.
 
 New Features
