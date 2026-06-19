@@ -469,7 +469,16 @@ namespace VideoGenerator.Views
                             else if (parsedEvent != null && !string.IsNullOrEmpty(parsedEvent.IconLookupName))
                                 status = "Pending Icon";
 
-                            string dialogueVal = _dialogueService.GetDialogue(selectedLang, folderName);
+                            string dialogueVal = AppSettings.Instance.ForceBatchRetranscribe ? "" : _dialogueService.GetDialogue(selectedLang, folderName);
+                            if (!AppSettings.Instance.ForceBatchRetranscribe && AppSettings.Instance.CleanWhisperHallucinations && !string.IsNullOrEmpty(dialogueVal))
+                            {
+                                string cleaned = DialogueService.CleanDialogue(dialogueVal);
+                                if (cleaned != dialogueVal)
+                                {
+                                    dialogueVal = cleaned;
+                                    _dialogueService.SetDialogue(selectedLang, folderName, cleaned);
+                                }
+                            }
 
                             var ev = new PreviewEventModel { 
                                 CharacterName = charName, 
@@ -532,7 +541,10 @@ namespace VideoGenerator.Views
                         if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null) continue;
                         
                         string dialogue = ev.Dialogue;
-                        if (AppSettings.Instance.EnableTranscriptions && string.IsNullOrEmpty(dialogue) && ev.AudioFiles.Count > 0)
+                        bool shouldTranscribe = AppSettings.Instance.EnableTranscriptions && ev.AudioFiles.Count > 0 &&
+                            (string.IsNullOrEmpty(dialogue) || AppSettings.Instance.ForceBatchRetranscribe);
+
+                        if (shouldTranscribe)
                         {
                             _logger.LogInfo($"Auto-transcribing on the fly for {ev.FolderName}...");
                             string transcription = await _transcriptionService.TranscribeAudiosAsync(ev.AudioFiles);
@@ -553,6 +565,29 @@ namespace VideoGenerator.Views
                                 {
                                     Application.Current.Dispatcher.Invoke(() => {
                                         QuickEditDialogue.Text = transcription;
+                                    });
+                                }
+                            }
+                        }
+                        else if (AppSettings.Instance.CleanWhisperHallucinations && !string.IsNullOrEmpty(dialogue))
+                        {
+                            string cleaned = DialogueService.CleanDialogue(dialogue);
+                            if (cleaned != dialogue)
+                            {
+                                dialogue = cleaned;
+                                ev.Dialogue = cleaned;
+                                if (ev.ParsedData != null)
+                                {
+                                    ev.ParsedData.Dialogue = cleaned;
+                                }
+                                string selectedLang = _model.SelectedLanguage ?? "EN";
+                                _dialogueService.SetDialogue(selectedLang, ev.FolderName, cleaned);
+                                
+                                // Update textbox in UI if this event is currently selected
+                                if (_model.SelectedEvent == ev)
+                                {
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        QuickEditDialogue.Text = cleaned;
                                     });
                                 }
                             }

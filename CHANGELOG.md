@@ -1,3 +1,17 @@
+VideoGenerator - Patch Notes | v1.2.3.1
+
+MINOR UPDATE
+This version adds automated dialogue cache cleanup and updates, a toggle to force Whisper re-transcription during Batch Rendering, and reorganizes the settings panel into sections using a tabbed layout.
+
+New Features
+  - Settings / Force Batch Re-transcription: Added a toggle switch in settings to bypass existing cached transcriptions in `dialogues.json` during Batch Rendering and force Whisper to re-transcribe all audio files.
+  - UI / Tabbed Settings Panel: Organized the settings panel into tabs ("General & Media" and "Transcription Engine") using the premium `LoreEngineTabControl` and `LoreEngineTabItem` styles for better usability.
+
+Improvements
+  - Core / Automated Dialogue Cache Cleanup: Dialogue text loaded from `dialogues.json` is now automatically post-processed to remove bracketed noise tags (hallucinations) on-the-fly when ambient tag cleaning is enabled. The cleaned text is automatically written back to the dialogues.json cache during both folder analysis and batch rendering, correcting old cache entries permanently.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.3.0
 
 MEDIUM UPDATE

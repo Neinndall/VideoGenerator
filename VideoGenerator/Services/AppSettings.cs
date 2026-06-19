@@ -292,6 +292,17 @@ namespace VideoGenerator.Services
             }
         }
 
+        private bool _forceBatchRetranscribe = false;
+        public bool ForceBatchRetranscribe
+        {
+            get => _forceBatchRetranscribe;
+            set
+            {
+                if (SetProperty(ref _forceBatchRetranscribe, value))
+                    QueueSave();
+            }
+        }
+
         [JsonConstructor]
         public AppSettings() { }
 
