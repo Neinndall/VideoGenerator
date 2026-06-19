@@ -88,7 +88,7 @@ namespace VideoGenerator.Services
                     .FromFileInput(audioFilePath)
                     .OutputToFile(tempWavPath, true, options => options
                         .WithAudioSamplingRate(16000)
-                        .WithCustomArgument("-ac 1 -c:a pcm_s16le"))
+                        .WithCustomArgument("-ac 1 -c:a pcm_s16le -af apad=whole_dur=3"))
                     .ProcessAsynchronously();
 
                 if (!convertResult || !File.Exists(tempWavPath))
