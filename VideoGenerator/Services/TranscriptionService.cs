@@ -152,7 +152,7 @@ namespace VideoGenerator.Services
                     results.Add(text);
                 }
             }
-            return string.Join(" ", results);
+            return string.Join(" || ", results);
         }
     }
 }

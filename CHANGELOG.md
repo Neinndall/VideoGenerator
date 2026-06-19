@@ -1,14 +1,21 @@
 VideoGenerator - Patch Notes | v1.2.3.1
 
 MINOR UPDATE
-This version adds automated dialogue cache cleanup and updates, a toggle to force Whisper re-transcription during Batch Rendering, and reorganizes the settings panel into sections using a tabbed layout.
+This version adds segment-by-segment dialogue video rendering for multi-audio events, automated output grouping by champion, automated dialogue cache cleanup and updates, a toggle to force Whisper re-transcription during Batch Rendering, and reorganizes the settings panel into sections using a tabbed layout.
 
 New Features
+  - Audio / Segmented Multi-Image Rendering: When an event has multiple audios, joining segment transcriptions with `" || "` automatically splits them into separate images during Batch Rendering. Video clips are generated for each audio-dialogue pair and concatenated losslessly, displaying dynamic subtitles changing precisely per audio file.
   - Settings / Force Batch Re-transcription: Added a toggle switch in settings to bypass existing cached transcriptions in `dialogues.json` during Batch Rendering and force Whisper to re-transcribe all audio files.
   - UI / Tabbed Settings Panel: Organized the settings panel into tabs ("General & Media" and "Transcription Engine") using the premium `LoreEngineTabControl` and `LoreEngineTabItem` styles for better usability.
 
 Improvements
+  - Core / Champion Folder Output Organization: Reorganized Batch Render outputs to save generated images (in `Generated/Images/<ChampionName>/`) and videos (in `Generated/Media/<ChampionName>/`) inside subdirectories named after the respective champion, preventing assets from getting mixed together.
   - Core / Automated Dialogue Cache Cleanup: Dialogue text loaded from `dialogues.json` is now automatically post-processed to remove bracketed noise tags (hallucinations) on-the-fly when ambient tag cleaning is enabled. The cleaned text is automatically written back to the dialogues.json cache during both folder analysis and batch rendering, correcting old cache entries permanently.
+  - UI / Real-Time Progress and Status: Added real-time progress calculation to the Batch Rendering process. Includes micro-step reporting (10% start, 30% transcribe, 55% image render, 80% video build) and decimal formatting (`F1` percentage) to show continuous visual progress.
+  - UI / Auto-Selection and Tab Sync: Dashboard now automatically selects the first event when applying character/status filters and hooks into the WPF `Loaded` event to instantly force-refresh the live preview and custom background when switching tabs.
+
+Bug Fixes
+  - Icons / Ascended Darkin Resolution: Added the `"Ascended Darkin"` region group to `DefaultGroups.cs` to prevent the app from failing to resolve icon paths, automatically mapping it to the official `"Darkin_icon.png"` asset crest.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

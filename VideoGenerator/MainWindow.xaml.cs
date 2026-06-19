@@ -110,7 +110,11 @@ namespace VideoGenerator.Views
                     else if (e.PropertyName == nameof(dashboardView.DashboardModel.ProgressValue))
                     {
                         EngineProgressBarValue = dashboardView.DashboardModel.ProgressValue;
-                        IsEngineIndeterminate = EngineProgressBarValue <= 0;
+                        IsEngineIndeterminate = false;
+                        if (dashboardView.DashboardModel.IsProcessing)
+                        {
+                            EngineStatusText = $"PROCESSING MEDIA... ({EngineProgressBarValue:F1}%)";
+                        }
                     }
                 };
                 // Initial update
@@ -125,7 +129,7 @@ namespace VideoGenerator.Views
                 EngineStatusText = "PROCESSING MEDIA...";
                 IsEngineBusy = true;
                 EngineProgressBarValue = 0;
-                IsEngineIndeterminate = false;
+                IsEngineIndeterminate = true;
             }
             else
             {
