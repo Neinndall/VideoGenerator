@@ -281,7 +281,7 @@ namespace VideoGenerator.Services
             }
         }
 
-        private bool _cleanWhisperHallucinations = true;
+        private bool _cleanWhisperHallucinations = false;
         public bool CleanWhisperHallucinations
         {
             get => _cleanWhisperHallucinations;
