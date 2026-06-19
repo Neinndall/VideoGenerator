@@ -28,6 +28,7 @@ namespace VideoGenerator.Views.Models
                 new ThematicGroup { Name = "Solari", Category = "Region", ChampionsRaw = "Leona" },
                 new ThematicGroup { Name = "Kinkou", Category = "Region", ChampionsRaw = "Shen, Akali, Kennen" },
                 new ThematicGroup { Name = "Darkin", Category = "Region", ChampionsRaw = "Aatrox, Kayn, Varus, Naafiri" },
+                new ThematicGroup { Name = "Ascended Darkin", Category = "Region", ChampionsRaw = "Aatrox, Kayn, Varus, Naafiri" },
                 new ThematicGroup { Name = "Ascended", Category = "Region", ChampionsRaw = "Azir, Pantheon, Renekton, Nasus, Xerath" },
                 new ThematicGroup { Name = "Vastaya", Category = "Region", ChampionsRaw = "Ahri, Nami, Neeko, Rakan, Rengar, Wukong, Xayah" },
                 new ThematicGroup { Name = "Demon", Category = "Region", ChampionsRaw = "Fiddlesticks, Evelynn, Nocturne, Shaco, Tahm Kench, Swain, Yone, Annie" },

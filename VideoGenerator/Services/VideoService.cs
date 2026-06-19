@@ -75,6 +75,11 @@ namespace VideoGenerator.Services
 
         public async Task<bool> CreateVideoAsync(string imagePath, List<string> audioPaths, string outputPath, double silenceDuration, string dialogue = "")
         {
+            return await CreateVideoAsync(new List<string> { imagePath }, audioPaths, outputPath, silenceDuration, dialogue);
+        }
+
+        public async Task<bool> CreateVideoAsync(List<string> imagePaths, List<string> audioPaths, string outputPath, double silenceDuration, string dialogue = "")
+        {
             string tempAudioPath = null;
             string silentAudioPath = null;
             string concatListPath = null;
@@ -90,8 +95,10 @@ namespace VideoGenerator.Services
                 string cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Cache");
                 Directory.CreateDirectory(cacheDir);
 
-                if (audioPaths.Count > 1)
+                if (imagePaths != null && imagePaths.Count > 1)
                 {
+                    var tempClips = new List<string>();
+
                     // 1. Create silent audio if needed
                     if (silenceDuration > 0)
                     {
@@ -105,69 +112,179 @@ namespace VideoGenerator.Services
                             .ProcessAsynchronously();
                     }
 
-                    // 2. Create Concat List
-                    concatListPath = Path.Combine(cacheDir, "concat_list.txt");
+                    for (int i = 0; i < audioPaths.Count; i++)
+                    {
+                        string imageForClip = i < imagePaths.Count ? imagePaths[i] : imagePaths.Last();
+                        string audioForClip = audioPaths[i];
+                        string clipAudioInput = audioForClip;
+                        string tempClipAudioPath = null;
+                        string tempConcatPath = null;
+
+                        // If silenceDuration > 0 and this is not the last audio track, append silence to this clip's audio
+                        if (silenceDuration > 0 && i < audioPaths.Count - 1 && silentAudioPath != null)
+                        {
+                            tempClipAudioPath = Path.Combine(cacheDir, $"temp_clip_audio_{i}_{Guid.NewGuid()}.wav");
+                            tempConcatPath = Path.Combine(cacheDir, $"temp_clip_concat_{i}_{Guid.NewGuid()}.txt");
+
+                            using (var writer = new StreamWriter(tempConcatPath))
+                            {
+                                writer.WriteLine($"file '{Path.GetFullPath(audioForClip).Replace("\\", "/")}'");
+                                writer.WriteLine($"file '{Path.GetFullPath(silentAudioPath).Replace("\\", "/")}'");
+                            }
+
+                            await FFMpegArguments
+                                .FromFileInput(tempConcatPath, true, options => options
+                                    .WithCustomArgument("-f concat -safe 0"))
+                                .OutputToFile(tempClipAudioPath, true, options => options
+                                    .WithAudioCodec("pcm_s16le"))
+                                .ProcessAsynchronously();
+
+                            clipAudioInput = tempClipAudioPath;
+                        }
+
+                        // Generate the temporary video clip
+                        string clipOutputPath = Path.Combine(cacheDir, $"temp_clip_{i}_{Guid.NewGuid()}.mp4");
+                        var audioAnalysis = await FFProbe.AnalyseAsync(clipAudioInput);
+                        var duration = audioAnalysis.Duration;
+
+                        string customArgs = "-tune stillimage -preset ultrafast -pix_fmt yuv420p -crf 28 -shortest";
+
+                        await FFMpegArguments
+                            .FromFileInput(imageForClip, true, options => options.Loop(1))
+                            .AddFileInput(clipAudioInput)
+                            .OutputToFile(clipOutputPath, true, options => options
+                                .WithVideoCodec("libx264")
+                                .WithAudioCodec("aac")
+                                .WithAudioBitrate(192)
+                                .WithDuration(duration)
+                                .WithCustomArgument(customArgs))
+                            .ProcessAsynchronously();
+
+                        tempClips.Add(clipOutputPath);
+
+                        // Clean up temporary audio files for this clip
+                        try
+                        {
+                            if (tempClipAudioPath != null && File.Exists(tempClipAudioPath)) File.Delete(tempClipAudioPath);
+                            if (tempConcatPath != null && File.Exists(tempConcatPath)) File.Delete(tempConcatPath);
+                        }
+                        catch { }
+                    }
+
+                    // Concatenate all temporary clips into the final video
+                    concatListPath = Path.Combine(cacheDir, $"final_concat_{Guid.NewGuid()}.txt");
                     using (var writer = new StreamWriter(concatListPath))
                     {
-                        for (int i = 0; i < audioPaths.Count; i++)
+                        foreach (var clip in tempClips)
                         {
-                            string path = Path.GetFullPath(audioPaths[i]).Replace("\\", "/");
-                            writer.WriteLine($"file '{path}'");
-                            
-                            if (silentAudioPath != null && i < audioPaths.Count - 1)
-                            {
-                                string sPath = Path.GetFullPath(silentAudioPath).Replace("\\", "/");
-                                writer.WriteLine($"file '{sPath}'");
-                            }
+                            writer.WriteLine($"file '{Path.GetFullPath(clip).Replace("\\", "/")}'");
                         }
                     }
 
-                    // 3. Join audios
-                    tempAudioPath = Path.Combine(cacheDir, "temp_combined_audio.wav");
-                    await FFMpegArguments
+                    var finalResult = await FFMpegArguments
                         .FromFileInput(concatListPath, true, options => options
                             .WithCustomArgument("-f concat -safe 0"))
-                        .OutputToFile(tempAudioPath, true, options => options
-                            .WithAudioCodec("pcm_s16le"))
+                        .OutputToFile(outputPath, true, options => options
+                            .WithCustomArgument("-c copy"))
                         .ProcessAsynchronously();
 
-                    finalAudioInput = tempAudioPath;
+                    // Clean up temporary clips
+                    foreach (var clip in tempClips)
+                    {
+                        try { if (File.Exists(clip)) File.Delete(clip); } catch { }
+                    }
+
+                    if (finalResult)
+                    {
+                        _logger.LogInfo($"    [SUCCESS] Multi-image Video generated: {Path.GetFileName(outputPath)}");
+                    }
+
+                    return finalResult;
                 }
                 else
                 {
-                    finalAudioInput = audioPaths[0];
+                    // Fallback to single image logic
+                    string singleImagePath = (imagePaths != null && imagePaths.Count > 0) ? imagePaths[0] : "";
+
+                    if (audioPaths.Count > 1)
+                    {
+                        // 1. Create silent audio if needed
+                        if (silenceDuration > 0)
+                        {
+                            silentAudioPath = Path.Combine(cacheDir, "silent_audio.wav");
+                            await FFMpegArguments
+                                .FromFileInput("anullsrc=r=48000:cl=stereo", false, options => options
+                                    .ForceFormat("lavfi"))
+                                .OutputToFile(silentAudioPath, true, options => options
+                                    .WithAudioCodec("pcm_s16le")
+                                    .WithDuration(TimeSpan.FromSeconds(silenceDuration)))
+                                .ProcessAsynchronously();
+                        }
+
+                        // 2. Create Concat List
+                        concatListPath = Path.Combine(cacheDir, "concat_list.txt");
+                        using (var writer = new StreamWriter(concatListPath))
+                        {
+                            for (int i = 0; i < audioPaths.Count; i++)
+                            {
+                                string path = Path.GetFullPath(audioPaths[i]).Replace("\\", "/");
+                                writer.WriteLine($"file '{path}'");
+                                
+                                if (silentAudioPath != null && i < audioPaths.Count - 1)
+                                {
+                                    string sPath = Path.GetFullPath(silentAudioPath).Replace("\\", "/");
+                                    writer.WriteLine($"file '{sPath}'");
+                                }
+                            }
+                        }
+
+                        // 3. Join audios
+                        tempAudioPath = Path.Combine(cacheDir, "temp_combined_audio.wav");
+                        await FFMpegArguments
+                            .FromFileInput(concatListPath, true, options => options
+                                .WithCustomArgument("-f concat -safe 0"))
+                            .OutputToFile(tempAudioPath, true, options => options
+                                .WithAudioCodec("pcm_s16le"))
+                            .ProcessAsynchronously();
+
+                        finalAudioInput = tempAudioPath;
+                    }
+                    else
+                    {
+                        finalAudioInput = audioPaths[0];
+                    }
+
+                    // 4. Analysis and Assembly
+                    if (!File.Exists(finalAudioInput)) 
+                    {
+                        throw new FileNotFoundException($"Audio target not found: {finalAudioInput}");
+                    }
+
+                    var audioAnalysis = await FFProbe.AnalyseAsync(finalAudioInput);
+                    var duration = audioAnalysis.Duration;
+
+                    if (!File.Exists(singleImagePath)) throw new FileNotFoundException($"Image input not found: {singleImagePath}");
+
+                    string customArgs = "-tune stillimage -preset ultrafast -pix_fmt yuv420p -crf 28 -shortest";
+
+                    var result = await FFMpegArguments
+                        .FromFileInput(singleImagePath, true, options => options.Loop(1))
+                        .AddFileInput(finalAudioInput)
+                        .OutputToFile(outputPath, true, options => options
+                            .WithVideoCodec("libx264")
+                            .WithAudioCodec("aac")
+                            .WithAudioBitrate(192)
+                            .WithDuration(duration)
+                            .WithCustomArgument(customArgs))
+                        .ProcessAsynchronously();
+
+                    if (result)
+                    {
+                        _logger.LogInfo($"    [SUCCESS] Video generated: {Path.GetFileName(outputPath)}");
+                    }
+
+                    return result;
                 }
-
-                // 4. Analysis and Assembly
-                if (!File.Exists(finalAudioInput)) 
-                {
-                    throw new FileNotFoundException($"Audio target not found: {finalAudioInput}");
-                }
-
-                var audioAnalysis = await FFProbe.AnalyseAsync(finalAudioInput);
-                var duration = audioAnalysis.Duration;
-
-                if (!File.Exists(imagePath)) throw new FileNotFoundException($"Image input not found: {imagePath}");
-
-                string customArgs = "-tune stillimage -preset ultrafast -pix_fmt yuv420p -crf 28 -shortest";
-
-                var result = await FFMpegArguments
-                    .FromFileInput(imagePath, true, options => options.Loop(1))
-                    .AddFileInput(finalAudioInput)
-                    .OutputToFile(outputPath, true, options => options
-                        .WithVideoCodec("libx264")
-                        .WithAudioCodec("aac")
-                        .WithAudioBitrate(192)
-                        .WithDuration(duration)
-                        .WithCustomArgument(customArgs))
-                    .ProcessAsynchronously();
-
-                if (result)
-                {
-                    _logger.LogInfo($"    [SUCCESS] Video generated: {Path.GetFileName(outputPath)}");
-                }
-
-                return result;
             }
             catch (Exception ex)
             {

@@ -20,6 +20,14 @@ namespace VideoGenerator.Services
             LoadDialogues();
         }
 
+        public static string CleanDialogue(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+            string cleaned = System.Text.RegularExpressions.Regex.Replace(text, @"\[.*?\]", "").Trim();
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"\s+", " ").Trim();
+            return cleaned;
+        }
+
         public string GetDialogue(string language, string folderName)
         {
             lock (_lock)

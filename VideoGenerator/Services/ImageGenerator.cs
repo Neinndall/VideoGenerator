@@ -104,10 +104,12 @@ namespace VideoGenerator.Services
             return _cachedBackground.Clone();
         }
 
-        public async Task<string> CreateImageAsync(ParsedEvent eventData, string fontName = "Arial", string customBackgroundPath = null, float textVerticalOffset = 0f)
+        public async Task<string> CreateImageAsync(ParsedEvent eventData, string fontName = "Arial", string customBackgroundPath = null, float textVerticalOffset = 0f, string customSuffix = "", string subFolder = "")
         {
-            Directory.CreateDirectory(AppConfig.OutputImagesDir);
-            string outputPath = Path.Combine(AppConfig.OutputImagesDir, $"{eventData.OriginalFolder}.png");
+            string targetDir = string.IsNullOrEmpty(subFolder) ? AppConfig.OutputImagesDir : Path.Combine(AppConfig.OutputImagesDir, subFolder);
+            Directory.CreateDirectory(targetDir);
+            string filename = string.IsNullOrEmpty(customSuffix) ? $"{eventData.OriginalFolder}.png" : $"{eventData.OriginalFolder}_{customSuffix}.png";
+            string outputPath = Path.Combine(targetDir, filename);
             var bytes = await CreateImageBytesAsync(eventData, fontName, customBackgroundPath, textVerticalOffset);
             if (bytes == null) return null;
 
