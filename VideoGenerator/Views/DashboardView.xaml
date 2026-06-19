@@ -335,7 +335,7 @@
                                       Text="{Binding DashboardModel.SelectedEvent.Dialogue, UpdateSourceTrigger=PropertyChanged}"
                                       materialDesign:HintAssist.Hint="Dialogue Subtitle (Optional, burned into video)"
                                       IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}"
-                                      ToolTip="Type the spoken voiceover dialogue or click Auto-Transcribe to use Whisper"
+                                      ToolTip="Type the spoken voiceover dialogue or click Test Transcribe to use Whisper"
                                       Style="{StaticResource CompactModernTextBox}" Margin="0,0,12,0"/>
                             <Button Grid.Column="1" Click="Transcribe_Click"
                                     IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}"
@@ -343,7 +343,7 @@
                                     Height="40" Padding="16,0">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Microphone" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
-                                    <TextBlock Text="AUTO-TRANSCRIBE" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                                    <TextBlock Text="TEST TRANSCRIBE" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
                                 </StackPanel>
                             </Button>
                         </Grid>

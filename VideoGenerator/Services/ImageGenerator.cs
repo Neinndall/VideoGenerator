@@ -160,7 +160,7 @@ namespace VideoGenerator.Services
                     bool hasIcon = !string.IsNullOrEmpty(eventData.IconPath) && File.Exists(eventData.IconPath);
                     bool isRightAlign = AppSettings.Instance.IconAlignment.Equals("Right", StringComparison.OrdinalIgnoreCase);
                     
-                    int bubbleWidth = hasIcon ? 850 : 1000;
+                    int bubbleWidth = (int)AppSettings.Instance.BubbleWidth;
                     int bubbleHeight = (int)AppSettings.Instance.BubbleHeight;
                     // If icon exists, center align with the icon vertically (default 738, customizable offset).
                     // If no icon, place it lower, sitting 20px above the ribbon (default 758, customizable offset).
@@ -169,12 +169,14 @@ namespace VideoGenerator.Services
 
                     if (hasIcon)
                     {
-                        bubbleX = isRightAlign ? 810 : 260;
+                        // Smart positioning: if right-aligned, the bubble expands inwards to avoid clashing with the icon (which starts at 1690).
+                        // If left-aligned, it starts at 260.
+                        bubbleX = (isRightAlign ? (1660 - bubbleWidth) : 260) + (int)AppSettings.Instance.BubbleHorizontalOffset;
                     }
                     else
                     {
                         // Centered horizontally if there is no icon
-                        bubbleX = (HudTextures.CanvasWidth - bubbleWidth) / 2; // (1920 - 1000) / 2 = 460
+                        bubbleX = ((HudTextures.CanvasWidth - bubbleWidth) / 2) + (int)AppSettings.Instance.BubbleHorizontalOffset;
                     }
 
                     // 1. Draw the Bubble Rectangle

@@ -151,9 +151,7 @@
                 Margin="8"
                 Background="{StaticResource PrimaryBackgroundBrush}"
                 CornerRadius="24">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <ContentControl x:Name="ContentArea" Margin="20" />
-            </ScrollViewer>
+             <ContentControl x:Name="ContentArea" Margin="20" />
         </Border>
     </Grid>
 </Window>

@@ -195,6 +195,28 @@ namespace VideoGenerator.Services
             }
         }
 
+        private float _bubbleWidth = 900f;
+        public float BubbleWidth
+        {
+            get => _bubbleWidth;
+            set
+            {
+                if (SetProperty(ref _bubbleWidth, value))
+                    QueueSave();
+            }
+        }
+
+        private float _bubbleHorizontalOffset = 0f;
+        public float BubbleHorizontalOffset
+        {
+            get => _bubbleHorizontalOffset;
+            set
+            {
+                if (SetProperty(ref _bubbleHorizontalOffset, value))
+                    QueueSave();
+            }
+        }
+
         [JsonConstructor]
         public AppSettings() { }
 

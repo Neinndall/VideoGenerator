@@ -29,8 +29,9 @@
         </StackPanel>
 
         <!-- Settings Container -->
-        <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Padding="0">
-            <StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+            <Border Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,8,0">
+                <StackPanel>
                     
                     <!-- SECTION: MEDIA DIRECTORY CONFIGURATION -->
                     <Border Background="{StaticResource SurfaceBrush}" 
@@ -245,6 +246,7 @@
                     </StackPanel>
 
                 </StackPanel>
-        </Border>
+            </Border>
+        </ScrollViewer>
     </Grid>
 </UserControl>

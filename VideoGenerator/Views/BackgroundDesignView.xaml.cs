@@ -76,7 +76,9 @@ namespace VideoGenerator.Views
                     e.PropertyName == nameof(AppSettings.BubbleTextSize) ||
                     e.PropertyName == nameof(AppSettings.BubbleHeight) ||
                     e.PropertyName == nameof(AppSettings.BubbleOpacity) ||
-                    e.PropertyName == nameof(AppSettings.BubbleVerticalOffset))
+                    e.PropertyName == nameof(AppSettings.BubbleVerticalOffset) ||
+                    e.PropertyName == nameof(AppSettings.BubbleWidth) ||
+                    e.PropertyName == nameof(AppSettings.BubbleHorizontalOffset))
                 {
                     if (e.PropertyName == nameof(AppSettings.SelectedFontName) && _model.SelectedFontName != AppSettings.Instance.SelectedFontName)
                     {
