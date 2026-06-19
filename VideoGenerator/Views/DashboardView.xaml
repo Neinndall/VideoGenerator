@@ -158,11 +158,11 @@
                                         
                                         <StackPanel Grid.Column="0" Margin="0,0,12,0" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding FolderName}" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" TextTrimming="CharacterEllipsis"/>
-                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                <TextBlock Text="{Binding ParsedData.DisplayText}" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text=" • " Foreground="{StaticResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding CharacterName}" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
+                                            <TextBlock FontSize="10" TextTrimming="CharacterEllipsis" Margin="0,4,0,0">
+                                                <Run Text="{Binding ParsedData.DisplayText, Mode=OneWay}" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
+                                                <Run Text=" • " Foreground="{StaticResource TextMutedBrush}"/>
+                                                <Run Text="{Binding CharacterName, Mode=OneWay}" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            </TextBlock>
                                         </StackPanel>
 
                                         <Border x:Name="StatusBadge" Grid.Column="1" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
@@ -261,29 +261,41 @@
                 <!-- QUICK EDIT PANEL (Collapsible, shown when an event is selected) -->
                 <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Margin="0,12,0,0"
                         Visibility="{Binding DashboardModel.SelectedEvent, Converter={StaticResource NullToVisibilityConverter}}">
-                    <Border Background="{StaticResource SurfaceBrush}" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
-                        <Grid>
+                    <Grid>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*"/>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="150"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         
-                        <!-- Text Input -->
-                        <TextBox x:Name="QuickEditDisplayText" Grid.Column="0" Grid.Row="0"
+                        <!-- Row 0: Text Input & Apply Button -->
+                        <TextBox x:Name="QuickEditDisplayText" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                                   Text="{Binding DashboardModel.SelectedEvent.ParsedData.DisplayText, UpdateSourceTrigger=PropertyChanged}"
                                   materialDesign:HintAssist.Hint="Text shown in HUD"
                                   ToolTip="Text that appears on the generated image/video"
                                   Style="{StaticResource CompactModernTextBox}"
                                   Margin="0,0,12,12"/>
 
-                        <!-- Icon Lookup Name Input -->
-                        <TextBox x:Name="QuickEditIconLookup" Grid.Column="1" Grid.Row="0"
+                        <Button Grid.Row="0" Grid.Column="2" Click="ApplyQuickEdit_Click"
+                                Style="{StaticResource ModernPrimaryButton}"
+                                Height="40" Padding="16,0" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <materialDesign:PackIcon Grid.Column="0" Kind="ContentSaveOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
+                                <TextBlock Grid.Column="1" Text="APPLY CHANGES" VerticalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap"/>
+                            </Grid>
+                        </Button>
+
+                        <!-- Row 1: Icon configuration (Lookup and Type) -->
+                        <TextBox x:Name="QuickEditIconLookup" Grid.Row="1" Grid.Column="0"
                                   Text="{Binding DashboardModel.SelectedEvent.ParsedData.IconLookupName, UpdateSourceTrigger=PropertyChanged}"
                                   materialDesign:HintAssist.Hint="Icon name or ID"
                                   ToolTip="For items you can type a fragment like 'Infinity' and it resolves to the official ID"
@@ -299,13 +311,12 @@
                             </TextBox.Style>
                         </TextBox>
 
-                        <!-- Icon Type Combo -->
-                        <ComboBox x:Name="QuickEditIconType" Grid.Column="2" Grid.Row="0"
+                        <ComboBox x:Name="QuickEditIconType" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
                                   SelectedValue="{Binding DashboardModel.SelectedEvent.ParsedData.IconType, UpdateSourceTrigger=PropertyChanged}"
                                   materialDesign:HintAssist.Hint="Icon category"
                                   ToolTip="Select the type of icon to look up"
                                   Style="{StaticResource ModernComboBoxStyle}"
-                                  Height="40" Margin="0,0,12,12">
+                                  Height="40" Margin="0,0,0,12">
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">champion</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">item</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">monster</System:String>
@@ -315,53 +326,95 @@
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">generic</System:String>
                         </ComboBox>
 
-                        <!-- Save changes button -->
-                        <Button Grid.Column="3" Grid.Row="0" Click="ApplyQuickEdit_Click"
-                                Style="{StaticResource ModernPrimaryButton}"
-                                Height="40" Padding="16,0" Margin="0,0,0,12">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="ContentSaveOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
-                                <TextBlock Text="APPLY CHANGES" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
-                            </StackPanel>
-                        </Button>
+                        <!-- Row 2: Dialogue Subtitle & Test Transcribe -->
+                        <TextBox x:Name="QuickEditDialogue" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                  Text="{Binding DashboardModel.SelectedEvent.Dialogue, UpdateSourceTrigger=PropertyChanged}"
+                                  materialDesign:HintAssist.Hint="Dialogue Subtitle (Optional, burned into video)"
+                                  IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}"
+                                  ToolTip="Type the spoken voiceover dialogue or click Test Transcribe to use Whisper"
+                                  Style="{StaticResource CompactModernTextBox}" Margin="0,0,12,0"/>
 
-                        <!-- Dialogue Subtitle Row -->
-                        <Grid Grid.Row="1" Grid.ColumnSpan="4" Margin="0,4,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="QuickEditDialogue" Grid.Column="0"
-                                      Text="{Binding DashboardModel.SelectedEvent.Dialogue, UpdateSourceTrigger=PropertyChanged}"
-                                      materialDesign:HintAssist.Hint="Dialogue Subtitle (Optional, burned into video)"
-                                      IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}"
-                                      ToolTip="Type the spoken voiceover dialogue or click Test Transcribe to use Whisper"
-                                      Style="{StaticResource CompactModernTextBox}" Margin="0,0,12,0"/>
-                            <Button Grid.Column="1" Click="Transcribe_Click"
-                                    IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}"
-                                    Style="{StaticResource ModernPrimaryButton}" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
-                                    Height="40" Padding="16,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Microphone" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
-                                    <TextBlock Text="TEST TRANSCRIBE" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
-                                </StackPanel>
-                            </Button>
-                        </Grid>
+                        <Button Grid.Row="2" Grid.Column="2" Click="Transcribe_Click"
+                                IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}"
+                                Style="{StaticResource ModernPrimaryButton}" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                Height="40" Padding="16,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <materialDesign:PackIcon Grid.Column="0" Kind="Microphone" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
+                                <TextBlock Grid.Column="1" Text="TEST TRANSCRIBE" VerticalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap"/>
+                            </Grid>
+                        </Button>
                     </Grid>
                 </Border>
-            </Border>
 
-                <!-- FINAL ACTION -->
-                <Button Grid.Row="2" 
-                        Click="Generate_Click"
-                        IsEnabled="{Binding DashboardModel.IsAnalyzed}"
-                        Style="{StaticResource ModernPrimaryButton}"
-                        Height="60" Margin="0,12,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="PlayCircleOutline" Margin="0,0,16,0" VerticalAlignment="Center" Width="24" Height="24"/>
-                        <TextBlock Text="START BATCH RENDERING" VerticalAlignment="Center" FontSize="14" FontWeight="Black"/>
-                    </StackPanel>
-                </Button>
+                <!-- FINAL ACTIONS GRID -->
+                <Grid Grid.Row="2" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Prepare Dialogues -->
+                    <Button Grid.Column="0" 
+                            Click="PrepareTranscription_Click"
+                            IsEnabled="{Binding DashboardModel.IsAnalyzed}"
+                            Style="{StaticResource ModernPrimaryButton}"
+                            Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            Foreground="{StaticResource TextPrimaryBrush}"
+                            Height="60" Margin="0,0,6,0"
+                            ToolTip="Run Whisper speech-to-text transcription and resolve missing icons">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="MicrophoneOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20" Foreground="{StaticResource AccentBrush}"/>
+                            <TextBlock Grid.Column="1" Text="1. PREPARE DIALOGUES" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap" TextAlignment="Center"/>
+                        </Grid>
+                    </Button>
+
+                    <!-- Review Dialogues (Dialogue Editor) -->
+                    <Button Grid.Column="1" 
+                            Click="ReviewDialogues_Click"
+                            IsEnabled="{Binding DashboardModel.IsAnalyzed}"
+                            Style="{StaticResource ModernPrimaryButton}"
+                            Background="#1A8B5CF6"
+                            BorderBrush="{StaticResource AccentBrush}"
+                            Foreground="{StaticResource TextHighlightBrush}"
+                            Height="60" Margin="6,0,6,0"
+                            ToolTip="Open Dialogue Segment Editor to review and correct transcripts">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="PlaylistEdit" Margin="0,0,6,0" VerticalAlignment="Center" Width="20" Height="20"/>
+                            <TextBlock Grid.Column="1" Text="REVIEW" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap" TextAlignment="Center"/>
+                        </Grid>
+                    </Button>
+
+                    <!-- Render Videos -->
+                    <Button Grid.Column="2" 
+                            Click="Generate_Click"
+                            IsEnabled="{Binding DashboardModel.IsAnalyzed}"
+                            Style="{StaticResource ModernPrimaryButton}"
+                            Height="60" Margin="6,0,0,0"
+                            ToolTip="Generate and lossless compile final .mp4 videos using FFmpeg">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="PlayCircleOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
+                            <TextBlock Grid.Column="1" Text="2. RENDER VIDEOS" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap" TextAlignment="Center"/>
+                        </Grid>
+                    </Button>
+                </Grid>
             </Grid>
         </Grid>
 

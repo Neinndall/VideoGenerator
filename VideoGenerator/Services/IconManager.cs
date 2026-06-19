@@ -328,40 +328,31 @@ namespace VideoGenerator.Services
             {
                 formattedName = Regex.Replace(formattedName, @"(?<!^)(?=[A-Z])", " ");
             }
-            string baseWikiName = formattedName.Trim().Replace(" ", "_");
 
-            // Known ping / system icon filenames on the League of Legends Fandom wiki.
-            // File names are case-sensitive on the wiki, so use the exact title.
-            var knownPingFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            string baseWikiNameSpaces = formattedName.Trim().Replace("_", " ");
+            string baseWikiNameUnderscores = formattedName.Trim().Replace(" ", "_");
+
+            var candidates = new List<string>
             {
-                ["Assist Me"] = "Assist_Me_ping.png",
-                ["Danger"] = "Danger_ping.png",
-                ["Enemy Missing"] = "Enemy_Missing_ping.png",
-                ["On My Way"] = "On_My_Way_ping.png",
-                ["Push"] = "Push_ping.png",
-                ["Retreat"] = "Retreat_ping.png",
-                ["Bait"] = "Bait_ping.png",
-                ["Hold"] = "Hold_ping.png",
-                ["Need Vision"] = "Need_Vision_ping.png",
-                ["Vision Cleared"] = "Vision_Cleared_ping.png",
-                ["All In"] = "All_In_ping.png",
-                ["Gold"] = "Gold_icon.png"
+                $"{baseWikiNameSpaces} ping.png",
+                $"{baseWikiNameUnderscores} ping.png",
+                $"{baseWikiNameUnderscores}_ping.png",
+                $"{baseWikiNameSpaces} icon.png",
+                $"{baseWikiNameUnderscores}_icon.png",
+                $"{baseWikiNameSpaces}.png",
+                $"{baseWikiNameUnderscores}.png",
+                $"{baseWikiNameUnderscores}_item.png"
             };
 
-            var candidates = new List<string>();
-            if (knownPingFiles.TryGetValue(systemName, out string mappedFile))
+            // Special case for Gold and Danger/Caution
+            if (systemName.Equals("Gold", StringComparison.OrdinalIgnoreCase))
             {
-                candidates.Add(mappedFile);
+                candidates.Insert(0, "Gold_icon.png");
             }
-
-            candidates.AddRange(new[]
+            else if (systemName.Equals("Danger", StringComparison.OrdinalIgnoreCase))
             {
-                $"LoL_ping_{baseWikiName.ToLower()}.png",
-                $"{baseWikiName}_ping.png",
-                $"{baseWikiName}_icon.png",
-                $"{baseWikiName}.png",
-                $"{baseWikiName}_item.png"
-            });
+                candidates.Insert(0, "Retreat ping.png");
+            }
 
             foreach (var wikiFileName in candidates)
             {
