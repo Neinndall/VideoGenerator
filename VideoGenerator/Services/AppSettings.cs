@@ -129,6 +129,28 @@ namespace VideoGenerator.Services
             }
         }
 
+        private string _whisperLanguage = "auto";
+        public string WhisperLanguage
+        {
+            get => _whisperLanguage;
+            set
+            {
+                if (SetProperty(ref _whisperLanguage, value))
+                    QueueSave();
+            }
+        }
+
+        private string _whisperModel = "base";
+        public string WhisperModel
+        {
+            get => _whisperModel;
+            set
+            {
+                if (SetProperty(ref _whisperModel, value))
+                    QueueSave();
+            }
+        }
+
         private float _bubbleTextSize = 22f;
         public float BubbleTextSize
         {
@@ -169,6 +191,103 @@ namespace VideoGenerator.Services
             set
             {
                 if (SetProperty(ref _bubbleVerticalOffset, value))
+                    QueueSave();
+            }
+        }
+
+        private float _bubbleWidth = 900f;
+        public float BubbleWidth
+        {
+            get => _bubbleWidth;
+            set
+            {
+                if (SetProperty(ref _bubbleWidth, value))
+                    QueueSave();
+            }
+        }
+
+        private float _bubbleHorizontalOffset = 0f;
+        public float BubbleHorizontalOffset
+        {
+            get => _bubbleHorizontalOffset;
+            set
+            {
+                if (SetProperty(ref _bubbleHorizontalOffset, value))
+                    QueueSave();
+            }
+        }
+
+        private string NormalizeColorInput(string val)
+        {
+            if (string.IsNullOrWhiteSpace(val)) return val;
+            var match = System.Text.RegularExpressions.Regex.Match(val, @"#[0-9A-Fa-f]{3,8}");
+            if (match.Success)
+            {
+                return match.Value;
+            }
+            string lower = val.Trim().ToLowerInvariant();
+            switch (lower)
+            {
+                case "white": return "#FFFFFF";
+                case "gold": return "#C89B3C";
+                case "hextech gold": return "#C89B3C";
+            }
+            return val;
+        }
+
+        private string _bubbleBorderColor = "#C89B3C";
+        public string BubbleBorderColor
+        {
+            get => _bubbleBorderColor;
+            set
+            {
+                string normalized = NormalizeColorInput(value);
+                if (SetProperty(ref _bubbleBorderColor, normalized))
+                    QueueSave();
+            }
+        }
+
+        private string _iconBorderColor = "#C89B3C";
+        public string IconBorderColor
+        {
+            get => _iconBorderColor;
+            set
+            {
+                string normalized = NormalizeColorInput(value);
+                if (SetProperty(ref _iconBorderColor, normalized))
+                    QueueSave();
+            }
+        }
+
+        private float _iconBorderThickness = 2f;
+        public float IconBorderThickness
+        {
+            get => _iconBorderThickness;
+            set
+            {
+                if (SetProperty(ref _iconBorderThickness, value))
+                    QueueSave();
+            }
+        }
+
+        private float _bubbleBorderThickness = 2f;
+        public float BubbleBorderThickness
+        {
+            get => _bubbleBorderThickness;
+            set
+            {
+                if (SetProperty(ref _bubbleBorderThickness, value))
+                    QueueSave();
+            }
+        }
+
+        private bool _cleanWhisperHallucinations = false;
+        public bool CleanWhisperHallucinations
+        {
+            get => _cleanWhisperHallucinations;
+            set
+            {
+                if (SetProperty(ref _cleanWhisperHallucinations, value))
                     QueueSave();
             }
         }

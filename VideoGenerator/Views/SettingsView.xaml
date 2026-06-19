@@ -29,8 +29,9 @@
         </StackPanel>
 
         <!-- Settings Container -->
-        <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Padding="0">
-            <StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+            <Border Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,8,0">
+                <StackPanel>
                     
                     <!-- SECTION: MEDIA DIRECTORY CONFIGURATION -->
                     <Border Background="{StaticResource SurfaceBrush}" 
@@ -176,6 +177,83 @@
                         </Grid>
                     </Border>
 
+                    <!-- DIVIDER -->
+                    <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
+                    <!-- Whisper Model -->
+                    <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                <TextBlock Text="Whisper Model Size" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                <TextBlock Text="Select the size of the Whisper speech-to-text model. Base is recommended. Larger models require downloading." 
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <ComboBox Grid.Column="1" 
+                                      ItemsSource="{Binding WhisperModelOptions}"
+                                      SelectedItem="{Binding Settings.WhisperModel}"
+                                      Style="{StaticResource ModernComboBoxStyle}"
+                                      materialDesign:HintAssist.Hint="Model Size"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- DIVIDER -->
+                    <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
+                    <!-- Whisper Language -->
+                    <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                <TextBlock Text="Transcription Audio Language" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                <TextBlock Text="Force Whisper to transcribe in a specific language to prevent translation errors or language confusion." 
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <ComboBox Grid.Column="1" 
+                                      ItemsSource="{Binding WhisperLanguageOptions}"
+                                      SelectedValue="{Binding Settings.WhisperLanguage, Mode=TwoWay}"
+                                      SelectedValuePath="Value"
+                                      DisplayMemberPath="Key"
+                                      Style="{StaticResource ModernComboBoxStyle}"
+                                      materialDesign:HintAssist.Hint="Language"/>
+                        </Grid>
+                     </Border>
+
+                     <!-- DIVIDER -->
+                     <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
+                     <!-- Clean Whisper Hallucinations -->
+                     <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
+                         <Grid>
+                             <Grid.ColumnDefinitions>
+                                 <ColumnDefinition Width="*"/>
+                                 <ColumnDefinition Width="200"/>
+                             </Grid.ColumnDefinitions>
+
+                             <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                 <TextBlock Text="Clean Ambient Audio Tags" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                 <TextBlock Text="Automatically strip non-speech ambient audio tags in square brackets like [BLANK_AUDIO] or [MUSIC] from transcriptions." 
+                                            TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                             </StackPanel>
+
+                             <ToggleButton Grid.Column="1" 
+                                           IsChecked="{Binding Settings.CleanWhisperHallucinations, Mode=TwoWay}"
+                                           Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Center"/>
+                         </Grid>
+                     </Border>
+
                     <!-- SYSTEM INFO SECTION -->
                     <Border Background="{StaticResource SurfaceBrush}" 
                             Padding="24,16" 
@@ -193,6 +271,7 @@
                     </StackPanel>
 
                 </StackPanel>
-        </Border>
+            </Border>
+        </ScrollViewer>
     </Grid>
 </UserControl>

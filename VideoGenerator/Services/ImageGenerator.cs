@@ -154,13 +154,22 @@ namespace VideoGenerator.Services
                     // Style Colors
                     byte alpha = (byte)(Math.Clamp(AppSettings.Instance.BubbleOpacity, 0f, 1f) * 255);
                     var bubbleBgColor = Color.FromRgba(10, 10, 12, alpha); // Hextech dark transparent with customizable opacity
-                    var goldBorderColor = Color.ParseHex("#C89B3C");     // Hextech Gold
+                    
+                    Color bubbleBorderColor;
+                    try
+                    {
+                        bubbleBorderColor = Color.ParseHex(AppSettings.Instance.BubbleBorderColor ?? "#C89B3C");
+                    }
+                    catch
+                    {
+                        bubbleBorderColor = Color.ParseHex("#C89B3C");
+                    }
 
                     // Check if there is a valid icon drawn
                     bool hasIcon = !string.IsNullOrEmpty(eventData.IconPath) && File.Exists(eventData.IconPath);
                     bool isRightAlign = AppSettings.Instance.IconAlignment.Equals("Right", StringComparison.OrdinalIgnoreCase);
                     
-                    int bubbleWidth = hasIcon ? 850 : 1000;
+                    int bubbleWidth = (int)AppSettings.Instance.BubbleWidth;
                     int bubbleHeight = (int)AppSettings.Instance.BubbleHeight;
                     // If icon exists, center align with the icon vertically (default 738, customizable offset).
                     // If no icon, place it lower, sitting 20px above the ribbon (default 758, customizable offset).
@@ -169,18 +178,24 @@ namespace VideoGenerator.Services
 
                     if (hasIcon)
                     {
-                        bubbleX = isRightAlign ? 810 : 260;
+                        // Smart positioning: if right-aligned, the bubble expands inwards to avoid clashing with the icon (which starts at 1690).
+                        // If left-aligned, it starts at 260.
+                        bubbleX = (isRightAlign ? (1660 - bubbleWidth) : 260) + (int)AppSettings.Instance.BubbleHorizontalOffset;
                     }
                     else
                     {
                         // Centered horizontally if there is no icon
-                        bubbleX = (HudTextures.CanvasWidth - bubbleWidth) / 2; // (1920 - 1000) / 2 = 460
+                        bubbleX = ((HudTextures.CanvasWidth - bubbleWidth) / 2) + (int)AppSettings.Instance.BubbleHorizontalOffset;
                     }
 
                     // 1. Draw the Bubble Rectangle
                     var bubbleRect = new RectangleF(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
                     image.Mutate(x => x.Fill(bubbleBgColor, bubbleRect));
-                    image.Mutate(x => x.Draw(goldBorderColor, 2f, bubbleRect));
+                    float bubbleThickness = AppSettings.Instance.BubbleBorderThickness;
+                    if (bubbleThickness > 0)
+                    {
+                        image.Mutate(x => x.Draw(bubbleBorderColor, bubbleThickness, bubbleRect));
+                    }
 
                     // 2. Draw the Triangle Tail pointing to the icon ONLY if the icon is present
                     if (hasIcon)
@@ -209,7 +224,10 @@ namespace VideoGenerator.Services
 
                         // Fill and outline the tail
                         image.Mutate(x => x.FillPolygon(bubbleBgColor, tailPoints));
-                        image.Mutate(x => x.DrawPolygon(goldBorderColor, 2f, tailPoints));
+                        if (bubbleThickness > 0)
+                        {
+                            image.Mutate(x => x.DrawPolygon(bubbleBorderColor, bubbleThickness, tailPoints));
+                        }
                     }
 
                     // 3. Draw Dialogue Text (Wrapped inside the bubble)
@@ -271,6 +289,24 @@ namespace VideoGenerator.Services
                     using (iconToDraw)
                     {
                         image.Mutate(x => x.DrawImage(iconToDraw, new Point(iconX, iconY), 1f));
+                    }
+
+                    // Draw configurable Icon Border
+                    float thickness = AppSettings.Instance.IconBorderThickness;
+                    if (thickness > 0)
+                    {
+                        Color iconBorderColor;
+                        try
+                        {
+                            iconBorderColor = Color.ParseHex(AppSettings.Instance.IconBorderColor ?? "#C89B3C");
+                        }
+                        catch
+                        {
+                            iconBorderColor = Color.ParseHex("#C89B3C");
+                        }
+
+                        var iconRect = new RectangleF(iconX, iconY, HudTextures.IconSize, HudTextures.IconSize);
+                        image.Mutate(x => x.Draw(iconBorderColor, thickness, iconRect));
                     }
                 }
 
