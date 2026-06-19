@@ -245,6 +245,39 @@
                             <!-- DIVIDER -->
                             <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
 
+                            <!-- Whisper CPU Threads -->
+                            <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="200"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                        <TextBlock Text="Whisper CPU Threads" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                        <TextBlock Text="Set the number of CPU threads for Speech-to-Text. More threads speed up transcription but increase CPU usage." 
+                                                   TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <DockPanel>
+                                            <TextBlock Text="{Binding Settings.WhisperThreadCount}" 
+                                                       Width="30" DockPanel.Dock="Right" TextAlignment="Right" 
+                                                       FontWeight="Bold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                                            <Slider Value="{Binding Settings.WhisperThreadCount, Mode=TwoWay}"
+                                                    Minimum="1" 
+                                                    Maximum="{Binding MaxCpuThreads}" 
+                                                    TickFrequency="1" IsSnapToTickEnabled="True" 
+                                                    Style="{StaticResource ModernSlider}"
+                                                    VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- DIVIDER -->
+                            <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
                             <!-- Whisper Language -->
                             <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
                                 <Grid>

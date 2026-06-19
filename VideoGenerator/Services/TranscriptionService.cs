@@ -116,8 +116,10 @@ namespace VideoGenerator.Services
                 }
 
                 string lang = AppSettings.Instance.WhisperLanguage ?? "auto";
+                int threads = AppSettings.Instance.WhisperThreadCount;
                 using var processor = factory.CreateBuilder()
                     .WithLanguage(lang)
+                    .WithThreads(threads)
                     .Build();
 
                 using var fileStream = new FileStream(tempWavPath, FileMode.Open, FileAccess.Read);

@@ -27,6 +27,8 @@ namespace VideoGenerator.Views
             { "Chinese (中文)", "zh" }
         };
 
+        public int MaxCpuThreads => System.Environment.ProcessorCount;
+
         public SettingsView(TranslationService translationService)
         {
             InitializeComponent();

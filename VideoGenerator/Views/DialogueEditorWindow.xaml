@@ -7,7 +7,7 @@
         xmlns:services="clr-namespace:VideoGenerator.Services"
         xmlns:converters="clr-namespace:VideoGenerator.Views.Converters"
         mc:Ignorable="d"
-        Title="DIALOGUE SEGMENT EDITOR &amp; VALIDATOR" 
+        Title="Dialogue Editor" 
         Height="700" Width="1050"
         WindowStartupLocation="CenterOwner"
         Background="#0D0D0F"
