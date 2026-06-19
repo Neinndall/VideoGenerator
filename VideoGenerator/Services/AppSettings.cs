@@ -303,6 +303,19 @@ namespace VideoGenerator.Services
             }
         }
 
+        private int _whisperThreadCount = Math.Max(1, Environment.ProcessorCount / 2);
+        public int WhisperThreadCount
+        {
+            get => _whisperThreadCount;
+            set
+            {
+                // Clamp between 1 and Environment.ProcessorCount
+                int clamped = Math.Clamp(value, 1, Environment.ProcessorCount);
+                if (SetProperty(ref _whisperThreadCount, clamped))
+                    QueueSave();
+            }
+        }
+
         [JsonConstructor]
         public AppSettings() { }
 
