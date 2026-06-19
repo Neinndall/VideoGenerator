@@ -527,27 +527,27 @@ namespace VideoGenerator.Views
             finally { _model.IsProcessing = false; }
         }
 
-        private async void Generate_Click(object sender, RoutedEventArgs e)
+        private async void PrepareTranscription_Click(object sender, RoutedEventArgs e)
         {
             if (!_model.IsAnalyzed || _model.FilteredProcessedEvents.Count == 0) return;
             _model.IsProcessing = true;
             _model.ProgressValue = 0;
-            _logger.LogInfo(">>> STARTING BATCH RENDER...");
+            _logger.LogInfo(">>> STARTING BATCH PREPARATION (STAGE 1)...");
             try {
-                var eventsToRender = _model.FilteredProcessedEvents.ToList();
+                var eventsToPrepare = _model.FilteredProcessedEvents.ToList();
                 var reportProgress = new Action<double>(value => Application.Current.Dispatcher.Invoke(() => _model.ProgressValue = value));
 
                 await Task.Run(async () => {
-                    int total = eventsToRender.Count;
+                    int total = eventsToPrepare.Count;
                     int processedCount = 0;
                     reportProgress(0.0);
 
-                    foreach (var ev in eventsToRender) {
+                    foreach (var ev in eventsToPrepare) {
                         double baseProgress = (double)processedCount / total * 100.0;
                         double stepWeight = 100.0 / total;
                         reportProgress(baseProgress + stepWeight * 0.1);
 
-                        // 1. Resolve pending icon in background safely
+                        // 1. Resolve pending icon
                         if (ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
                         {
                             string iconPath = await ResolveIconPathAsync(ev.ParsedData);
@@ -563,7 +563,7 @@ namespace VideoGenerator.Views
                             reportProgress((double)processedCount / total * 100.0);
                             continue;
                         }
-                        
+
                         string dialogue = ev.Dialogue;
                         bool shouldTranscribe = AppSettings.Instance.EnableTranscriptions && ev.AudioFiles.Count > 0 &&
                             (string.IsNullOrEmpty(dialogue) || AppSettings.Instance.ForceBatchRetranscribe);
@@ -571,7 +571,7 @@ namespace VideoGenerator.Views
                         if (shouldTranscribe)
                         {
                             reportProgress(baseProgress + stepWeight * 0.3);
-                            _logger.LogInfo($"Auto-transcribing on the fly for {ev.FolderName}...");
+                            _logger.LogInfo($"Auto-transcribing for {ev.FolderName}...");
                             string transcription = await _transcriptionService.TranscribeAudiosAsync(ev.AudioFiles);
                             if (!string.IsNullOrEmpty(transcription))
                             {
@@ -581,11 +581,10 @@ namespace VideoGenerator.Views
                                 {
                                     ev.ParsedData.Dialogue = transcription;
                                 }
-                                
+
                                 string selectedLang = _model.SelectedLanguage ?? "EN";
                                 _dialogueService.SetDialogue(selectedLang, ev.FolderName, transcription);
-                                
-                                // Update textbox in UI if this event is currently selected
+
                                 if (_model.SelectedEvent == ev)
                                 {
                                     Application.Current.Dispatcher.Invoke(() => {
@@ -607,8 +606,7 @@ namespace VideoGenerator.Views
                                 }
                                 string selectedLang = _model.SelectedLanguage ?? "EN";
                                 _dialogueService.SetDialogue(selectedLang, ev.FolderName, cleaned);
-                                
-                                // Update textbox in UI if this event is currently selected
+
                                 if (_model.SelectedEvent == ev)
                                 {
                                     Application.Current.Dispatcher.Invoke(() => {
@@ -624,9 +622,9 @@ namespace VideoGenerator.Views
                                       .Select(s => s.Trim())
                                       .ToArray();
 
-                        var imagePaths = new List<string>();
                         reportProgress(baseProgress + stepWeight * 0.55);
 
+                        // 2. Pre-render HUD image files
                         if (dialogueParts.Length > 1 && ev.AudioFiles.Count > 1)
                         {
                             for (int i = 0; i < ev.AudioFiles.Count; i++)
@@ -634,28 +632,125 @@ namespace VideoGenerator.Views
                                 string partDialogue = i < dialogueParts.Length ? dialogueParts[i] : "";
                                 string oldDialogue = ev.ParsedData.Dialogue;
                                 ev.ParsedData.Dialogue = partDialogue;
-
-                                string imgPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName);
+                                await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName);
                                 ev.ParsedData.Dialogue = oldDialogue;
-
-                                if (string.IsNullOrEmpty(imgPath) || !File.Exists(imgPath))
-                                {
-                                    imgPath = AppSettings.Instance.CustomBackgroundPath ?? AppConfig.BackgroundPath;
-                                }
-                                imagePaths.Add(imgPath);
                             }
                         }
                         else
                         {
-                            string tempImagePath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
-                            if (string.IsNullOrEmpty(tempImagePath) || !File.Exists(tempImagePath))
+                            await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
+                        }
+
+                        Application.Current.Dispatcher.Invoke(() => {
+                            ev.Status = "Ready";
+                        });
+
+                        reportProgress(baseProgress + stepWeight * 0.85);
+
+                        processedCount++;
+                        reportProgress((double)processedCount / total * 100.0);
+                    }
+                    reportProgress(100.0);
+                });
+                _logger.LogInfo(">>> BATCH PREPARATION COMPLETE. You can now REVIEW DIALOGUES or RENDER VIDEOS.");
+
+                // Show DialogueEditor Window automatically once preparation completes
+                Application.Current.Dispatcher.Invoke(() => {
+                    ReviewDialogues_Click(null, null);
+                });
+            } catch (Exception ex) { _logger.LogError("Preparation failed", ex); }
+            finally { _model.IsProcessing = false; }
+        }
+
+        private void ReviewDialogues_Click(object sender, RoutedEventArgs e)
+        {
+            var events = _model.FilteredProcessedEvents.ToList();
+            if (events.Count == 0) return;
+
+            var dialog = new DialogueEditorWindow(
+                events,
+                _transcriptionService,
+                _dialogueService,
+                _imageGenerator,
+                _videoService,
+                _model.SelectedLanguage
+            );
+            dialog.Owner = Application.Current.MainWindow;
+            if (dialog.ShowDialog() == true)
+            {
+                _logger.LogInfo("Dialogues reviewed and approved by user.");
+                _ = UpdatePreviewAsync(); // Refresh current preview
+            }
+        }
+
+        private async void Generate_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_model.IsAnalyzed || _model.FilteredProcessedEvents.Count == 0) return;
+            _model.IsProcessing = true;
+            _model.ProgressValue = 0;
+            _logger.LogInfo(">>> STARTING BATCH VIDEO RENDERING (STAGE 2)...");
+            try {
+                var eventsToRender = _model.FilteredProcessedEvents.ToList();
+                var reportProgress = new Action<double>(value => Application.Current.Dispatcher.Invoke(() => _model.ProgressValue = value));
+
+                await Task.Run(async () => {
+                    int total = eventsToRender.Count;
+                    int processedCount = 0;
+                    reportProgress(0.0);
+
+                    foreach (var ev in eventsToRender) {
+                        double baseProgress = (double)processedCount / total * 100.0;
+                        double stepWeight = 100.0 / total;
+                        reportProgress(baseProgress + stepWeight * 0.1);
+
+                        if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null)
+                        {
+                            processedCount++;
+                            reportProgress((double)processedCount / total * 100.0);
+                            continue;
+                        }
+
+                        string dialogue = ev.Dialogue;
+                        var dialogueParts = string.IsNullOrEmpty(dialogue) 
+                            ? new string[0] 
+                            : dialogue.Split(new[] { "||" }, StringSplitOptions.None)
+                                      .Select(s => s.Trim())
+                                      .ToArray();
+
+                        var imagePaths = new List<string>();
+                        reportProgress(baseProgress + stepWeight * 0.45);
+
+                        // Locate pre-rendered images, or generate them if missing
+                        string targetDir = Path.Combine(AppConfig.OutputImagesDir, ev.CharacterName);
+                        if (dialogueParts.Length > 1 && ev.AudioFiles.Count > 1)
+                        {
+                            for (int i = 0; i < ev.AudioFiles.Count; i++)
                             {
-                                tempImagePath = AppSettings.Instance.CustomBackgroundPath ?? AppConfig.BackgroundPath;
+                                string expectedPath = Path.Combine(targetDir, $"{ev.FolderName}_part_{i}.png");
+                                if (!File.Exists(expectedPath))
+                                {
+                                    string partDialogue = i < dialogueParts.Length ? dialogueParts[i] : "";
+                                    string oldDialogue = ev.ParsedData.Dialogue;
+                                    ev.ParsedData.Dialogue = partDialogue;
+                                    expectedPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName);
+                                    ev.ParsedData.Dialogue = oldDialogue;
+                                }
+                                imagePaths.Add(expectedPath);
                             }
-                            imagePaths.Add(tempImagePath);
+                        }
+                        else
+                        {
+                            string expectedPath = Path.Combine(targetDir, $"{ev.FolderName}.png");
+                            if (!File.Exists(expectedPath))
+                            {
+                                expectedPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
+                            }
+                            imagePaths.Add(expectedPath);
                         }
 
                         reportProgress(baseProgress + stepWeight * 0.8);
+
+                        // Compile video Frame + Audio using FFmpeg
                         string outputVideoDir = Path.Combine(AppConfig.OutputVideosDir, ev.CharacterName);
                         Directory.CreateDirectory(outputVideoDir);
                         string outputPath = Path.Combine(outputVideoDir, ev.FolderName + ".mp4");
@@ -666,8 +761,8 @@ namespace VideoGenerator.Views
                     }
                     reportProgress(100.0);
                 });
-                _logger.LogInfo(">>> BATCH PROCESS COMPLETED.");
-            } catch (Exception ex) { _logger.LogError("Generation failed", ex); }
+                _logger.LogInfo(">>> VIDEO RENDERING COMPLETED.");
+            } catch (Exception ex) { _logger.LogError("Rendering failed", ex); }
             finally { _model.IsProcessing = false; }
         }
 

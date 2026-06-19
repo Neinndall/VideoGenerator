@@ -1,3 +1,26 @@
+VideoGenerator - Patch Notes | v1.2.4.0
+
+MEDIUM UPDATE
+This version introduces a new Dual-Phase Batch Rendering pipeline and a dedicated Dialogue Segment Editor Dialog to offer absolute, granular control over every individual audio segment and subtitle transcription.
+
+New Features
+  - UI / Dialogue Segment Editor Window: A premium HUD-styled modal dialog that displays a left pane with the event queue and a right pane showing every individual audio segment (part) of the selected event. Users can play individual audio files and edit their transcripts in independent text boxes, bypassing manual "||" separators.
+  - UI / Validation Status: Added validation checkboxes within the editor to mark event dialogue segments as verified, turning on a checkmark icon in the Dashboard pipeline list.
+
+Improvements
+  - Core / Dual-Phase Pipeline Split: Divided the batch process into two distinct stages:
+    * Step 1: "Prepare Dialogues" resolves icons, downloads files, runs Whisper, cleans ambient noise tags, and pre-renders HUD frame PNGs.
+    * Step 2: "Render Videos" compiles the final `.mp4` using FFmpeg in seconds, utilizing the verified dialogues and pre-rendered frames.
+  - UI / Dashboard Button layout: Updated the action panel with three dedicated buttons (1. Prepare Dialogues, Review, 2. Render Videos).
+
+Bug Fixes & Refinements
+  - Audio / Dialogue Playback Engine: Added on-the-fly conversion of `.ogg` audio files to temporary `.wav` files via FFmpeg inside the Dialogue Editor Window to enable native playback of voiceover files using WPF's MediaPlayer.
+  - UI / Dialogue Editor XAML Fixes: Resolved crash on window startup by correcting GridSplitter placement outside the ColumnDefinitions collection and swapping the invalid `MaterialDesignAccentCheckBox` style for the standard `MaterialDesignCheckBox`.
+  - UI / Dashboard Layout Responsiveness: Rearranged the Quick Edit inspector card into 3 vertical rows to prevent text and button clipping at smaller window widths (<=1200px). Added text wrapping to final action buttons and resolved horizontal text ellipsis cropping on pipeline list items.
+  - Icons / Danger Ping Wiki Resolution: Configured `IconManager` to map the `"Danger"` ping to the updated `"Retreat ping.png"` filename to match the League of Legends Wiki naming convention, resolving download failures.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.3.1
 
 MINOR UPDATE

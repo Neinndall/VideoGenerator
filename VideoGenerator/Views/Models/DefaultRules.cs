@@ -68,6 +68,11 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "Ping2DDanger", TranslationKey = "event_ping_danger", Section = "PINGS", IconType = "system", IconLookup = "Danger", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Ping2DEnemyMissing", TranslationKey = "event_ping_missing", Section = "PINGS", IconType = "system", IconLookup = "Enemy Missing", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Ping2DOnMyWay", TranslationKey = "event_ping_omw", Section = "PINGS", IconType = "system", IconLookup = "On My Way", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Ping2DRetreat", TranslationKey = "event_ping_retreat", Section = "PINGS", IconType = "system", IconLookup = "Retreat", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Ping2DPush", TranslationKey = "event_ping_push", Section = "PINGS", IconType = "system", IconLookup = "Push", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Ping2DBait", TranslationKey = "event_ping_bait", Section = "PINGS", IconType = "system", IconLookup = "Bait", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Ping2DHold", TranslationKey = "event_ping_hold", Section = "PINGS", IconType = "system", IconLookup = "Hold", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Ping2DAllIn", TranslationKey = "event_ping_all_in", Section = "PINGS", IconType = "system", IconLookup = "All In", Type = RuleType.Simple, ExtractsTarget = false },
 
                 // ==========================================
                 // ✨ ABILITIES (Habilidades y Rangos)
