@@ -227,7 +227,32 @@
                                       Style="{StaticResource ModernComboBoxStyle}"
                                       materialDesign:HintAssist.Hint="Language"/>
                         </Grid>
-                    </Border>
+                     </Border>
+
+                     <!-- DIVIDER -->
+                     <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
+
+                     <!-- Clean Whisper Hallucinations -->
+                     <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
+                         <Grid>
+                             <Grid.ColumnDefinitions>
+                                 <ColumnDefinition Width="*"/>
+                                 <ColumnDefinition Width="200"/>
+                             </Grid.ColumnDefinitions>
+
+                             <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                 <TextBlock Text="Clean Ambient Audio Tags" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                 <TextBlock Text="Automatically strip non-speech ambient audio tags in square brackets like [BLANK_AUDIO] or [MUSIC] from transcriptions." 
+                                            TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                             </StackPanel>
+
+                             <ToggleButton Grid.Column="1" 
+                                           IsChecked="{Binding Settings.CleanWhisperHallucinations, Mode=TwoWay}"
+                                           Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Center"/>
+                         </Grid>
+                     </Border>
 
                     <!-- SYSTEM INFO SECTION -->
                     <Border Background="{StaticResource SurfaceBrush}" 

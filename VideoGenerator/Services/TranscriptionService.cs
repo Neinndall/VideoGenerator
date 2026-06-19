@@ -115,6 +115,14 @@ namespace VideoGenerator.Services
                 }
 
                 string cleanedResult = transcriptionText.Trim();
+                
+                if (AppSettings.Instance.CleanWhisperHallucinations)
+                {
+                    // Remove bracketed non-speech sound tags (e.g., [BLANK_AUDIO], [MUSIC])
+                    cleanedResult = System.Text.RegularExpressions.Regex.Replace(cleanedResult, @"\[.*?\]", "").Trim();
+                    cleanedResult = System.Text.RegularExpressions.Regex.Replace(cleanedResult, @"\s+", " ").Trim();
+                }
+
                 _logger.LogInfo($"Transcription result: \"{cleanedResult}\"");
                 return cleanedResult;
             }

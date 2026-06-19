@@ -1,16 +1,41 @@
+VideoGenerator - Patch Notes | v1.2.2.2
+
+MINOR UPDATE
+This version adds user-configurable options for HUD Icon and Dialogue Bubble border colors and thicknesses in the Background Design studio, and introduces automatic cleanup of Whisper transcription hallucinations/non-speech tags with a dedicated settings toggle.
+
+New Features
+  - Design Studio / Customizable Border Styling: Added inputs to configure custom Border Colors and Border Thicknesses (0 to 5px range) for both HUD Icon and Dialogue Speech Bubbles.
+  - UI / Color Dropdown Presets: Added Dropdown (ComboBox) selectors containing only "Hextech Gold" and "White" options for a unified aesthetic.
+  - UI / Design Studio Descriptions: Updated the descriptions in Background Design to explicitly state that only Gold and White borders are supported.
+  - Audio / Transcription Hallucination Cleanup: Added post-processing cleanup in `TranscriptionService` to strip Whisper-generated non-speech tags in square brackets (e.g. `[BLANK_AUDIO]`, `[MUSIC]`, etc.) arising from silence or background tracks.
+  - Settings / Clean Ambient Audio Tags Toggle: Added a ToggleSwitch under the transcription settings panel to enable/disable the automatic removal of non-speech bracketed tags.
+
+Improvements
+  - Core / Border Rendering Engine: Refactored `ImageGenerator.cs` to dynamically parse and draw custom border colors and thicknesses on dialogue bubbles, triangle pointer tails, and framed champion/item icons.
+  - UI / Live Preview Sync: Synchronized `BackgroundDesignView.xaml.cs` and `DashboardView.xaml.cs` to trigger instant live canvas and dashboard updates upon changing border settings.
+  - UI / XML Syntax Clean Up: Cleaned up duplicate nested `Grid.RowDefinitions` elements in `BackgroundDesignView.xaml` preventing layout compile errors.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.2.1
 
 MINOR UPDATE
-This version adds user-configurable options for the Whisper Speech-to-Text model size and target audio language to resolve translation misidentifications.
+This version adds user-configurable options for the Whisper Speech-to-Text model size, target audio language, and advanced dialogue bubble layout customization.
 
 New Features
   - Settings / Whisper Model Selector: Added UI ComboBox under Settings to select Whisper model size ("tiny", "base", "small"). The default model is upgraded to "base" for higher out-of-the-box accuracy.
   - Settings / Whisper Language Selector: Added UI ComboBox to force Whisper transcriptions into a specific target language (e.g. Turkish, Spanish, English, etc.) rather than relying on automatic detection, resolving wrong language detection issues.
+  - Design Studio / Dialogue Bubble Customization: Added real-time sliders in Background Design to adjust Dialogue Bubble Width (500px to 1400px) and Horizontal Offset (-300px to 300px).
 
 Improvements
   - Core / Dynamic Whisper Download: Modified `TranscriptionService` to dynamically construct URLs and paths, automatically downloading the user-selected model from Hugging Face on demand.
   - UI / Conditional Enablement: Whisper Model and Language settings are reactively disabled if Speech-to-Text transcriptions are toggled OFF.
-  - UI / Global ScrollViewer: Added a ScrollViewer around the main ContentArea in `MainWindow.xaml` to satisfy the central scrolling requirement and prevent options from overflowing.
+  - UI / Settings ScrollViewer: Added a ScrollViewer specifically around the Settings panel to handle overflow cleanly without breaking the Dashboard viewport layout.
+  - UI / Real-Time Dashboard Sync: Updated the Dashboard preview to listen to all speech bubble customization properties (text size, height, opacity, offsets, width) for immediate visual updates.
+  - UI / Test Transcribe Button: Renamed the confusing "AUTO-TRANSCRIBE" button in the Quick Edit panel to "TEST TRANSCRIBE" and updated its tooltip to clarify that it transcribes the selected event for testing and editing.
+  - UI / Bubble Vertical Offset Limits: Adjusted the BUBBLE VERTICAL OFFSET slider range in Background Design (now -350px to 0px) to allow raising the bubble higher on screen while removing positive offsets (moving it lower).
+  - UI / Bubble Height Limits: Increased the BUBBLE HEIGHT slider maximum limit in Background Design from 240px to 400px to accommodate taller custom text boxes.
+  - Core / Smart Bubble Positioning: Implemented collision prevention in `ImageGenerator` so that wider dialogue bubbles expand inward, avoiding overlapping the champion icon when right-aligned.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

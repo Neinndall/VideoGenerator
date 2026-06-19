@@ -203,46 +203,75 @@
 
                             <Border Padding="16">
                                 <StackPanel>
-                                    <TextBlock Text="Configure the target champion/structure HUD icon placement. Toggle left/right alignment and shift the vertical pixel offset dynamically." 
+                                     <TextBlock Text="Configure the target champion/structure HUD icon placement. Toggle alignment, adjust thickness, and select either Gold or White borders (the only two supported options)." 
                                                FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14" TextWrapping="Wrap" Opacity="0.7" LineHeight="15"/>
 
                                     <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="12"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="110"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
+                                         <Grid.RowDefinitions>
+                                             <RowDefinition Height="Auto"/> <!-- 0: Alignment -->
+                                             <RowDefinition Height="12"/>   <!-- 1: Gap -->
+                                             <RowDefinition Height="Auto"/> <!-- 2: Vertical Position -->
+                                             <RowDefinition Height="12"/>   <!-- 3: Gap -->
+                                             <RowDefinition Height="Auto"/> <!-- 4: Border Color -->
+                                             <RowDefinition Height="12"/>   <!-- 5: Gap -->
+                                             <RowDefinition Height="Auto"/> <!-- 6: Border Thickness -->
+                                         </Grid.RowDefinitions>
+                                         <Grid.ColumnDefinitions>
+                                             <ColumnDefinition Width="110"/>
+                                             <ColumnDefinition Width="*"/>
+                                         </Grid.ColumnDefinitions>
+ 
+                                         <!-- Row 0: Horizontal Alignment -->
+                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="ALIGNMENT" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                         <Grid Grid.Row="0" Grid.Column="1">
+                                             <Grid.ColumnDefinitions>
+                                                 <ColumnDefinition Width="*"/>
+                                                 <ColumnDefinition Width="*"/>
+                                             </Grid.ColumnDefinitions>
+                                             <RadioButton x:Name="AlignLeftRadio" Grid.Column="0" Content="LEFT" Checked="AlignLeft_Checked"
+                                                          Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="32" Margin="0,0,4,0"/>
+                                             <RadioButton x:Name="AlignRightRadio" Grid.Column="1" Content="RIGHT" Checked="AlignRight_Checked"
+                                                          Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="32" Margin="4,0,0,0"/>
+                                         </Grid>
+ 
+                                         <!-- Row 2: Vertical Position -->
+                                         <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+                                             <Grid Margin="0,0,0,4">
+                                                 <TextBlock Text="VERTICAL POSITION" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                 <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset, StringFormat={}{0:F0}px}" 
+                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                             </Grid>
+                                             <Slider Minimum="-600" Maximum="200" 
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     Margin="0,4,0,0"/>
+                                         </StackPanel>
 
-                                        <!-- Row 0: Horizontal Alignment -->
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="ALIGNMENT" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                        <Grid Grid.Row="0" Grid.Column="1">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <RadioButton x:Name="AlignLeftRadio" Grid.Column="0" Content="LEFT" Checked="AlignLeft_Checked"
-                                                         Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="32" Margin="0,0,4,0"/>
-                                            <RadioButton x:Name="AlignRightRadio" Grid.Column="1" Content="RIGHT" Checked="AlignRight_Checked"
-                                                         Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="32" Margin="4,0,0,0"/>
-                                        </Grid>
+                                         <!-- Row 4: Icon Border Color -->
+                                         <TextBlock Grid.Row="4" Grid.Column="0" Text="BORDER COLOR" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                         <ComboBox Grid.Row="4" Grid.Column="1"
+                                                   SelectedValue="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconBorderColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                   SelectedValuePath="Tag"
+                                                   Style="{StaticResource ModernComboBoxStyle}"
+                                                   Height="40">
+                                             <ComboBoxItem Content="Hextech Gold" Tag="#C89B3C"/>
+                                             <ComboBoxItem Content="White" Tag="#FFFFFF"/>
+                                         </ComboBox>
 
-                                        <!-- Row 2: Vertical Position -->
-                                        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
-                                            <Grid Margin="0,0,0,4">
-                                                <TextBlock Text="VERTICAL POSITION" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset, StringFormat={}{0:F0}px}" 
-                                                           HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                                            </Grid>
-                                            <Slider Minimum="-600" Maximum="200" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    Margin="0,4,0,0"/>
-                                        </StackPanel>
-                                    </Grid>
+                                         <!-- Row 6: Icon Border Thickness -->
+                                         <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2">
+                                             <Grid Margin="0,0,0,4">
+                                                 <TextBlock Text="BORDER THICKNESS" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                 <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconBorderThickness, StringFormat={}{0:F1}px}" 
+                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                             </Grid>
+                                             <Slider Minimum="0" Maximum="5" 
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconBorderThickness}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="0.5" IsSnapToTickEnabled="True"
+                                                     Margin="0,4,0,0"/>
+                                         </StackPanel>
+                                     </Grid>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -261,7 +290,7 @@
 
                             <Border Padding="16">
                                 <StackPanel>
-                                    <TextBlock Text="Configure the subtitle speech bubble layout. Adjust the text size, height of the bubble container, background opacity, and vertical offset." 
+                                    <TextBlock Text="Configure the subtitle speech bubble layout. Adjust text size, height, opacity, offsets, and select either Gold or White borders (the only two supported options)." 
                                                FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14" TextWrapping="Wrap" Opacity="0.7" LineHeight="15"/>
 
                                     <Grid>
@@ -277,94 +306,124 @@
                                             <RowDefinition Height="Auto"/> <!-- 8: Width -->
                                             <RowDefinition Height="12"/>   <!-- 9: Gap -->
                                             <RowDefinition Height="Auto"/> <!-- 10: Horizontal Offset -->
+                                            <RowDefinition Height="12"/>   <!-- 11: Gap -->
+                                            <RowDefinition Height="Auto"/> <!-- 12: Border Color -->
+                                            <RowDefinition Height="12"/>   <!-- 13: Gap -->
+                                            <RowDefinition Height="Auto"/> <!-- 14: Border Thickness -->
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
+ 
+                                         <!-- Row 0: Bubble Text Size -->
+                                         <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+                                             <Grid Margin="0,0,0,4">
+                                                 <TextBlock Text="BUBBLE TEXT SIZE" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                 <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleTextSize, StringFormat={}{0:F0}px}" 
+                                                             HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                             </Grid>
+                                             <Slider Minimum="12" Maximum="40" 
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleTextSize}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="1" IsSnapToTickEnabled="True"
+                                                     Margin="0,4,0,0"/>
+                                         </StackPanel>
+ 
+                                         <!-- Row 2: Bubble Height -->
+                                         <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+                                             <Grid Margin="0,0,0,4">
+                                                 <TextBlock Text="BUBBLE HEIGHT" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                 <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHeight, StringFormat={}{0:F0}px}" 
+                                                             HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                             </Grid>
+                                             <Slider Minimum="80" Maximum="400" 
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHeight}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="5" IsSnapToTickEnabled="True"
+                                                     Margin="0,4,0,0"/>
+                                         </StackPanel>
+ 
+                                         <!-- Row 4: Bubble Opacity -->
+                                         <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2">
+                                             <Grid Margin="0,0,0,4">
+                                                 <TextBlock Text="BUBBLE OPACITY" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                 <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleOpacity, StringFormat={}{0:P0}}" 
+                                                             HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                             </Grid>
+                                             <Slider Minimum="0.0" Maximum="1.0" 
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleOpacity}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                                     Margin="0,4,0,0"/>
+                                         </StackPanel>
+ 
+                                         <!-- Row 6: Bubble Vertical Offset -->
+                                         <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2">
+                                             <Grid Margin="0,0,0,4">
+                                                 <TextBlock Text="BUBBLE VERTICAL OFFSET" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                 <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleVerticalOffset, StringFormat={}{0:F0}px}" 
+                                                             HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                             </Grid>
+                                             <Slider Minimum="-350" Maximum="0" 
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleVerticalOffset}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="5" IsSnapToTickEnabled="True"
+                                                     Margin="0,4,0,0"/>
+                                         </StackPanel>
+ 
+                                         <!-- Row 8: Bubble Width -->
+                                         <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2">
+                                             <Grid Margin="0,0,0,4">
+                                                 <TextBlock Text="BUBBLE WIDTH" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                 <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleWidth, StringFormat={}{0:F0}px}" 
+                                                             HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                             </Grid>
+                                             <Slider Minimum="500" Maximum="1400" 
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleWidth}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="10" IsSnapToTickEnabled="True"
+                                                     Margin="0,4,0,0"/>
+                                         </StackPanel>
+ 
+                                         <!-- Row 10: Bubble Horizontal Offset -->
+                                         <StackPanel Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2">
+                                             <Grid Margin="0,0,0,4">
+                                                 <TextBlock Text="BUBBLE HORIZONTAL OFFSET" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                 <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHorizontalOffset, StringFormat={}{0:F0}px}" 
+                                                             HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                             </Grid>
+                                             <Slider Minimum="-300" Maximum="300" 
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHorizontalOffset}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="5" IsSnapToTickEnabled="True"
+                                                     Margin="0,4,0,0"/>
+                                         </StackPanel>
 
-                                        <!-- Row 0: Bubble Text Size -->
-                                        <StackPanel Grid.Row="0">
-                                            <Grid Margin="0,0,0,4">
-                                                <TextBlock Text="BUBBLE TEXT SIZE" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleTextSize, StringFormat={}{0:F0}px}" 
-                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                                            </Grid>
-                                            <Slider Minimum="12" Maximum="40" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleTextSize}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    TickFrequency="1" IsSnapToTickEnabled="True"
-                                                    Margin="0,4,0,0"/>
-                                        </StackPanel>
+                                         <!-- Row 12: Bubble Border Color -->
+                                         <TextBlock Grid.Row="12" Grid.Column="0" Text="BORDER COLOR" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                         <ComboBox Grid.Row="12" Grid.Column="1"
+                                                   SelectedValue="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleBorderColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                   SelectedValuePath="Tag"
+                                                   Style="{StaticResource ModernComboBoxStyle}"
+                                                   Height="40">
+                                             <ComboBoxItem Content="Hextech Gold" Tag="#C89B3C"/>
+                                             <ComboBoxItem Content="White" Tag="#FFFFFF"/>
+                                         </ComboBox>
 
-                                        <!-- Row 2: Bubble Height -->
-                                        <StackPanel Grid.Row="2">
-                                            <Grid Margin="0,0,0,4">
-                                                <TextBlock Text="BUBBLE HEIGHT" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHeight, StringFormat={}{0:F0}px}" 
+                                         <!-- Row 14: Bubble Border Thickness -->
+                                         <StackPanel Grid.Row="14" Grid.Column="0" Grid.ColumnSpan="2">
+                                             <Grid Margin="0,0,0,4">
+                                                 <TextBlock Text="BORDER THICKNESS" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                 <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleBorderThickness, StringFormat={}{0:F1}px}" 
                                                             HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                                            </Grid>
-                                            <Slider Minimum="80" Maximum="400" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHeight}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    TickFrequency="5" IsSnapToTickEnabled="True"
-                                                    Margin="0,4,0,0"/>
-                                        </StackPanel>
-
-                                        <!-- Row 4: Bubble Opacity -->
-                                        <StackPanel Grid.Row="4">
-                                            <Grid Margin="0,0,0,4">
-                                                <TextBlock Text="BUBBLE OPACITY" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleOpacity, StringFormat={}{0:P0}}" 
-                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                                            </Grid>
-                                            <Slider Minimum="0.0" Maximum="1.0" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleOpacity}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    TickFrequency="0.05" IsSnapToTickEnabled="True"
-                                                    Margin="0,4,0,0"/>
-                                        </StackPanel>
-
-                                        <!-- Row 6: Bubble Vertical Offset -->
-                                        <StackPanel Grid.Row="6">
-                                            <Grid Margin="0,0,0,4">
-                                                <TextBlock Text="BUBBLE VERTICAL OFFSET" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleVerticalOffset, StringFormat={}{0:F0}px}" 
-                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                                            </Grid>
-                                            <Slider Minimum="-350" Maximum="0" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleVerticalOffset}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    TickFrequency="5" IsSnapToTickEnabled="True"
-                                                    Margin="0,4,0,0"/>
-                                        </StackPanel>
-
-                                        <!-- Row 8: Bubble Width -->
-                                        <StackPanel Grid.Row="8">
-                                            <Grid Margin="0,0,0,4">
-                                                <TextBlock Text="BUBBLE WIDTH" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleWidth, StringFormat={}{0:F0}px}" 
-                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                                            </Grid>
-                                            <Slider Minimum="500" Maximum="1400" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleWidth}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    TickFrequency="10" IsSnapToTickEnabled="True"
-                                                    Margin="0,4,0,0"/>
-                                        </StackPanel>
-
-                                        <!-- Row 10: Bubble Horizontal Offset -->
-                                        <StackPanel Grid.Row="10">
-                                            <Grid Margin="0,0,0,4">
-                                                <TextBlock Text="BUBBLE HORIZONTAL OFFSET" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHorizontalOffset, StringFormat={}{0:F0}px}" 
-                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                                            </Grid>
-                                            <Slider Minimum="-300" Maximum="300" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHorizontalOffset}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    TickFrequency="5" IsSnapToTickEnabled="True"
-                                                    Margin="0,4,0,0"/>
-                                        </StackPanel>
+                                             </Grid>
+                                             <Slider Minimum="0" Maximum="5" 
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleBorderThickness}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="0.5" IsSnapToTickEnabled="True"
+                                                     Margin="0,4,0,0"/>
+                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
                             </Border>

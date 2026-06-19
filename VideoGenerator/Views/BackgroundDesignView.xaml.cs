@@ -78,7 +78,11 @@ namespace VideoGenerator.Views
                     e.PropertyName == nameof(AppSettings.BubbleOpacity) ||
                     e.PropertyName == nameof(AppSettings.BubbleVerticalOffset) ||
                     e.PropertyName == nameof(AppSettings.BubbleWidth) ||
-                    e.PropertyName == nameof(AppSettings.BubbleHorizontalOffset))
+                    e.PropertyName == nameof(AppSettings.BubbleHorizontalOffset) ||
+                    e.PropertyName == nameof(AppSettings.BubbleBorderColor) ||
+                    e.PropertyName == nameof(AppSettings.IconBorderColor) ||
+                    e.PropertyName == nameof(AppSettings.IconBorderThickness) ||
+                    e.PropertyName == nameof(AppSettings.BubbleBorderThickness))
                 {
                     if (e.PropertyName == nameof(AppSettings.SelectedFontName) && _model.SelectedFontName != AppSettings.Instance.SelectedFontName)
                     {
