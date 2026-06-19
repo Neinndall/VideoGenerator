@@ -12,6 +12,10 @@ namespace VideoGenerator.Services
     {
         private readonly LogService _logger;
         private readonly VideoService _videoService;
+        private WhisperFactory _whisperFactory;
+        private string _loadedModelPath;
+        private readonly object _modelLock = new object();
+
         private string GetModelFileName()
         {
             string model = AppSettings.Instance.WhisperModel?.ToLower() ?? "base";
@@ -98,11 +102,21 @@ namespace VideoGenerator.Services
                 }
 
                 string modelPath = GetModelPath();
-                _logger.LogInfo($"Starting Whisper transcription using model {Path.GetFileName(modelPath)}...");
-                using var whisperFactory = WhisperFactory.FromPath(modelPath);
-                
+                WhisperFactory factory;
+                lock (_modelLock)
+                {
+                    if (_whisperFactory == null || _loadedModelPath != modelPath)
+                    {
+                        _logger.LogInfo($"Loading Whisper model into memory: {Path.GetFileName(modelPath)}...");
+                        _whisperFactory?.Dispose();
+                        _whisperFactory = WhisperFactory.FromPath(modelPath);
+                        _loadedModelPath = modelPath;
+                    }
+                    factory = _whisperFactory;
+                }
+
                 string lang = AppSettings.Instance.WhisperLanguage ?? "auto";
-                using var processor = whisperFactory.CreateBuilder()
+                using var processor = factory.CreateBuilder()
                     .WithLanguage(lang)
                     .Build();
 
