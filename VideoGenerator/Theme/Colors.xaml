@@ -5,6 +5,7 @@
     <Color x:Key="PrimaryBackgroundColor">#0D0D0F</Color> <!-- Ultra Dark -->
     <Color x:Key="SecondaryBackgroundColor">#161618</Color> <!-- Card/Sidebar -->
     <Color x:Key="SurfaceColor">#1C1C1E</Color> <!-- Input Backgrounds -->
+    <Color x:Key="InputBackgroundColor">#1C1C1E</Color> <!-- Input Backgrounds -->
     
     <!-- Brand & Accents -->
     <Color x:Key="AccentColor">#8B5CF6</Color> <!-- Modern Violet -->
@@ -16,6 +17,7 @@
     <Color x:Key="WarningColor">#F59E0B</Color>
     <Color x:Key="ErrorColor">#EF4444</Color>
     <Color x:Key="InfoColor">#3B82F6</Color>
+    <Color x:Key="CancelColor">#F97316</Color> <!-- Orange -->
 
     <!-- Border & Dividers -->
     <Color x:Key="BorderColor">#27272A</Color>
@@ -30,25 +32,37 @@
     <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="{StaticResource PrimaryBackgroundColor}"/>
     <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="{StaticResource SecondaryBackgroundColor}"/>
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+    <SolidColorBrush x:Key="InputBackgroundBrush" Color="{StaticResource InputBackgroundColor}"/>
+    
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
     <SolidColorBrush x:Key="AccentBrushLight" Color="{StaticResource AccentColorLight}"/>
     <SolidColorBrush x:Key="AccentBrushDark" Color="{StaticResource AccentColorDark}"/>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
     <SolidColorBrush x:Key="BorderBrightBrush" Color="{StaticResource BorderColorBright}"/>
     
+    <!-- Glassmorphism Brushes -->
+    <SolidColorBrush x:Key="GlassBorderBrush" Color="#1AFFFFFF"/>
+    <SolidColorBrush x:Key="GlassBackgroundBrush" Color="#B8121215"/>
+    <SolidColorBrush x:Key="GlassCardBrush" Color="#CC18181B"/>
+    
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
     <SolidColorBrush x:Key="TextHighlightBrush" Color="#FAFAFA"/>
-
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
     <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
     <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
+    <SolidColorBrush x:Key="CancelBrush" Color="{StaticResource CancelColor}"/>
 
     <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="{StaticResource AccentColor}" Offset="0"/>
         <GradientStop Color="{StaticResource AccentColorDark}" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="CancelGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FB923C" Offset="0"/>
+        <GradientStop Color="{StaticResource CancelColor}" Offset="1"/>
     </LinearGradientBrush>
     
 </ResourceDictionary>

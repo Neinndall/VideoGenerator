@@ -6,6 +6,7 @@
              xmlns:converters="clr-namespace:VideoGenerator.Views.Converters">
 
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:FileNameConverter x:Key="FileNameConverter"/>
@@ -18,21 +19,21 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="32,24,32,16">
+    <Grid Margin="0,16,0,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- 1. CINEMATIC HEADER -->
-        <Grid Grid.Row="0" Margin="0,0,0,24">
+        <Grid Grid.Row="0" Margin="0,0,0,32">
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="HUD &amp; VISUAL DESIGNER" 
-                           FontSize="24" 
+                           FontSize="28" 
                            FontWeight="Black" 
                            Foreground="{StaticResource TextHighlightBrush}" />
                 <TextBlock Text="Customize backgrounds, adjust text vertical offsets, and configure icon alignments in real-time." 
-                           FontSize="12" 
+                           FontSize="13" 
                            FontWeight="SemiBold" 
                            Foreground="{StaticResource TextSecondaryBrush}" 
                            Opacity="0.7"
@@ -433,17 +434,50 @@
             </ScrollViewer>
 
             <!-- RIGHT: LIVE CINEMA CANVAS -->
-            <Grid Grid.Column="1" Margin="8,0,0,0">
+            <Grid Grid.Column="1" Margin="16,0,0,0">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Canvas Toolbar -->
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Cinematic Viewport -->
-                <Border Grid.Row="0" Style="{StaticResource ModernContainer}" Padding="16" Background="#050505">
+                <!-- 1. CANVAS TOOLBAR -->
+                <Border Grid.Row="0" Style="{StaticResource ModernContainer}" Padding="12,8" Margin="0,0,0,12" Background="{StaticResource SurfaceBrush}">
                     <Grid>
-                        <Viewbox Stretch="Uniform" VerticalAlignment="Center">
-                            <Grid Width="1920" Height="1080" Background="#0D0D0F" x:Name="RenderCanvas" 
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="MonitorScreenshot" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="PREVIEW CANVAS STUDIO" FontSize="11" FontWeight="Black" Foreground="{StaticResource TextHighlightBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <!-- Toggle Guides Checkbox styled as pill -->
+                            <ToggleButton Style="{StaticResource MaterialDesignActionToggleButton}" 
+                                          IsChecked="{Binding ShowGuides, Mode=TwoWay}"
+                                          ToolTip="Toggle Grid Guide Overlays"
+                                          Width="36" Height="36" Margin="0,0,8,0"
+                                          Background="Transparent" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}">
+                                <ToggleButton.Content>
+                                    <materialDesign:PackIcon Kind="Grid" Width="16" Height="16" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                </ToggleButton.Content>
+                            </ToggleButton>
+
+                            <!-- Reset Defaults Button -->
+                            <Button Click="ResetDefaults_Click"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    ToolTip="Reset Layout Defaults"
+                                    Foreground="{StaticResource ErrorBrush}"
+                                    Width="36" Height="36">
+                                <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18"/>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Cinematic Viewport -->
+                <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Padding="16" Background="#050505" CornerRadius="12">
+                    <Grid>
+                        <Viewbox x:Name="ViewportBox" Stretch="Uniform" VerticalAlignment="Center">
+                            <Grid Width="1920" Height="1080" Background="#020202" x:Name="RenderCanvas" 
                                   MouseDown="RenderCanvas_MouseDown" Cursor="Hand" ToolTip="Click to toggle maximize mode (hides/shows inspector sidebar)">
                                 <!-- 1. Fully Rendered Preview Image -->
                                 <Image Source="{Binding PreviewImage}" 
@@ -451,23 +485,37 @@
                                        UseLayoutRounding="True"
                                        SnapsToDevicePixels="True"
                                        RenderOptions.BitmapScalingMode="HighQuality"/>
+                                
+                                <!-- 2. Guide Overlay Lines -->
+                                <Grid Visibility="{Binding ShowGuides, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <!-- Horizontal Center Guide -->
+                                    <Line X1="0" Y1="540" X2="1920" Y2="540" Stroke="#608B5CF6" StrokeThickness="2" StrokeDashArray="4,4"/>
+                                    <!-- Vertical Center Guide -->
+                                    <Line X1="960" Y1="0" X2="960" Y2="1080" Stroke="#608B5CF6" StrokeThickness="2" StrokeDashArray="4,4"/>
+                                    <!-- Safe Zone Rectangle (10% margins) -->
+                                    <Rectangle Margin="192,108" Stroke="#40FFFFFF" StrokeThickness="2" StrokeDashArray="8,8"/>
+                                    
+                                    <!-- Label markers -->
+                                    <TextBlock Text="CENTER" Foreground="#808B5CF6" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-30,0,0"/>
+                                    <TextBlock Text="SAFE AREA (90%)" Foreground="#50FFFFFF" FontSize="14" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="210,120,0,0"/>
+                                </Grid>
                             </Grid>
                         </Viewbox>
                         
                         <!-- Zoom Label -->
-                        <Border Background="#CC161618" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="24" Padding="12,6" CornerRadius="4" IsHitTestVisible="False">
+                        <Border Background="#E60D0D0F" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="24" Padding="12,6" CornerRadius="6" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}" IsHitTestVisible="False">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="MagnifyPlus" Width="14" Height="14" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="LIVE PREVIEW (CLICK TO MAXIMIZE)" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextHighlightBrush}"/>
+                                <materialDesign:PackIcon Kind="MagnifyPlus" Width="14" Height="14" Foreground="{StaticResource AccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="LIVE PREVIEW (CLICK CANVAS TO MAXIMIZE)" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextHighlightBrush}"/>
                             </StackPanel>
                         </Border>
                     </Grid>
                 </Border>
 
                 <!-- Footer Status -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
-                    <materialDesign:PackIcon Kind="AlertCircleOutline" Width="14" Height="14" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="Changes are synchronized in real-time with the global video engine." 
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+                    <materialDesign:PackIcon Kind="ClockFast" Width="14" Height="14" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Design modifications compile and synchronize instantly." 
                                FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" FontStyle="Italic"/>
                 </StackPanel>
             </Grid>

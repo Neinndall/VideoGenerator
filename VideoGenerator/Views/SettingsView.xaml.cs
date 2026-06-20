@@ -10,7 +10,7 @@ namespace VideoGenerator.Views
         public List<double> SilenceOptions { get; } = new() { 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0 };
         public List<float> OffsetOptions { get; } = new() { -20f, -15f, -10f, -8f, -5f, 0f, 5f, 10f, 20f };
         public List<string> LanguageOptions { get; } = new();
-        public List<string> WhisperModelOptions { get; } = new() { "tiny", "base", "small" };
+        public List<string> WhisperModelOptions { get; } = new() { "tiny", "base", "small", "medium" };
         public Dictionary<string, string> WhisperLanguageOptions { get; } = new()
         {
             { "Auto-Detect", "auto" },

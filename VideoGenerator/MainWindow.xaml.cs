@@ -12,6 +12,7 @@ namespace VideoGenerator.Views
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly LogService _logService;
+        private readonly TaskCancellationService _cancellationService;
         private readonly Dictionary<string, UserControl> _viewCache = new();
 
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
@@ -77,11 +78,12 @@ namespace VideoGenerator.Views
             }
         }
 
-        public MainWindow(IServiceProvider serviceProvider, LogService logService)
+        public MainWindow(IServiceProvider serviceProvider, LogService logService, TaskCancellationService cancellationService)
         {
             InitializeComponent();
             _serviceProvider = serviceProvider;
             _logService = logService;
+            _cancellationService = cancellationService;
             
             DataContext = this;
             
@@ -113,7 +115,16 @@ namespace VideoGenerator.Views
                         IsEngineIndeterminate = false;
                         if (dashboardView.DashboardModel.IsProcessing)
                         {
-                            EngineStatusText = $"PROCESSING MEDIA... ({EngineProgressBarValue:F1}%)";
+                            string desc = string.IsNullOrEmpty(dashboardView.DashboardModel.StatusText) ? "PROCESSING MEDIA..." : dashboardView.DashboardModel.StatusText;
+                            EngineStatusText = desc.ToUpper();
+                        }
+                    }
+                    else if (e.PropertyName == nameof(dashboardView.DashboardModel.StatusText))
+                    {
+                        if (dashboardView.DashboardModel.IsProcessing)
+                        {
+                            string desc = string.IsNullOrEmpty(dashboardView.DashboardModel.StatusText) ? "PROCESSING MEDIA..." : dashboardView.DashboardModel.StatusText;
+                            EngineStatusText = desc.ToUpper();
                         }
                     }
                 };
@@ -133,7 +144,10 @@ namespace VideoGenerator.Views
             }
             else
             {
-                EngineStatusText = "STABLE - READY";
+                if (EngineStatusText != "CANCELED - TASK ANNULLED")
+                {
+                    EngineStatusText = "STABLE - READY";
+                }
                 IsEngineBusy = false;
                 EngineProgressBarValue = 0;
                 IsEngineIndeterminate = true;
@@ -168,6 +182,26 @@ namespace VideoGenerator.Views
             {
                 ContentArea.Content = view;
             }
+        }
+
+        private void CancelProcessing_Click(object sender, RoutedEventArgs e)
+        {
+            CancelActiveTask();
+        }
+
+        public void CancelActiveTask()
+        {
+            _cancellationService.Cancel();
+        }
+
+        protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Escape && IsEngineBusy)
+            {
+                CancelActiveTask();
+                e.Handled = true;
+            }
+            base.OnPreviewKeyDown(e);
         }
     }
 }

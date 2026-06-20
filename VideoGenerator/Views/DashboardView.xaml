@@ -13,12 +13,12 @@
         <converters:NonLockingImageConverter x:Key="NonLockingImageConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="32,24,32,16">
+    <Grid Margin="0,16,0,8">
         <Grid.RowDefinitions>
             <RowDefinition x:Name="HeaderRow" Height="Auto"/>
             <RowDefinition x:Name="ConfigRow" Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition x:Name="LogsRow" Height="Auto"/>
+            <RowDefinition Height="3*"/>
+            <RowDefinition x:Name="LogsRow" Height="*"/>
         </Grid.RowDefinitions>
  
         <!-- 1. CINEMATIC HEADER -->
@@ -36,13 +36,13 @@
         </StackPanel>
 
         <!-- 2. CONFIGURATION & ANALYSIS BAR -->
-        <Grid Grid.Row="1" Margin="0,0,0,24">
+        <Grid Grid.Row="1" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Border Style="{StaticResource ModernContainer}" Margin="0,0,16,0" Padding="12">
+            <Border Style="{StaticResource ModernContainer}" Margin="0,0,16,0" Padding="10">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/> <!-- Directory expands dynamically -->
@@ -51,7 +51,7 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Path Selector -->
-                    <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0" VerticalAlignment="Center">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -61,31 +61,29 @@
                                      materialDesign:HintAssist.Hint="Media Source Directory"
                                      Style="{StaticResource ModernTextBox}"
                                      IsReadOnly="True" Margin="0,0,8,0"/>
-                            <Button Grid.Column="1" Click="SelectFolder_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="40" Height="40">
-                                <materialDesign:PackIcon Kind="FolderSearchOutline" Width="20" Height="20"/>
+                            <Button Grid.Column="1" Click="SelectFolder_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="36" Height="36">
+                                <materialDesign:PackIcon Kind="FolderSearchOutline" Width="18" Height="18"/>
                             </Button>
                         </Grid>
                     </StackPanel>
 
                     <!-- Lang -->
-                    <StackPanel Grid.Column="1" Width="130" Margin="0,0,16,0" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1" Width="130" Margin="0,0,12,0" VerticalAlignment="Center">
                         <ComboBox ItemsSource="{Binding DashboardModel.AvailableLanguages}" 
                                   SelectedItem="{Binding DashboardModel.SelectedLanguage}"
                                   IsEnabled="{Binding DashboardModel.IsAnalyzed, Converter={StaticResource InverseBooleanConverter}}"
                                   materialDesign:HintAssist.Hint="Target Lang"
-                                  Style="{StaticResource ModernComboBoxStyle}" Height="52" Padding="12,0"/>
+                                  Style="{StaticResource ModernComboBoxStyle}" Height="42" Padding="12,0"/>
                     </StackPanel>
 
                     <!-- Character Selector (Only visible after analysis is complete) -->
-                    <StackPanel Grid.Column="2" Width="160" Margin="0,0,16,0" VerticalAlignment="Center"
+                    <StackPanel Grid.Column="2" Width="160" Margin="0,0,12,0" VerticalAlignment="Center"
                                 Visibility="{Binding DashboardModel.IsAnalyzed, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <ComboBox ItemsSource="{Binding DashboardModel.CharactersList}" 
                                   SelectedItem="{Binding DashboardModel.SelectedCharacter}"
                                   materialDesign:HintAssist.Hint="Filter Character"
-                                  Style="{StaticResource ModernComboBoxStyle}" Height="52" Padding="12,0"/>
+                                  Style="{StaticResource ModernComboBoxStyle}" Height="42" Padding="12,0"/>
                     </StackPanel>
-
-
                 </Grid>
             </Border>
 
@@ -93,10 +91,10 @@
                     Click="ProcessFolders_Click"
                     IsEnabled="{Binding DashboardModel.IsProcessing, Converter={StaticResource InverseBooleanConverter}}"
                     Style="{StaticResource ModernPrimaryButton}"
-                    Width="200" Height="74">
+                    Width="180" Height="72">
                 <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="FileSearchOutline" Margin="0,0,12,0" VerticalAlignment="Center" Width="20" Height="20"/>
-                    <TextBlock Text="PROCESS FOLDERS" VerticalAlignment="Center" FontSize="12" FontWeight="Black"/>
+                    <materialDesign:PackIcon Kind="FileSearchOutline" Margin="0,0,10,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                    <TextBlock Text="PROCESS FOLDERS" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
                 </StackPanel>
             </Button>
         </Grid>
@@ -358,22 +356,20 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     
-                    <!-- Prepare Dialogues -->
                     <Button Grid.Column="0" 
                             Click="PrepareTranscription_Click"
                             IsEnabled="{Binding DashboardModel.IsAnalyzed}"
-                            Style="{StaticResource ModernPrimaryButton}"
+                            Style="{StaticResource ModernSecondaryButton}"
                             Background="{StaticResource SurfaceBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            Foreground="{StaticResource TextPrimaryBrush}"
-                            Height="60" Margin="0,0,6,0"
-                            ToolTip="Run Whisper speech-to-text transcription and resolve missing icons">
+                            Padding="10,0"
+                            Height="44" Margin="0,0,6,0"
+                            ToolTip="Run Whisper speech-to-text transcription to generate subtitles for audio files">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <materialDesign:PackIcon Grid.Column="0" Kind="MicrophoneOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20" Foreground="{StaticResource AccentBrush}"/>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="MicrophoneOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
                             <TextBlock Grid.Column="1" Text="1. PREPARE DIALOGUES" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap" TextAlignment="Center"/>
                         </Grid>
                     </Button>
@@ -382,18 +378,17 @@
                     <Button Grid.Column="1" 
                             Click="ReviewDialogues_Click"
                             IsEnabled="{Binding DashboardModel.IsAnalyzed}"
-                            Style="{StaticResource ModernPrimaryButton}"
-                            Background="#1A8B5CF6"
-                            BorderBrush="{StaticResource AccentBrush}"
-                            Foreground="{StaticResource TextHighlightBrush}"
-                            Height="60" Margin="6,0,6,0"
+                            Style="{StaticResource ModernSecondaryButton}"
+                            Background="{StaticResource SurfaceBrush}"
+                            Padding="10,0"
+                            Height="44" Margin="6,0,6,0"
                             ToolTip="Open Dialogue Segment Editor to review and correct transcripts">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <materialDesign:PackIcon Grid.Column="0" Kind="PlaylistEdit" Margin="0,0,6,0" VerticalAlignment="Center" Width="20" Height="20"/>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="PlaylistEdit" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
                             <TextBlock Grid.Column="1" Text="REVIEW" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap" TextAlignment="Center"/>
                         </Grid>
                     </Button>
@@ -403,7 +398,8 @@
                             Click="Generate_Click"
                             IsEnabled="{Binding DashboardModel.IsAnalyzed}"
                             Style="{StaticResource ModernPrimaryButton}"
-                            Height="60" Margin="6,0,0,0"
+                            Padding="10,0"
+                            Height="44" Margin="6,0,0,0"
                             ToolTip="Generate and lossless compile final .mp4 videos using FFmpeg">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -419,7 +415,7 @@
         </Grid>
 
         <!-- 4. TERMINAL LOGS (COMPACT) -->
-        <Border Grid.Row="3" Style="{StaticResource ModernContainer}" Height="120" Margin="0,24,0,0" Padding="0">
+        <Border Grid.Row="3" Style="{StaticResource ModernContainer}" MinHeight="110" Margin="0,12,0,0" Padding="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -432,9 +428,31 @@
                     </StackPanel>
                 </Border>
                 <RichTextBox Grid.Row="1" 
-                             Style="{StaticResource ModernRichTextBox}"
                              services:LogExtensions.RichLogSource="{Binding LogService.Logs}"
-                             FontSize="10" Padding="6"/>
+                             FontSize="10" Padding="6">
+                    <RichTextBox.Style>
+                        <Style TargetType="RichTextBox" BasedOn="{StaticResource ModernRichTextBox}">
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="RichTextBox">
+                                        <Border x:Name="border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderThickness="0"
+                                                CornerRadius="0,0,11,11"
+                                                Padding="{TemplateBinding Padding}"
+                                                SnapsToDevicePixels="True">
+                                            <ScrollViewer x:Name="PART_ContentHost" 
+                                                          Focusable="false" 
+                                                          HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}" 
+                                                          VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </RichTextBox.Style>
+                </RichTextBox>
             </Grid>
         </Border>
     </Grid>

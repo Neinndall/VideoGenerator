@@ -27,6 +27,9 @@ namespace VideoGenerator.Views.Models
         private double _progressValue = 0;
 
         [ObservableProperty]
+        private string _statusText = string.Empty;
+
+        [ObservableProperty]
         private PreviewEventModel _selectedEvent;
 
         [ObservableProperty]

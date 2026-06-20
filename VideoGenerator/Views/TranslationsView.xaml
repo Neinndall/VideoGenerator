@@ -10,7 +10,7 @@
         <converters:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="32,24,32,16">
+    <Grid Margin="0,16,0,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -71,9 +71,9 @@
                     </Border>
 
                     <ListBox Grid.Row="1" 
-                             ItemsSource="{Binding AvailableLanguages}"
-                             SelectedItem="{Binding SelectedLanguage}"
-                             Style="{StaticResource VirtualizedListBoxStyle}">
+                              ItemsSource="{Binding AvailableLanguages}"
+                              SelectedItem="{Binding SelectedLanguage}"
+                              Style="{StaticResource VirtualizedListBoxStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Padding="12,10">
@@ -93,18 +93,21 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
-                    <!-- Grid Header -->
-                    <Border Background="{StaticResource SecondaryBackgroundBrush}" 
-                            BorderBrush="{StaticResource BorderBrush}" 
-                            BorderThickness="0,0,0,1" 
-                            Padding="12,10" 
-                            VerticalAlignment="Top" 
-                            Panel.ZIndex="1"
-                            CornerRadius="12,12,0,0">
-                         <Grid>
+                    <!-- Title Header -->
+                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="BookOpenOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
+                            <TextBlock Text="TRANSLATIONS DICTIONARY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Column Headers (dark bg, no icons) -->
+                    <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="12,10">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto">
                                     <ColumnDefinition.Style>
@@ -123,15 +126,15 @@
                                 <ColumnDefinition Width="40"/>
                             </Grid.ColumnDefinitions>
                             
-                            <TextBlock Text="LANGUAGE" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" Margin="4,0,0,0"
+                            <TextBlock Text="LANGUAGE" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="8,0,0,0"
                                        Visibility="{Binding SelectedLanguage, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=ALL}"/>
-                            <TextBlock Grid.Column="1" Text="EVENT KEY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" Margin="4,0,0,0"/>
-                            <TextBlock Grid.Column="2" Text="DISPLAY TEXT" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" Margin="4,0,0,0"/>
+                            <TextBlock Grid.Column="1" Text="EVENT KEY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <TextBlock Grid.Column="2" Text="DISPLAY TEXT" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="9" VerticalAlignment="Center" Margin="8,0,0,0"/>
                         </Grid>
                     </Border>
 
                     <!-- Items List -->
-                    <ListBox Grid.Row="1" 
+                    <ListBox Grid.Row="2" 
                              ItemsSource="{Binding FilteredEntries}"
                              Style="{StaticResource NonSelectableListBoxStyle}"
                              Margin="0,0,0,1">
