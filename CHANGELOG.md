@@ -1,3 +1,33 @@
+VideoGenerator - Patch Notes | v1.2.4.2
+
+MINOR UPDATE
+This version introduces a redesigned global status footer with real-time progress tracking and task cancellation, adds the Whisper "medium" model to the transcription engine settings, unifies input border styling, and applies extensive layout and visual polish across all views.
+New Features
+  - UI / Global Footer Status Bar: Relocated the engine status panel from the sidebar to a full-width footer bar at the bottom of the window. Displays a redesigned layout with a left-aligned grouped status indicator, a centered auto-stretching progress bar, a static sync icon during active operations (optimized to avoid GPU overhead), and a compact CANCEL (ESC) button visible only when processing.
+  - UI / Task Cancellation System: Any running batch operation (folder analysis, transcription, HUD rendering, video compilation) is now fully cancellable. Press the `Escape` key or click the Cancel button to abort immediately. Cancelled operations display "CANCELED - TASK ANNULLED" in orange warning state (`#F97316`).
+  - Core / Centralized Task Cancellation Service: Centralized all cancellation tokens and tracking within a new DI-registered `TaskCancellationService` class, decoupling CancellationTokenSource lifecycles from view code-behinds.
+  - Settings / Whisper Medium Model: Added the "medium" model size to the Whisper Speech-to-Text model selector (tiny, base, small, medium). The medium model offers significantly higher transcription accuracy at the cost of a larger download and increased processing time.
+
+Improvements & Visual Polish
+  - UI / Sidebar Navigation Polish: 
+    * Increased lateral margin of navigation items to `10px` to create a more inset, centered, and clean sidebar layout.
+    * Height of the selected accent line indicator increased to `20px` and margin adjusted to `6px` to align perfectly with the border radius.
+    * Changed selected item foreground to `AccentBrushLight` (#A78BFA) for a softer, more luminous purple glow, which transitions to a glowing pastel lilac (#E9D5FF) on hover instead of turning white.
+    * Optimized status bar performance & layout: Redesigned the footer layout to group the status icon and label together on the left inside a fixed-width column (`340px`) to prevent any layout shifting when the status text changes length. The progress bar stretches dynamically in the center, and the progress percentage and cancel controls align on the right. Removed the infinite spinning `DoubleAnimation` on the sync icon to eliminate continuous GPU redraws, dramatically lowering GPU usage during operations. Font weight adjusted to a cleaner Bold, and text color tuned for maximum professional readability.
+  - UI / Hover Accent Gradients: Updated the `ModernSecondaryButton` style so that hovering over secondary buttons (like "Prepare Dialogues" and "Review") smoothly transitions the background to the modern violet accent gradient (from `AccentColorLight` to `AccentColor`) and makes the text white, matching primary action highlights.
+  - UI / Centralized Input Borders: Unified all text box (`ModernTextBox`, `ModernTextBoxWithClear`, `ModernSearchTextBox`) and combo box (`ModernComboBoxStyle`) borders to a consistent `1.5px` default and active focus thickness, configured directly within the global theme styles.
+  - UI / Sidebar Refinements: Streamlined sidebar layout with refined logo size, reduced title text (15px) and version label (10px), wider navigation selector with minimal padding (4px), and tighter vertical item spacing (2px gap) for a more compact look.
+  - UI / Dashboard Layout Polish: Slimmed down the configuration bar (Media Source Directory + Lang + Character filter) with reduced padding and element sizes. PROCESS FOLDERS button now auto-stretches vertically to match the config bar height. Engine Console logger expands dynamically to fill remaining vertical space with symmetric 12px spacing above and below.
+  - UI / Event Mapping Headers: Separated RULES REPOSITORY title header (SurfaceBrush background) from column headers (KEYWORD, DICT KEY, ICON/LOOKUP, TYPE) which now sit on the dark background without icons, creating a cleaner visual hierarchy.
+  - UI / Dictionary Headers: Applied the same header pattern — TRANSLATIONS DICTIONARY title on SurfaceBrush, column labels (LANGUAGE, EVENT KEY, DISPLAY TEXT) on dark background without icons, with corrected alignment margins to match data rows.
+  - UI / View Margins & Alignment: Unified all view margins to align the rightmost edge of content with the status bar. Eliminated dead spacing between the logger and status bar. Symmetric outer margins throughout the shell.
+  - UI / Dialogue Action Buttons: Restyled PREPARE DIALOGUES and REVIEW buttons to use the subtle `ModernSecondaryButton` style with `SurfaceBrush` background, reserving the vibrant purple gradient exclusively for the final RENDER VIDEOS action.
+  - UI / Engine Console Corners: Fixed the bottom rounded corners of the log viewer with a custom RichTextBox template (`CornerRadius: 0,0,11,11`) that aligns perfectly inside the outer ModernContainer.
+  - UI / List Styling: Removed zebra striping from non-selectable list items. Rows now use a uniform dark background with subtle hover highlights.
+  - Core / Dynamic Progress Reporting: Refactored progress calculations to pre-count audio files and update linearly (e.g., "Transcribing 3/12 (filename.ogg)") instead of hardcoded percentage steps.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.4.1
 
 MINOR UPDATE
