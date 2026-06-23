@@ -8,7 +8,7 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="32,24,32,16">
+    <Grid Margin="0,16,0,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -330,29 +330,29 @@
                              <!-- DIVIDER -->
                              <Border Height="1" Background="{StaticResource BorderBrush}" Opacity="0.5" Margin="24,0"/>
 
-                             <!-- Force Re-transcription on Batch Render -->
-                             <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
-                                 <Grid>
-                                     <Grid.ColumnDefinitions>
-                                         <ColumnDefinition Width="*"/>
-                                         <ColumnDefinition Width="200"/>
-                                     </Grid.ColumnDefinitions>
+                                                           <!-- Force Re-transcription on Dialogue Preparation -->
+                              <Border Padding="24,28" IsEnabled="{Binding Settings.EnableTranscriptions}">
+                                  <Grid>
+                                      <Grid.ColumnDefinitions>
+                                          <ColumnDefinition Width="*"/>
+                                          <ColumnDefinition Width="200"/>
+                                      </Grid.ColumnDefinitions>
 
-                                     <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
-                                         <TextBlock Text="Force Batch Re-transcription" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
-                                         <TextBlock Text="Ignore the cached transcriptions in dialogues.json during Batch Rendering and force Whisper to re-transcribe all audio files." 
-                                                    TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
-                                     </StackPanel>
+                                      <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,32,0">
+                                          <TextBlock Text="Force Dialogue Re-transcription" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                                          <TextBlock Text="Ignore cached transcriptions in dialogues.json during dialogue preparation and force Whisper to re-transcribe all audio files." 
+                                                     TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.6" FontSize="11" Margin="0,4,0,0"/>
+                                      </StackPanel>
 
-                                     <ToggleButton Grid.Column="1" 
-                                                   IsChecked="{Binding Settings.ForceBatchRetranscribe, Mode=TwoWay}"
-                                                   Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                                                   HorizontalAlignment="Left"
-                                                   VerticalAlignment="Center"/>
-                                 </Grid>
-                             </Border>
-                        </StackPanel>
-                    </Border>
+                                      <ToggleButton Grid.Column="1" 
+                                                    IsChecked="{Binding Settings.ForceBatchRetranscribe, Mode=TwoWay}"
+                                                    Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center"/>
+                                  </Grid>
+                              </Border>
+                         </StackPanel>
+                     </Border>
                 </ScrollViewer>
             </TabItem>
         </TabControl>

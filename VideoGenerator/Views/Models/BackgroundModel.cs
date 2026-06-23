@@ -19,5 +19,8 @@ namespace VideoGenerator.Views.Models
 
         [ObservableProperty]
         private string _selectedFontName = "Segoe UI";
+
+        [ObservableProperty]
+        private bool _showGuides = false;
     }
 }

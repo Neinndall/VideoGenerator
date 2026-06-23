@@ -236,5 +236,30 @@ namespace VideoGenerator.Views
                 InspectorColumn.Width = _isMaximized ? new GridLength(0) : new GridLength(380);
             }
         }
+
+        private void ResetDefaults_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("Are you sure you want to reset all visual layout parameters to their default values?", "Reset Defaults", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                AppSettings.Instance.TextVerticalOffset = -8f;
+                AppSettings.Instance.IconVerticalOffset = 0f;
+                AppSettings.Instance.IconAlignment = "Left";
+                AppSettings.Instance.SelectedFontName = "Segoe UI";
+                AppSettings.Instance.BubbleTextSize = 22f;
+                AppSettings.Instance.BubbleHeight = 120f;
+                AppSettings.Instance.BubbleOpacity = 0.85f;
+                AppSettings.Instance.BubbleVerticalOffset = 0f;
+                AppSettings.Instance.BubbleWidth = 900f;
+                AppSettings.Instance.BubbleHorizontalOffset = 0f;
+                AppSettings.Instance.BubbleBorderColor = "#C89B3C";
+                AppSettings.Instance.IconBorderColor = "#C89B3C";
+                AppSettings.Instance.IconBorderThickness = 2f;
+                AppSettings.Instance.BubbleBorderThickness = 2f;
+                
+                AlignLeftRadio.IsChecked = true;
+                _model.SelectedFontName = "Segoe UI";
+                UpdatePreview();
+            }
+        }
     }
 }

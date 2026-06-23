@@ -21,6 +21,7 @@ namespace VideoGenerator.Views
         private readonly DashboardModel _model = new();
         private readonly DataFetcher _dataFetcher;
         private CancellationTokenSource _previewCancellationSource;
+        private readonly TaskCancellationService _cancellationService;
         private readonly TranslationService _translationService;
         private readonly IconManager _iconManager;
         private readonly NameParser _nameParser;
@@ -39,7 +40,8 @@ namespace VideoGenerator.Views
             VideoService videoService,
             LogService logger,
             TranscriptionService transcriptionService,
-            DialogueService dialogueService)
+            DialogueService dialogueService,
+            TaskCancellationService cancellationService)
         {
             InitializeComponent();
             _dataFetcher = dataFetcher;
@@ -51,6 +53,7 @@ namespace VideoGenerator.Views
             _logger = logger;
             _transcriptionService = transcriptionService;
             _dialogueService = dialogueService;
+            _cancellationService = cancellationService;
             
             DataContext = this;
             DashboardModel = _model;
@@ -411,6 +414,18 @@ namespace VideoGenerator.Views
             }
         }
 
+        // CancelActiveOperation removed, managed globally via TaskCancellationService
+
+        private void HandleCancellation()
+        {
+            _model.ProgressValue = 0;
+            _logger.LogWarn("TASK CANCELED - OPERATION ABORTED BY USER.");
+            if (Application.Current.MainWindow is MainWindow mainWindow)
+            {
+                mainWindow.EngineStatusText = "CANCELED - TASK ANNULLED";
+            }
+        }
+
         private void SelectFolder_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Audio Directory" };
@@ -430,6 +445,8 @@ namespace VideoGenerator.Views
                 return;
             }
 
+            var token = _cancellationService.CreateNewToken();
+
             _model.IsProcessing = true;
             _model.ProcessedEvents.Clear();
             _model.FilteredProcessedEvents.Clear();
@@ -448,19 +465,27 @@ namespace VideoGenerator.Views
                     var allDirs = Directory.GetDirectories(_model.AudioPath, "*", SearchOption.AllDirectories)
                         .Concat(new[] { _model.AudioPath })
                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Where(dir => {
+                            if (dir.Contains("cast3D") || dir.Contains("cast2D")) return false;
+                            try {
+                                return Directory.GetFiles(dir).Any(f => f.EndsWith(".mp3") || f.EndsWith(".wav") || f.EndsWith(".ogg"));
+                            } catch { return false; }
+                        })
                         .ToList();
 
                     int total = allDirs.Count;
                     int processedCount = 0;
 
                     foreach (var dir in allDirs) {
+                        token.ThrowIfCancellationRequested();
+                        Application.Current.Dispatcher.Invoke(() => {
+                            _model.StatusText = $"Analyzing: {Path.GetFileName(dir)}";
+                        });
                         try {
-                            if (dir.Contains("cast3D") || dir.Contains("cast2D")) continue;
                             var audioFiles = Directory.GetFiles(dir).Where(f => f.EndsWith(".mp3") || f.EndsWith(".wav") || f.EndsWith(".ogg")).ToList();
-                            if (audioFiles.Count == 0) continue;
-
                             string folderName = Path.GetFileName(dir);
                             var parsedEvent = await _nameParser.ParseFolderNameAsync(folderName, selectedLang);
+                            token.ThrowIfCancellationRequested();
                             
                             string charName = "General";
                             var charMatch = Regex.Match(folderName, @"Play_vo_([A-Za-z0-9]+)(Skin\d+)?_");
@@ -503,7 +528,10 @@ namespace VideoGenerator.Views
                                 ev.ParsedData.Dialogue = dialogueVal;
                             }
                             
+                            token.ThrowIfCancellationRequested();
                             Application.Current.Dispatcher.Invoke(() => _model.ProcessedEvents.Add(ev));
+                        } catch (OperationCanceledException) {
+                            throw;
                         } catch (Exception innerEx) {
                             _logger.LogError($"Failed to process folder: {Path.GetFileName(dir)} | Error: {innerEx.Message}");
                         }
@@ -512,15 +540,17 @@ namespace VideoGenerator.Views
                         reportProgress((double)processedCount / total * 100.0);
                     }
                     reportProgress(100.0);
-                });
+                }, token);
                 _model.IsAnalyzed = _model.ProcessedEvents.Count > 0;
                 if (_model.ProcessedEvents.Count > 0) _model.SelectedEvent = _model.ProcessedEvents[0];
                 _logger.LogInfo($">>> ANALYSIS COMPLETE. Found {_model.ProcessedEvents.Count} events. Resolving icons in background...");
                 // Keep 100% visible briefly before switching back to idle
-                await Task.Delay(400);
+                await Task.Delay(400, token);
 
                 // Resolve icons concurrently in the background so the UI stays responsive
                 _ = Task.Run(async () => await ResolvePendingIconsAsync());
+            } catch (OperationCanceledException) {
+                HandleCancellation();
             } catch (Exception ex) { 
                 _logger.LogError("Critical analysis failure", ex); 
             }
@@ -530,27 +560,58 @@ namespace VideoGenerator.Views
         private async void PrepareTranscription_Click(object sender, RoutedEventArgs e)
         {
             if (!_model.IsAnalyzed || _model.FilteredProcessedEvents.Count == 0) return;
+            
+            var token = _cancellationService.CreateNewToken();
+
             _model.IsProcessing = true;
             _model.ProgressValue = 0;
             _logger.LogInfo(">>> STARTING BATCH PREPARATION (STAGE 1)...");
             try {
                 var eventsToPrepare = _model.FilteredProcessedEvents.ToList();
                 var reportProgress = new Action<double>(value => Application.Current.Dispatcher.Invoke(() => _model.ProgressValue = value));
+                string selectedLang = _model.SelectedLanguage ?? "EN";
 
                 await Task.Run(async () => {
                     int total = eventsToPrepare.Count;
                     int processedCount = 0;
+
+                    // Calculate total audios to transcribe
+                    int totalAudiosToTranscribe = 0;
+                    foreach (var ev in eventsToPrepare)
+                    {
+                        if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null) continue;
+                        bool shouldTranscribe = AppSettings.Instance.EnableTranscriptions && ev.AudioFiles.Count > 0 &&
+                            (string.IsNullOrEmpty(ev.Dialogue) || AppSettings.Instance.ForceBatchRetranscribe);
+                        if (shouldTranscribe)
+                        {
+                            totalAudiosToTranscribe += ev.AudioFiles.Count;
+                        }
+                    }
+
+                    int completedAudiosCount = 0;
                     reportProgress(0.0);
 
                     foreach (var ev in eventsToPrepare) {
+                        token.ThrowIfCancellationRequested();
                         double baseProgress = (double)processedCount / total * 100.0;
                         double stepWeight = 100.0 / total;
-                        reportProgress(baseProgress + stepWeight * 0.1);
+
+                        Application.Current.Dispatcher.Invoke(() => {
+                            _model.StatusText = $"Preparing: {ev.FolderName}";
+                            if (totalAudiosToTranscribe == 0)
+                            {
+                                reportProgress(baseProgress + stepWeight * 0.1);
+                            }
+                        });
 
                         // 1. Resolve pending icon
                         if (ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
                         {
+                            Application.Current.Dispatcher.Invoke(() => {
+                                _model.StatusText = $"Resolving icon for: {ev.FolderName}";
+                            });
                             string iconPath = await ResolveIconPathAsync(ev.ParsedData);
+                            token.ThrowIfCancellationRequested();
                             Application.Current.Dispatcher.Invoke(() => {
                                 ev.ParsedData.IconPath = string.IsNullOrEmpty(iconPath) ? "MISSING" : iconPath;
                                 ev.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
@@ -560,7 +621,10 @@ namespace VideoGenerator.Views
                         if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null)
                         {
                             processedCount++;
-                            reportProgress((double)processedCount / total * 100.0);
+                            if (totalAudiosToTranscribe == 0)
+                            {
+                                reportProgress((double)processedCount / total * 100.0);
+                            }
                             continue;
                         }
 
@@ -570,9 +634,20 @@ namespace VideoGenerator.Views
 
                         if (shouldTranscribe)
                         {
-                            reportProgress(baseProgress + stepWeight * 0.3);
                             _logger.LogInfo($"Auto-transcribing for {ev.FolderName}...");
-                            string transcription = await _transcriptionService.TranscribeAudiosAsync(ev.AudioFiles);
+                            string transcription = await _transcriptionService.TranscribeAudiosAsync(ev.AudioFiles, 
+                                (audioPath) => {
+                                    completedAudiosCount++;
+                                    Application.Current.Dispatcher.Invoke(() => {
+                                        _model.StatusText = $"Transcribing: {Path.GetFileName(audioPath)}";
+                                        if (totalAudiosToTranscribe > 0)
+                                        {
+                                            _model.ProgressValue = (double)completedAudiosCount / totalAudiosToTranscribe * 100.0;
+                                        }
+                                    });
+                                }, 
+                                token);
+                            token.ThrowIfCancellationRequested();
                             if (!string.IsNullOrEmpty(transcription))
                             {
                                 dialogue = transcription;
@@ -616,19 +691,27 @@ namespace VideoGenerator.Views
                             }
                         }
 
+                        token.ThrowIfCancellationRequested();
                         var dialogueParts = string.IsNullOrEmpty(dialogue) 
                             ? new string[0] 
                             : dialogue.Split(new[] { "||" }, StringSplitOptions.None)
                                       .Select(s => s.Trim())
                                       .ToArray();
 
-                        reportProgress(baseProgress + stepWeight * 0.55);
+                        if (totalAudiosToTranscribe == 0)
+                        {
+                            reportProgress(baseProgress + stepWeight * 0.55);
+                        }
 
                         // 2. Pre-render HUD image files
                         if (dialogueParts.Length > 1 && ev.AudioFiles.Count > 1)
                         {
                             for (int i = 0; i < ev.AudioFiles.Count; i++)
                             {
+                                token.ThrowIfCancellationRequested();
+                                Application.Current.Dispatcher.Invoke(() => {
+                                    _model.StatusText = $"Generating HUD image: {ev.FolderName}";
+                                });
                                 string partDialogue = i < dialogueParts.Length ? dialogueParts[i] : "";
                                 string oldDialogue = ev.ParsedData.Dialogue;
                                 ev.ParsedData.Dialogue = partDialogue;
@@ -638,27 +721,37 @@ namespace VideoGenerator.Views
                         }
                         else
                         {
+                            token.ThrowIfCancellationRequested();
+                            Application.Current.Dispatcher.Invoke(() => {
+                                _model.StatusText = $"Generating HUD image for {ev.FolderName}";
+                            });
                             await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
                         }
 
+                        token.ThrowIfCancellationRequested();
                         Application.Current.Dispatcher.Invoke(() => {
                             ev.Status = "Ready";
                         });
 
-                        reportProgress(baseProgress + stepWeight * 0.85);
-
                         processedCount++;
-                        reportProgress((double)processedCount / total * 100.0);
+                        if (totalAudiosToTranscribe == 0)
+                        {
+                            reportProgress((double)processedCount / total * 100.0);
+                        }
                     }
                     reportProgress(100.0);
-                });
+                }, token);
                 _logger.LogInfo(">>> BATCH PREPARATION COMPLETE. You can now REVIEW DIALOGUES or RENDER VIDEOS.");
 
                 // Show DialogueEditor Window automatically once preparation completes
                 Application.Current.Dispatcher.Invoke(() => {
                     ReviewDialogues_Click(null, null);
                 });
-            } catch (Exception ex) { _logger.LogError("Preparation failed", ex); }
+            } catch (OperationCanceledException) {
+                HandleCancellation();
+            } catch (Exception ex) { 
+                _logger.LogError("Preparation failed", ex); 
+            }
             finally { _model.IsProcessing = false; }
         }
 
@@ -686,6 +779,9 @@ namespace VideoGenerator.Views
         private async void Generate_Click(object sender, RoutedEventArgs e)
         {
             if (!_model.IsAnalyzed || _model.FilteredProcessedEvents.Count == 0) return;
+            
+            var token = _cancellationService.CreateNewToken();
+
             _model.IsProcessing = true;
             _model.ProgressValue = 0;
             _logger.LogInfo(">>> STARTING BATCH VIDEO RENDERING (STAGE 2)...");
@@ -699,9 +795,14 @@ namespace VideoGenerator.Views
                     reportProgress(0.0);
 
                     foreach (var ev in eventsToRender) {
+                        token.ThrowIfCancellationRequested();
                         double baseProgress = (double)processedCount / total * 100.0;
                         double stepWeight = 100.0 / total;
-                        reportProgress(baseProgress + stepWeight * 0.1);
+
+                        Application.Current.Dispatcher.Invoke(() => {
+                            _model.StatusText = $"Rendering video: {ev.FolderName}";
+                            reportProgress(baseProgress + stepWeight * 0.1);
+                        });
 
                         if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null)
                         {
@@ -726,6 +827,10 @@ namespace VideoGenerator.Views
                         {
                             for (int i = 0; i < ev.AudioFiles.Count; i++)
                             {
+                                token.ThrowIfCancellationRequested();
+                                Application.Current.Dispatcher.Invoke(() => {
+                                    _model.StatusText = $"Rendering image: {ev.FolderName}";
+                                });
                                 string expectedPath = Path.Combine(targetDir, $"{ev.FolderName}_part_{i}.png");
                                 if (!File.Exists(expectedPath))
                                 {
@@ -740,6 +845,10 @@ namespace VideoGenerator.Views
                         }
                         else
                         {
+                            token.ThrowIfCancellationRequested();
+                            Application.Current.Dispatcher.Invoke(() => {
+                                _model.StatusText = $"Rendering image for {ev.FolderName}";
+                            });
                             string expectedPath = Path.Combine(targetDir, $"{ev.FolderName}.png");
                             if (!File.Exists(expectedPath))
                             {
@@ -748,21 +857,32 @@ namespace VideoGenerator.Views
                             imagePaths.Add(expectedPath);
                         }
 
-                        reportProgress(baseProgress + stepWeight * 0.8);
+                        token.ThrowIfCancellationRequested();
+                        Application.Current.Dispatcher.Invoke(() => {
+                            _model.StatusText = $"Compiling video for {ev.FolderName}";
+                            reportProgress(baseProgress + stepWeight * 0.8);
+                        });
 
                         // Compile video Frame + Audio using FFmpeg
                         string outputVideoDir = Path.Combine(AppConfig.OutputVideosDir, ev.CharacterName);
                         Directory.CreateDirectory(outputVideoDir);
                         string outputPath = Path.Combine(outputVideoDir, ev.FolderName + ".mp4");
+                        
                         await _videoService.CreateVideoAsync(imagePaths, ev.AudioFiles, outputPath, 0.5, dialogue);
 
                         processedCount++;
                         reportProgress((double)processedCount / total * 100.0);
                     }
                     reportProgress(100.0);
-                });
+                }, token);
+                
+                token.ThrowIfCancellationRequested();
                 _logger.LogInfo(">>> VIDEO RENDERING COMPLETED.");
-            } catch (Exception ex) { _logger.LogError("Rendering failed", ex); }
+            } catch (OperationCanceledException) {
+                HandleCancellation();
+            } catch (Exception ex) { 
+                _logger.LogError("Rendering failed", ex); 
+            }
             finally { _model.IsProcessing = false; }
         }
 
@@ -772,12 +892,17 @@ namespace VideoGenerator.Views
             var ev = _model.SelectedEvent;
             
             _logger.LogInfo($"Starting transcription for: {ev.FolderName}");
+            
+            var token = _cancellationService.CreateNewToken();
+
             _model.IsProcessing = true;
             try
             {
                 if (ev.AudioFiles != null && ev.AudioFiles.Count > 0)
                 {
-                    string transcription = await _transcriptionService.TranscribeAudiosAsync(ev.AudioFiles);
+                    token.ThrowIfCancellationRequested();
+                    string transcription = await _transcriptionService.TranscribeAudiosAsync(ev.AudioFiles, cancellationToken: token);
+                    token.ThrowIfCancellationRequested();
                     if (!string.IsNullOrEmpty(transcription))
                     {
                         ev.Dialogue = transcription;
@@ -796,6 +921,10 @@ namespace VideoGenerator.Views
                         _logger.LogWarn("Transcription returned empty or failed.");
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                HandleCancellation();
             }
             catch (Exception ex)
             {

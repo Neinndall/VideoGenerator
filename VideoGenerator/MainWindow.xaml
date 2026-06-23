@@ -21,26 +21,29 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
     
-    <Grid Margin="12">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/> <!-- Global Footer Status Bar -->
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="240"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Modern Sidebar -->
-        <Border Grid.Column="0" 
+        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" 
                 Style="{StaticResource ModernContainer}"
-                Margin="8"
+                Margin="16,24,8,16"
                 Padding="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- Sidebar Header -->
-                <StackPanel Grid.Row="0" Margin="24,40,24,32">
+                <StackPanel Grid.Row="0" Margin="8,32,8,24">
                     <Border Width="64" Height="64" 
                             Background="#1A8B5CF6" 
                             CornerRadius="16"
@@ -54,7 +57,7 @@
                                                  HorizontalAlignment="Center"/>
                     </Border>
                     <TextBlock Text="VIDEO GENERATOR" 
-                               FontSize="18"
+                               FontSize="15"
                                FontWeight="ExtraBold"
                                HorizontalAlignment="Center"
                                Foreground="{StaticResource TextPrimaryBrush}"/>
@@ -62,13 +65,13 @@
                                FontSize="10"
                                FontWeight="Bold"
                                HorizontalAlignment="Center" 
-                               Opacity="0.5"
+                               Opacity="0.7"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <!-- Navigation -->
-                <StackPanel Grid.Row="1" Margin="12,0">
+                <StackPanel Grid.Row="1" Margin="10,0">
                     <ListBox x:Name="NavListBox" 
                              Style="{StaticResource VirtualizedListBoxStyle}"
                              ItemContainerStyle="{StaticResource ModernNavItem}"
@@ -82,7 +85,7 @@
                         <ListBoxItem Tag="Background">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="ImageEditOutline" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Background Design" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <TextBlock Text="Visual Design" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </StackPanel>
                         </ListBoxItem>
                         <ListBoxItem Tag="EventRules">
@@ -105,53 +108,112 @@
                         </ListBoxItem>
                     </ListBox>
                 </StackPanel>
-
-                <!-- Status Info Footer -->
-                <Border Grid.Row="2" 
-                        Margin="16,24" 
-                        Padding="16" 
-                        Style="{StaticResource HUDBorder}">
-                    <StackPanel>
-                        <TextBlock Text="ENGINE STATUS" 
-                                   FontSize="10"
-                                   FontWeight="Black"
-                                   Margin="0,0,0,8"
-                                   Opacity="0.4"
-                                   Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <!-- ModernProgressBar Component -->
-                        <local:ModernProgressBar Value="{Binding EngineProgressBarValue, Mode=OneWay}"
-                                                 IsIndeterminate="{Binding IsEngineIndeterminate, Mode=OneWay}"
-                                                 Visibility="{Binding IsEngineBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                 Margin="0,4,0,4"/>
-                        <TextBlock Margin="0,8,0,0"
-                                   Text="{Binding EngineStatusText}"
-                                   FontSize="9"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
-                                    <Setter Property="Opacity" Value="0.6"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsEngineBusy}" Value="True">
-                                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                            <Setter Property="Opacity" Value="1.0"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                </Border>
             </Grid>
         </Border>
 
         <!-- Main Content Area -->
-        <Border Grid.Column="1" 
-                Margin="8"
+        <Border Grid.Row="0" Grid.Column="1" 
                 Background="{StaticResource PrimaryBackgroundBrush}"
-                CornerRadius="24">
-             <ContentControl x:Name="ContentArea" Margin="20" />
+                BorderThickness="0"
+                Margin="8,24,16,2">
+            <ContentControl x:Name="ContentArea" Margin="0" />
+        </Border>
+
+        <!-- Global Status & Progress Footer -->
+        <Border Grid.Row="1" Grid.Column="1"
+                Background="{StaticResource SecondaryBackgroundBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16,6"
+                Height="40"
+                Margin="8,2,16,16"
+                VerticalAlignment="Center">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="340"/> <!-- Status Icon & Text Group (Fixed to prevent shifting) -->
+                    <ColumnDefinition Width="*"/>    <!-- Progress Bar -->
+                    <ColumnDefinition Width="Auto"/> <!-- Progress Percentage -->
+                    <ColumnDefinition Width="Auto"/> <!-- Cancel Button -->
+                </Grid.ColumnDefinitions>
+                
+                <!-- Left: Status Icon and Label -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0">
+                    <!-- Status Icon -->
+                    <materialDesign:PackIcon x:Name="StatusIcon" Width="16" Height="16" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <materialDesign:PackIcon.Style>
+                            <Style TargetType="materialDesign:PackIcon">
+                                <Setter Property="Kind" Value="CheckCircleOutline"/>
+                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEngineBusy}" Value="True">
+                                        <Setter Property="Kind" Value="Sync"/>
+                                        <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding EngineStatusText}" Value="CANCELED - TASK ANNULLED">
+                                        <Setter Property="Kind" Value="AlertCircleOutline"/>
+                                        <Setter Property="Foreground" Value="{StaticResource CancelBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </materialDesign:PackIcon.Style>
+                    </materialDesign:PackIcon>
+
+                    <!-- Status Label -->
+                    <TextBlock Text="{Binding EngineStatusText}" 
+                               FontSize="11" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="300">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEngineBusy}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding EngineStatusText}" Value="CANCELED - TASK ANNULLED">
+                                        <Setter Property="Foreground" Value="{StaticResource CancelBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Middle: Modern Progress Bar -->
+                <local:ModernProgressBar Grid.Column="1" 
+                                         Value="{Binding EngineProgressBarValue, Mode=OneWay}"
+                                         IsIndeterminate="{Binding IsEngineIndeterminate, Mode=OneWay}"
+                                         Visibility="{Binding IsEngineBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                         VerticalAlignment="Center"
+                                         Height="6"
+                                         Margin="0,0,16,0"/>
+
+                <!-- Right: Progress Percentage Text -->
+                <TextBlock Grid.Column="2" 
+                           Text="{Binding EngineProgressBarValue, StringFormat={}{0:F1}%}"
+                           FontSize="11" 
+                           FontWeight="Bold" 
+                           Foreground="{StaticResource AccentBrushLight}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,16,0"
+                           Visibility="{Binding IsEngineBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                <!-- Far Right: Cancel Button -->
+                <Button Grid.Column="3" 
+                        Click="CancelProcessing_Click"
+                        Style="{StaticResource ModernCancelButton}"
+                        Height="28" Padding="12,0"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding IsEngineBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="CloseCircleOutline" Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="CANCEL (ESC)" FontSize="9" FontWeight="Black" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
         </Border>
     </Grid>
 </Window>

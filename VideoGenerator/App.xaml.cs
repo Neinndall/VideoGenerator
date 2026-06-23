@@ -36,12 +36,12 @@ namespace VideoGenerator
                     string version = await dataFetcher.GetLatestLolVersionAsync();
                     await dbBuilder.InitializeDatabasesAsync(version);
                     var logger = ServiceProvider.GetService<LogService>();
-                    logger?.LogInfo("Local databases synchronized successfully.");
+                    logger.LogInfo("Local databases synchronized successfully.");
                 }
                 catch (Exception ex)
                 {
                     var logger = ServiceProvider.GetService<LogService>();
-                    logger?.LogError("Failed to synchronize local databases", ex);
+                    logger.LogError("Failed to synchronize local databases", ex);
                 }
             });
 
@@ -73,6 +73,7 @@ namespace VideoGenerator
             services.AddSingleton<VideoService>();
             services.AddSingleton<TranscriptionService>();
             services.AddSingleton<DialogueService>();
+            services.AddSingleton<TaskCancellationService>();
 
             // --- Views (Singletons for state preservation) ---
             services.AddSingleton<MainWindow>();

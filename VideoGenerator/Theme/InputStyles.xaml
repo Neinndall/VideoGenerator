@@ -5,9 +5,11 @@
 
     <!-- Global Modern TextBox Style -->
     <Style x:Key="ModernTextBox" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
-        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="1.5"/>
         <Setter Property="Height" Value="52"/>
         <Setter Property="Padding" Value="12,8"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -28,10 +30,10 @@
 
     <!-- TextBox with custom clear button (especially for ReadOnly text boxes) -->
     <Style x:Key="ModernTextBoxWithClear" TargetType="TextBox">
-        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="Height" Value="42"/>
         <Setter Property="Padding" Value="10,0,32,0"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -98,9 +100,10 @@
 
     <!-- Global Modern ComboBox Style -->
     <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignOutlinedComboBox}">
-        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="Height" Value="52"/>
         <Setter Property="Padding" Value="12,8"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -111,10 +114,10 @@
 
     <!-- Modern Search TextBox Style -->
     <Style x:Key="ModernSearchTextBox" TargetType="TextBox">
-        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="Height" Value="38"/>
         <Setter Property="Padding" Value="10,0,32,0"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>

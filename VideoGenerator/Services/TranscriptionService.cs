@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Threading;
 using Whisper.net;
 using VideoGenerator.Models;
 
@@ -71,7 +72,7 @@ namespace VideoGenerator.Services
             }
         }
 
-        public async Task<string> TranscribeAudioAsync(string audioFilePath)
+        public async Task<string> TranscribeAudioAsync(string audioFilePath, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(audioFilePath) || !File.Exists(audioFilePath))
             {
@@ -93,6 +94,7 @@ namespace VideoGenerator.Services
                     .OutputToFile(tempWavPath, true, options => options
                         .WithAudioSamplingRate(16000)
                         .WithCustomArgument("-ac 1 -c:a pcm_s16le -af apad=whole_dur=3"))
+                    .CancellableThrough(cancellationToken)
                     .ProcessAsynchronously();
 
                 if (!convertResult || !File.Exists(tempWavPath))
@@ -100,6 +102,8 @@ namespace VideoGenerator.Services
                     _logger.LogWarn("FFmpeg audio conversion failed for Whisper transcription.");
                     return string.Empty;
                 }
+
+                cancellationToken.ThrowIfCancellationRequested();
 
                 string modelPath = GetModelPath();
                 WhisperFactory factory;
@@ -124,9 +128,11 @@ namespace VideoGenerator.Services
 
                 using var fileStream = new FileStream(tempWavPath, FileMode.Open, FileAccess.Read);
                 
+                _logger.LogInfo($"Transcribing audio: {Path.GetFileName(audioFilePath)}...");
                 var transcriptionText = "";
-                await foreach (var segment in processor.ProcessAsync(fileStream))
+                await foreach (var segment in processor.ProcessAsync(fileStream, cancellationToken))
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     transcriptionText += segment.Text + " ";
                 }
 
@@ -140,8 +146,18 @@ namespace VideoGenerator.Services
                 _logger.LogInfo($"Transcription result: \"{cleanedResult}\"");
                 return cleanedResult;
             }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarn("Transcription cancelled by user.");
+                throw;
+            }
             catch (Exception ex)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    _logger.LogWarn("Transcription interrupted by user cancellation.");
+                    throw new OperationCanceledException(cancellationToken);
+                }
                 _logger.LogError("Error during audio transcription", ex);
                 return string.Empty;
             }
@@ -155,14 +171,16 @@ namespace VideoGenerator.Services
             }
         }
 
-        public async System.Threading.Tasks.Task<string> TranscribeAudiosAsync(System.Collections.Generic.IEnumerable<string> audioFilePaths)
+        public async Task<string> TranscribeAudiosAsync(System.Collections.Generic.IEnumerable<string> audioFilePaths, Action<string> onAudioStart = null, CancellationToken cancellationToken = default)
         {
             if (audioFilePaths == null) return string.Empty;
 
             var results = new System.Collections.Generic.List<string>();
             foreach (var path in audioFilePaths)
             {
-                string text = await TranscribeAudioAsync(path);
+                cancellationToken.ThrowIfCancellationRequested();
+                onAudioStart?.Invoke(path);
+                string text = await TranscribeAudioAsync(path, cancellationToken);
                 if (!string.IsNullOrEmpty(text))
                 {
                     results.Add(text);
@@ -172,3 +190,4 @@ namespace VideoGenerator.Services
         }
     }
 }
+
