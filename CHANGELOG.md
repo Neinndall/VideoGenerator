@@ -1,7 +1,19 @@
+VideoGenerator - Patch Notes | v1.2.4.3
+
+HOTFIX
+This version optimizes champion skin icons by shifting from full widescreen splash arts to centered character tiles for the HUD rendering process.
+
+Improvements & Visual Polish
+  - Asset Pipeline / Centered Character Tiles: Switched the champion skin image downloader in `IconManager` to fetch from League of Legends DDragon `tiles` CDN rather than `splash` assets. This guarantees that generated HUD circle icons are centered on the champion's face/body automatically, improving visual rendering quality.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
 VideoGenerator - Patch Notes | v1.2.4.2
 
 MINOR UPDATE
 This version introduces a redesigned global status footer with real-time progress tracking and task cancellation, adds the Whisper "medium" model to the transcription engine settings, unifies input border styling, and applies extensive layout and visual polish across all views.
+
 New Features
   - UI / Global Footer Status Bar: Relocated the engine status panel from the sidebar to a full-width footer bar at the bottom of the window. Displays a redesigned layout with a left-aligned grouped status indicator, a centered auto-stretching progress bar, a static sync icon during active operations (optimized to avoid GPU overhead), and a compact CANCEL (ESC) button visible only when processing.
   - UI / Task Cancellation System: Any running batch operation (folder analysis, transcription, HUD rendering, video compilation) is now fully cancellable. Press the `Escape` key or click the Cancel button to abort immediately. Cancelled operations display "CANCELED - TASK ANNULLED" in orange warning state (`#F97316`).

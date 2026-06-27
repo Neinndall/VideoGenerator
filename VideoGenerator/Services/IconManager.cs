@@ -35,7 +35,7 @@ namespace VideoGenerator.Services
                 string name = skinMatch.Groups[1].Value;
                 // Parse as int to strip any leading zeros (e.g., "01" -> "1")
                 string skinIndex = int.Parse(skinMatch.Groups[2].Value).ToString();
-                return await GetSplashUrlAsync(name, skinIndex);
+                return await GetTileUrlAsync(name, skinIndex);
             }
 
             // Case 2: Thematic or Region
@@ -128,11 +128,11 @@ namespace VideoGenerator.Services
             return null;
         }
 
-        private async Task<string> GetSplashUrlAsync(string championName, string skinIndex)
+        private async Task<string> GetTileUrlAsync(string championName, string skinIndex)
         {
             string internalName = _aliasManager.GetInternalName(championName);
-            string url = $"https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{internalName}_{skinIndex}.jpg";
-            return await _dataFetcher.DownloadIconAsync(url, "splash");
+            string url = $"https://ddragon.leagueoflegends.com/cdn/img/champion/tiles/{internalName}_{skinIndex}.jpg";
+            return await _dataFetcher.DownloadIconAsync(url, "tiles");
         }
 
         public async Task<string> GetItemIconAsync(string itemNameOrId)
