@@ -84,6 +84,8 @@ namespace VideoGenerator.Views
             _videoService = videoService;
             _language = language ?? "EN";
 
+            _mediaPlayer.MediaEnded += (s, e) => StopAudio();
+
             DataContext = this;
 
             foreach (var ev in events)
