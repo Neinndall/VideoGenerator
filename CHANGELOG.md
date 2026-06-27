@@ -6,6 +6,7 @@ This version optimizes champion skin icons by shifting from full widescreen spla
 Improvements & Visual Polish
   - Asset Pipeline / Centered Character Tiles: Switched the champion skin image downloader in `IconManager` to fetch from League of Legends DDragon `tiles` CDN rather than `splash` assets. This guarantees that generated HUD circle icons are centered on the champion's face/body automatically, improving visual rendering quality.
   - UI / Dialogue Editor Focus Preservation: When opening the dialogue editor (Review Dialogues) from the dashboard, the editor now automatically focuses and scrolls to the event that was currently selected in the dashboard's pipeline list, eliminating the need to search for it manually.
+  - UI / Dialogue Editor Champion Icon Border: Applied a fixed, elegant Hextech Gold border (`HextechGoldBrush`, #C89B3C) with a subtle 1.5px thickness to the resolved champion/event icon in the Dialogue Editor header.
 
 Bug Fixes & Refinements
   - Audio / Dialogue Editor Playback State: Hooked into the `MediaPlayer.MediaEnded` event to automatically reset the segment playback button icon back to the Play state (`>`) when the track finishes playing, instead of remaining stuck as a Stop square.

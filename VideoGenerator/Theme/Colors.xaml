@@ -11,6 +11,8 @@
     <Color x:Key="AccentColor">#8B5CF6</Color> <!-- Modern Violet -->
     <Color x:Key="AccentColorLight">#A78BFA</Color>
     <Color x:Key="AccentColorDark">#6D28D9</Color>
+    <Color x:Key="HextechGoldColor">#C89B3C</Color>
+    <Color x:Key="WhiteColor">#FFFFFF</Color>
     
     <!-- Semantic Colors -->
     <Color x:Key="SuccessColor">#10B981</Color> 
@@ -37,6 +39,8 @@
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
     <SolidColorBrush x:Key="AccentBrushLight" Color="{StaticResource AccentColorLight}"/>
     <SolidColorBrush x:Key="AccentBrushDark" Color="{StaticResource AccentColorDark}"/>
+    <SolidColorBrush x:Key="HextechGoldBrush" Color="{StaticResource HextechGoldColor}"/>
+    <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource WhiteColor}"/>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
     <SolidColorBrush x:Key="BorderBrightBrush" Color="{StaticResource BorderColorBright}"/>
     

@@ -101,7 +101,10 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Resolved Icon -->
-                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24" Background="#1A1A1D" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" ClipToBounds="True" Margin="0,0,16,0">
+                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24" Background="#1A1A1D" 
+                                BorderBrush="{StaticResource HextechGoldBrush}" 
+                                BorderThickness="1.5" 
+                                ClipToBounds="True" Margin="0,0,16,0">
                             <Image Source="{Binding SelectedEvent.ParsedData.IconPath, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NonLockingImageConverter}}" Stretch="UniformToFill"/>
                         </Border>
 
