@@ -766,7 +766,8 @@ namespace VideoGenerator.Views
                 _dialogueService,
                 _imageGenerator,
                 _videoService,
-                _model.SelectedLanguage
+                _model.SelectedLanguage,
+                _model.SelectedEvent
             );
             dialog.Owner = Application.Current.MainWindow;
             if (dialog.ShowDialog() == true)

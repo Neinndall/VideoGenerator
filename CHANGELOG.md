@@ -5,6 +5,7 @@ This version optimizes champion skin icons by shifting from full widescreen spla
 
 Improvements & Visual Polish
   - Asset Pipeline / Centered Character Tiles: Switched the champion skin image downloader in `IconManager` to fetch from League of Legends DDragon `tiles` CDN rather than `splash` assets. This guarantees that generated HUD circle icons are centered on the champion's face/body automatically, improving visual rendering quality.
+  - UI / Dialogue Editor Focus Preservation: When opening the dialogue editor (Review Dialogues) from the dashboard, the editor now automatically focuses and scrolls to the event that was currently selected in the dashboard's pipeline list, eliminating the need to search for it manually.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
