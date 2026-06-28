@@ -38,9 +38,9 @@ namespace VideoGenerator.Services
 
             // 2. Sync CommunityDragon data (skins, skinlines, full items database)
             await Task.WhenAll(
-                SyncCommunityDragonJsonAsync(AppConfig.SkinsDataUrl, Path.Combine(AppConfig.CacheDir, "skins_data.json")),
-                SyncCommunityDragonJsonAsync(AppConfig.SkinLinesUrl, Path.Combine(AppConfig.CacheDir, "skinlines_data.json")),
-                SyncCommunityDragonJsonAsync(AppConfig.ItemsDataUrl, Path.Combine(AppConfig.CacheDir, "items_data.json"))
+                SyncCommunityDragonJsonAsync(AppConfig.SkinsDataUrl, AppConfig.SkinsCachePath),
+                SyncCommunityDragonJsonAsync(AppConfig.SkinLinesUrl, AppConfig.SkinLinesCachePath),
+                SyncCommunityDragonJsonAsync(AppConfig.ItemsDataUrl, AppConfig.ItemsCachePath)
             );
 
             // 3. Fandom sync (Monsters/Structures) - These are lore-based, so we always try to merge new ones

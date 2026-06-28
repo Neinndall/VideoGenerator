@@ -14,6 +14,7 @@ Bug Fixes & Refinements
   - Core / Default Aliases Expansion: Added default aliases mapping for `Kai'Sa` -> `Kaisa`, `Cho'Gath` -> `Chogath`, `Kog'Maw` -> `KogMaw`, `Nunu & Willump` -> `Nunu`, and `Renata Glasc` -> `Renata`.
   - Core / PBE Data Support: Changed `SkinsDataUrl`, `SkinLinesUrl`, and `ItemsDataUrl` endpoints in `AppConfig` from `latest` to `pbe`, allowing the application to successfully load upcoming/unreleased champion skins (e.g., T1 Yunara) for audio and video processing.
   - Core / Community Dragon Fallback: Added a fallback download channel in `IconManager.GetTileUrlAsync` to query the Community Dragon skins database for skin `tilePath` properties and download the correct, centered square tile if DDragon fails, including automatic lowercase conversion and path normalization for case-sensitive CDragon requests.
+  - Core / Localized Databases Support (ES, TR, EN): Configured the Community Dragon data URLs and cache paths in `AppConfig` to dynamically adapt based on the selected `DefaultDictionaryLanguage` setting (mapping "ES" to "es_es", "TR" to "tr_tr", and others to "default"). Language-specific cached files are stored separately (e.g., `skins_data_tr_tr.json`) to prevent cross-language cache collisions, allowing translation lookups for skins, skinlines, and items in the user's preferred language.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

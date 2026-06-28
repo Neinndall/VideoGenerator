@@ -19,6 +19,9 @@ namespace VideoGenerator.Services
         private Dictionary<string, JsonElement> _skinsCache;
         private List<JsonElement> _skinLinesCache;
         private Dictionary<int, ItemData> _itemsCache;
+        private string _loadedSkinsLocale;
+        private string _loadedSkinlinesLocale;
+        private string _loadedItemsLocale;
 
         private class ItemData
         {
@@ -56,15 +59,17 @@ namespace VideoGenerator.Services
 
         public async Task<Dictionary<string, JsonElement>> GetSkinsDataAsync()
         {
-            if (_skinsCache != null) return _skinsCache;
+            string locale = AppConfig.GetCdragonLocale();
+            if (_skinsCache != null && _loadedSkinsLocale == locale) return _skinsCache;
 
-            string cachePath = Path.Combine(AppConfig.CacheDir, "skins_data.json");
+            string cachePath = AppConfig.SkinsCachePath;
             if (File.Exists(cachePath))
             {
                 try
                 {
                     string cachedJson = await File.ReadAllTextAsync(cachePath);
                     _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
+                    _loadedSkinsLocale = locale;
                     return _skinsCache ?? new Dictionary<string, JsonElement>();
                 }
                 catch (Exception ex)
@@ -78,15 +83,17 @@ namespace VideoGenerator.Services
 
         public async Task<List<JsonElement>> GetSkinLinesAsync()
         {
-            if (_skinLinesCache != null) return _skinLinesCache;
+            string locale = AppConfig.GetCdragonLocale();
+            if (_skinLinesCache != null && _loadedSkinlinesLocale == locale) return _skinLinesCache;
 
-            string cachePath = Path.Combine(AppConfig.CacheDir, "skinlines_data.json");
+            string cachePath = AppConfig.SkinLinesCachePath;
             if (File.Exists(cachePath))
             {
                 try
                 {
                     string cachedJson = await File.ReadAllTextAsync(cachePath);
                     _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(cachedJson);
+                    _loadedSkinlinesLocale = locale;
                     return _skinLinesCache ?? new List<JsonElement>();
                 }
                 catch (Exception ex)
@@ -100,15 +107,17 @@ namespace VideoGenerator.Services
 
         private async Task<Dictionary<int, ItemData>> GetItemsDataAsync()
         {
-            if (_itemsCache != null) return _itemsCache;
+            string locale = AppConfig.GetCdragonLocale();
+            if (_itemsCache != null && _loadedItemsLocale == locale) return _itemsCache;
 
-            string cachePath = Path.Combine(AppConfig.CacheDir, "items_data.json");
+            string cachePath = AppConfig.ItemsCachePath;
             if (File.Exists(cachePath))
             {
                 try
                 {
                     string cachedJson = await File.ReadAllTextAsync(cachePath);
                     _itemsCache = ParseItemsJson(cachedJson);
+                    _loadedItemsLocale = locale;
                     return _itemsCache ?? new Dictionary<int, ItemData>();
                 }
                 catch (Exception ex)
