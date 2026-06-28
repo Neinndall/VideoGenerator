@@ -1,7 +1,7 @@
 VideoGenerator - Patch Notes | v1.2.4.3
 
-HOTFIX
-This version optimizes champion skin icons by shifting from full widescreen splash arts to centered character tiles for the HUD rendering process.
+MINOR UPDATE
+This version optimizes champion skin icons by shifting from full widescreen splash arts to centered character tiles for the HUD rendering process. It also fixes case-sensitive DDragon CDN downloads and integrates Community Dragon fallback for new PBE and custom champion skins.
 
 Improvements & Visual Polish
   - Asset Pipeline / Centered Character Tiles: Switched the champion skin image downloader in `IconManager` to fetch from League of Legends DDragon `tiles` CDN rather than `splash` assets. This guarantees that generated HUD circle icons are centered on the champion's face/body automatically, improving visual rendering quality.
@@ -10,6 +10,10 @@ Improvements & Visual Polish
 
 Bug Fixes & Refinements
   - Audio / Dialogue Editor Playback State: Hooked into the `MediaPlayer.MediaEnded` event to automatically reset the segment playback button icon back to the Play state (`>`) when the track finishes playing, instead of remaining stuck as a Stop square.
+  - Core / Case Normalization for Champion Aliases: Updated `AliasManager.GetInternalName` to clean names of apostrophes, hyphens, and dots, ensuring that names parsed from event folders (e.g. "KaiSa") successfully map to official internal representations (e.g. "Kaisa") in `DefaultAliases.cs` to prevent case-sensitive DDragon CDN URL download failures.
+  - Core / Default Aliases Expansion: Added default aliases mapping for `Kai'Sa` -> `Kaisa`, `Cho'Gath` -> `Chogath`, `Kog'Maw` -> `KogMaw`, `Nunu & Willump` -> `Nunu`, and `Renata Glasc` -> `Renata`.
+  - Core / PBE Data Support: Changed `SkinsDataUrl`, `SkinLinesUrl`, and `ItemsDataUrl` endpoints in `AppConfig` from `latest` to `pbe`, allowing the application to successfully load upcoming/unreleased champion skins (e.g., T1 Yunara) for audio and video processing.
+  - Core / Community Dragon Fallback: Added a fallback download channel in `IconManager.GetTileUrlAsync` to query the Community Dragon skins database for skin `tilePath` properties and download the correct, centered square tile if DDragon fails, including automatic lowercase conversion and path normalization for case-sensitive CDragon requests.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

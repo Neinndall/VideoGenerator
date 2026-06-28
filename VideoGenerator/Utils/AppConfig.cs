@@ -31,9 +31,9 @@ namespace VideoGenerator.Models
         public static readonly string LocalVersionPath = Path.Combine(ConfigDir, "version.json");
         // URLs
         public static readonly string MonsterWikiUrl = "https://leagueoflegends.fandom.com/wiki/Monster";
-        public static readonly string SkinsDataUrl = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/skins.json";
-        public static readonly string SkinLinesUrl = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/skinlines.json";
-        public static readonly string ItemsDataUrl = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/items.json";
+        public static readonly string SkinsDataUrl = "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/skins.json";
+        public static readonly string SkinLinesUrl = "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/skinlines.json";
+        public static readonly string ItemsDataUrl = "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/v1/items.json";
         public static readonly string VersionsUrl = "https://ddragon.leagueoflegends.com/api/versions.json";
     }
 }
