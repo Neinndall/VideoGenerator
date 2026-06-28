@@ -1,7 +1,29 @@
+VideoGenerator - Patch Notes | v1.2.4.3
+
+MINOR UPDATE
+This version optimizes champion skin icons by shifting from full widescreen splash arts to centered character tiles for the HUD rendering process. It also fixes case-sensitive DDragon CDN downloads and integrates Community Dragon fallback for new PBE and custom champion skins.
+
+Improvements & Visual Polish
+  - Asset Pipeline / Centered Character Tiles: Switched the champion skin image downloader in `IconManager` to fetch from League of Legends DDragon `tiles` CDN rather than `splash` assets. This guarantees that generated HUD circle icons are centered on the champion's face/body automatically, improving visual rendering quality.
+  - UI / Dialogue Editor Focus Preservation: When opening the dialogue editor (Review Dialogues) from the dashboard, the editor now automatically focuses and scrolls to the event that was currently selected in the dashboard's pipeline list, eliminating the need to search for it manually.
+  - UI / Dialogue Editor Champion Icon Border: Applied a fixed, elegant Hextech Gold border (`HextechGoldBrush`, #C89B3C) with a subtle 1.5px thickness to the resolved champion/event icon in the Dialogue Editor header.
+
+Bug Fixes & Refinements
+  - Audio / Dialogue Editor Playback State: Hooked into the `MediaPlayer.MediaEnded` event to automatically reset the segment playback button icon back to the Play state (`>`) when the track finishes playing, instead of remaining stuck as a Stop square.
+  - Core / Case Normalization for Champion Aliases: Updated `AliasManager.GetInternalName` to clean names of apostrophes, hyphens, and dots, ensuring that names parsed from event folders (e.g. "KaiSa") successfully map to official internal representations (e.g. "Kaisa") in `DefaultAliases.cs` to prevent case-sensitive DDragon CDN URL download failures.
+  - Core / Default Aliases Expansion: Added default aliases mapping for `Kai'Sa` -> `Kaisa`, `Cho'Gath` -> `Chogath`, `Kog'Maw` -> `KogMaw`, `Nunu & Willump` -> `Nunu`, and `Renata Glasc` -> `Renata`.
+  - Core / PBE Data Support: Changed `SkinsDataUrl`, `SkinLinesUrl`, and `ItemsDataUrl` endpoints in `AppConfig` from `latest` to `pbe`, allowing the application to successfully load upcoming/unreleased champion skins (e.g., T1 Yunara) for audio and video processing.
+  - Core / Community Dragon Fallback: Added a fallback download channel in `IconManager.GetTileUrlAsync` to query the Community Dragon skins database for skin `tilePath` properties and download the correct, centered square tile if DDragon fails, including automatic lowercase conversion and path normalization for case-sensitive CDragon requests.
+  - Core / Localized Databases Support (ES, TR, EN): Configured the Community Dragon data URLs and cache paths in `AppConfig` to dynamically adapt based on the selected `DefaultDictionaryLanguage` setting (mapping "ES" to "es_es", "TR" to "tr_tr", and others to "default"). Language-specific cached files are stored separately (e.g., `skins_data_tr_tr.json`) to prevent cross-language cache collisions, allowing translation lookups for skins, skinlines, and items in the user's preferred language.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
 VideoGenerator - Patch Notes | v1.2.4.2
 
 MINOR UPDATE
 This version introduces a redesigned global status footer with real-time progress tracking and task cancellation, adds the Whisper "medium" model to the transcription engine settings, unifies input border styling, and applies extensive layout and visual polish across all views.
+
 New Features
   - UI / Global Footer Status Bar: Relocated the engine status panel from the sidebar to a full-width footer bar at the bottom of the window. Displays a redesigned layout with a left-aligned grouped status indicator, a centered auto-stretching progress bar, a static sync icon during active operations (optimized to avoid GPU overhead), and a compact CANCEL (ESC) button visible only when processing.
   - UI / Task Cancellation System: Any running batch operation (folder analysis, transcription, HUD rendering, video compilation) is now fully cancellable. Press the `Escape` key or click the Cancel button to abort immediately. Cancelled operations display "CANCELED - TASK ANNULLED" in orange warning state (`#F97316`).

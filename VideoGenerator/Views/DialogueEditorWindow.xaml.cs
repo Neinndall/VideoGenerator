@@ -74,7 +74,8 @@ namespace VideoGenerator.Views
             DialogueService dialogueService,
             ImageGenerator imageGenerator,
             VideoService videoService,
-            string language)
+            string language,
+            PreviewEventModel initialSelectedEvent = null)
         {
             InitializeComponent();
             _transcriptionService = transcriptionService;
@@ -82,6 +83,8 @@ namespace VideoGenerator.Views
             _imageGenerator = imageGenerator;
             _videoService = videoService;
             _language = language ?? "EN";
+
+            _mediaPlayer.MediaEnded += (s, e) => StopAudio();
 
             DataContext = this;
 
@@ -93,7 +96,20 @@ namespace VideoGenerator.Views
             EventsListBox.ItemsSource = Events;
             PartsItemsControl.ItemsSource = CurrentParts;
 
-            if (Events.Count > 0)
+            if (initialSelectedEvent != null)
+            {
+                var match = Events.FirstOrDefault(ev => ev.FolderName == initialSelectedEvent.FolderName);
+                if (match != null)
+                {
+                    EventsListBox.SelectedItem = match;
+                    EventsListBox.ScrollIntoView(match);
+                }
+                else if (Events.Count > 0)
+                {
+                    EventsListBox.SelectedIndex = 0;
+                }
+            }
+            else if (Events.Count > 0)
             {
                 EventsListBox.SelectedIndex = 0;
             }

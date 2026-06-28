@@ -35,7 +35,7 @@ namespace VideoGenerator.Services
                 string name = skinMatch.Groups[1].Value;
                 // Parse as int to strip any leading zeros (e.g., "01" -> "1")
                 string skinIndex = int.Parse(skinMatch.Groups[2].Value).ToString();
-                return await GetSplashUrlAsync(name, skinIndex);
+                return await GetTileUrlAsync(name, skinIndex);
             }
 
             // Case 2: Thematic or Region
@@ -128,11 +128,54 @@ namespace VideoGenerator.Services
             return null;
         }
 
-        private async Task<string> GetSplashUrlAsync(string championName, string skinIndex)
+        private async Task<string> GetTileUrlAsync(string championName, string skinIndex)
         {
             string internalName = _aliasManager.GetInternalName(championName);
-            string url = $"https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{internalName}_{skinIndex}.jpg";
-            return await _dataFetcher.DownloadIconAsync(url, "splash");
+            string url = $"https://ddragon.leagueoflegends.com/cdn/img/champion/tiles/{internalName}_{skinIndex}.jpg";
+            string path = await _dataFetcher.DownloadIconAsync(url, "tiles");
+            if (!string.IsNullOrEmpty(path)) return path;
+
+            // Fallback: lookup in Community Dragon skins database
+            try
+            {
+                var skinsData = await _dataFetcher.GetSkinsDataAsync();
+                if (skinsData != null && int.TryParse(skinIndex, out int targetSkinId))
+                {
+                    string Normalize(string input) => input?.Replace("'", "").Replace(" ", "").Replace("_", "").ToLowerInvariant() ?? "";
+                    string normalizedChampion = Normalize(internalName);
+
+                    foreach (var skin in skinsData.Values)
+                    {
+                        string splashPath = skin.TryGetProperty("splashPath", out var splashProp) ? splashProp.GetString() ?? "" : "";
+                        var match = Regex.Match(splashPath, @"Skin(\d+)", RegexOptions.IgnoreCase);
+                        if (!match.Success || int.Parse(match.Groups[1].Value) != targetSkinId) continue;
+
+                        if (Normalize(splashPath).Contains(normalizedChampion))
+                        {
+                            string tilePath = skin.TryGetProperty("tilePath", out var tileProp) ? tileProp.GetString() ?? "" : "";
+                            if (!string.IsNullOrEmpty(tilePath))
+                            {
+                                string cleanPath = tilePath.ToLowerInvariant();
+                                if (cleanPath.StartsWith("/lol-game-data/assets/assets/"))
+                                {
+                                    cleanPath = cleanPath.Substring("/lol-game-data/assets/".Length);
+                                }
+                                else if (cleanPath.StartsWith("/lol-game-data/"))
+                                {
+                                    cleanPath = cleanPath.Substring("/lol-game-data/".Length);
+                                }
+                                string cdragonUrl = $"https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/{cleanPath}";
+                                string downloaded = await _dataFetcher.DownloadIconAsync(cdragonUrl, "tiles");
+                                if (!string.IsNullOrEmpty(downloaded)) return downloaded;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return null;
         }
 
         public async Task<string> GetItemIconAsync(string itemNameOrId)

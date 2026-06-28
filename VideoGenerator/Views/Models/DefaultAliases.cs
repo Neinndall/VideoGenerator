@@ -18,7 +18,12 @@ namespace VideoGenerator.Views.Models
                 new ChampionAlias { DisplayName = "Vel'Koz", InternalName = "Velkoz" },
                 new ChampionAlias { DisplayName = "Rek'Sai", InternalName = "RekSai" },
                 new ChampionAlias { DisplayName = "Dr. Mundo", InternalName = "DrMundo" },
-                new ChampionAlias { DisplayName = "Jarvan IV", InternalName = "JarvanIV" }
+                new ChampionAlias { DisplayName = "Jarvan IV", InternalName = "JarvanIV" },
+                new ChampionAlias { DisplayName = "Kai'Sa", InternalName = "Kaisa" },
+                new ChampionAlias { DisplayName = "Cho'Gath", InternalName = "Chogath" },
+                new ChampionAlias { DisplayName = "Kog'Maw", InternalName = "KogMaw" },
+                new ChampionAlias { DisplayName = "Nunu & Willump", InternalName = "Nunu" },
+                new ChampionAlias { DisplayName = "Renata Glasc", InternalName = "Renata" }
             };
         }
     }

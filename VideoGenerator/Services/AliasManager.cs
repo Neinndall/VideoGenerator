@@ -77,9 +77,9 @@ namespace VideoGenerator.Services
         public string GetInternalName(string displayName)
         {
             if (string.IsNullOrEmpty(displayName)) return string.Empty;
-            string clean = displayName.Replace(" ", "").Replace("'", "");
+            string clean = displayName.Replace(" ", "").Replace("'", "").Replace(".", "").Replace("-", "");
             var alias = Aliases.FirstOrDefault(a => a.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase) || 
-                                                     a.DisplayName.Replace(" ", "").Equals(clean, StringComparison.OrdinalIgnoreCase));
+                                                     a.DisplayName.Replace(" ", "").Replace("'", "").Replace(".", "").Replace("-", "").Equals(clean, StringComparison.OrdinalIgnoreCase));
             
             return alias?.InternalName ?? clean;
         }
