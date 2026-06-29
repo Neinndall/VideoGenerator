@@ -151,8 +151,10 @@
                     </Border>
 
                     <ListBox Grid.Row="2" 
+                              x:Name="EventsListBox"
                               ItemsSource="{Binding DashboardModel.FilteredProcessedEvents}"
                               SelectedItem="{Binding DashboardModel.SelectedEvent}"
+                              SelectionChanged="EventsListBox_SelectionChanged"
                               Style="{StaticResource VirtualizedListBoxStyle}"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               utils:ScrollHelper.BubbleMouseWheel="False">

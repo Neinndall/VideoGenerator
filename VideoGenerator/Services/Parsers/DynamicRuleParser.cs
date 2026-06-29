@@ -164,6 +164,8 @@ namespace VideoGenerator.Services.Parsers
                     displayText = _translationService.GetText(language, "event_first_encounter_general");
                 else if (rule.Keyword.Equals("Kill", StringComparison.OrdinalIgnoreCase))
                     displayText = _translationService.GetText(language, "event_kill_general");
+                else if (rule.Keyword.Equals("Death", StringComparison.OrdinalIgnoreCase))
+                    displayText = _translationService.GetText(language, "event_death");
                 else if (rule.Keyword.Equals("MoveFirst", StringComparison.OrdinalIgnoreCase))
                     displayText = _translationService.GetText(language, "event_move_first");
                 else if (isTrulyGeneral)

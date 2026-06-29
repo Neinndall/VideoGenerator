@@ -30,6 +30,7 @@ namespace VideoGenerator.Views
         private readonly LogService _logger;
         private readonly TranscriptionService _transcriptionService;
         private readonly DialogueService _dialogueService;
+        private readonly EventFilterService _eventFilterService;
 
         public DashboardView(
             DataFetcher dataFetcher,
@@ -41,7 +42,8 @@ namespace VideoGenerator.Views
             LogService logger,
             TranscriptionService transcriptionService,
             DialogueService dialogueService,
-            TaskCancellationService cancellationService)
+            TaskCancellationService cancellationService,
+            EventFilterService eventFilterService)
         {
             InitializeComponent();
             _dataFetcher = dataFetcher;
@@ -54,6 +56,7 @@ namespace VideoGenerator.Views
             _transcriptionService = transcriptionService;
             _dialogueService = dialogueService;
             _cancellationService = cancellationService;
+            _eventFilterService = eventFilterService;
             
             DataContext = this;
             DashboardModel = _model;
@@ -168,35 +171,41 @@ namespace VideoGenerator.Views
             var filter = _model.SelectedFilter;
             var search = _model.SearchQuery;
 
-            var items = _model.ProcessedEvents.Where(ev => {
-                bool matchesChar = characterFilter == "ALL" || string.Equals(ev.CharacterName, characterFilter, StringComparison.OrdinalIgnoreCase);
-                if (!matchesChar) return false;
+            var items = _eventFilterService.FilterEvents(
+                _model.ProcessedEvents, 
+                characterFilter, 
+                filter, 
+                search);
 
-                if (!string.IsNullOrEmpty(search))
-                {
-                    bool matchesSearch = (ev.FolderName != null && ev.FolderName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                                         (ev.ParsedData != null && ev.ParsedData.DisplayText != null && ev.ParsedData.DisplayText.Contains(search, StringComparison.OrdinalIgnoreCase));
-                    if (!matchesSearch) return false;
-                }
-
-                return filter switch
-                {
-                    "ERRORS" => ev.Status == "Missing Icon" || ev.Status == "No Audio",
-                    "PENDING" => ev.Status == "Pending" || ev.Status == "Pending Icon",
-                    _ => true
-                };
-            }).ToList();
+            var previouslySelected = _model.SelectedEvent;
 
             _model.FilteredProcessedEvents.Clear();
             foreach (var item in items) _model.FilteredProcessedEvents.Add(item);
 
-            if (_model.FilteredProcessedEvents.Count > 0)
+            if (previouslySelected != null && _model.FilteredProcessedEvents.Contains(previouslySelected))
+            {
+                _model.SelectedEvent = previouslySelected;
+            }
+            else if (_model.FilteredProcessedEvents.Count > 0)
             {
                 _model.SelectedEvent = _model.FilteredProcessedEvents[0];
             }
             else
             {
                 _model.SelectedEvent = null;
+            }
+
+            if (_model.SelectedEvent != null)
+            {
+                EventsListBox?.ScrollIntoView(_model.SelectedEvent);
+            }
+        }
+
+        private void EventsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (EventsListBox != null && EventsListBox.SelectedItem != null)
+            {
+                EventsListBox.ScrollIntoView(EventsListBox.SelectedItem);
             }
         }
 

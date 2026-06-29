@@ -50,9 +50,8 @@ namespace VideoGenerator.Services
                     
                     if (userRules != null)
                     {
-                        // Clean out legacy duplicate Respawn rules to allow the new unified rule to merge correctly
-                        userRules.RemoveAll(r => r.Keyword.Equals("Respawn", StringComparison.OrdinalIgnoreCase));
-                        userRules.RemoveAll(r => r.Keyword.Equals("Unique", StringComparison.OrdinalIgnoreCase));
+                        // Deduplicate user rules by Keyword to clean up any past duplicates (like Death)
+                        userRules = userRules.GroupBy(r => r.Keyword, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).ToList();
 
                         // 2. Merge Strategy: Add official rules that are missing or update them if changed
                         var mergedList = new List<EventRule>(userRules);

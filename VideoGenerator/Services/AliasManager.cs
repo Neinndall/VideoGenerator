@@ -32,6 +32,7 @@ namespace VideoGenerator.Services
                 {
                     string json = File.ReadAllText(_configPath);
                     loaded = JsonSerializer.Deserialize<List<ChampionAlias>>(json) ?? new();
+                    loaded = loaded.GroupBy(a => a.DisplayName, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).ToList();
                 }
                 catch { }
             }

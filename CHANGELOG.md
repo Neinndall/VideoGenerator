@@ -1,3 +1,21 @@
+VideoGenerator - Patch Notes | v1.2.5.1
+
+MINOR UPDATE
+This version addresses duplicate rule issues in the Event Rules panel, unifies 2D/3D event rules, and introduces automatic deduplication for local user configuration files.
+
+Bug Fixes & Refinements
+  - Core / Duplicate Death Rule Resolution: Removed the duplicate Simple rule for "Death" from `DefaultRules` and added a programmatic translation fallback for the general/generic Death event in `DynamicRuleParser`, matching the design pattern of the "Kill" rule.
+  - Core / 2D and 3D Event Rule Unification: Merged `Shop2DOpen` and `Shop3DOpen` into a single unified `ShopOpen` rule, `Move2DRiver`/`Move3DRiver` into `MoveRiver`, and `Spell2DRRankOne`/`Spell2DRRankUp` into `SpellRRankOne`/`SpellRRankUp`, relying on the parser's 2D/3D token removal to match both events cleanly.
+  - Core / Configuration Self-Healing & Deduplication: Added auto-deduplication logic inside `RuleManager` (rules), `GroupManager` (groups), and `AliasManager` (aliases) when loading configurations from the user's local `AppData` files, cleaning up any duplicate records automatically.
+  - Architecture / Explicit Event Classification Routing: Refactored `NameParser` to replace the sequential chain-of-responsibility search with a deterministic, signature-based classification routing scheme. Events are explicitly dispatched to specialized parsers (items, skins, monsters, rules, or spells) based on content signatures rather than order-sensitive evaluations, eliminating parsing hijack conflicts.
+  - UI / Slider Tooltip Precision: Added `AutoToolTipPrecision` properties and snap-to-tick configurations to all sliders in `BackgroundDesignView.xaml`, limiting tooltip outputs to clean integers (for offsets/sizes), single decimal places (for thicknesses), or percentages (for opacity/brightness) instead of long float decimals.
+  - UI / Default Preview Text: Changed the default value of the Preview Text textbox in Visual Design (`BackgroundModel`) from "DUMMY EVENT TEXT" to a clean "Placeholder Text" value by default.
+  - Core / Buff Receive Suffix Formatting: Added base translation key `event_buff_receive` ("Receive buff" / "Recibir mejora") and updated the default `SpellBuffReceive` rule to use it, preventing duplicate "general" suffixes like "Recibir mejora en General en General" by letting the parser append "en General" dynamically.
+  - UI / Dashboard Searcher Selection Preservation: Updated `ApplyFilter` in `DashboardView.xaml.cs` to preserve the active selection if it remains in the filtered list after updating search queries or clearing filters. Added a `SelectionChanged` handler to automatically scroll the selected item back into view.
+  - Architecture / Event Filter Decoupling: Created and registered `EventFilterService` to encapsulate all pipeline filtering and search matching logic, decoupling it from the dashboard view code-behind and improving testability and code organization.
+  - Core / AppData Upgrade Migration: Added logic inside `App.xaml.cs` to clear/delete the local `AppData/Local/VideoGenerator` directory exactly once when upgrading to version v1.2.5.1 (managed via a `.migrated_v1.2.5.1` flag file), ensuring a clean configuration sweep without losing settings on subsequent launches.
+  - Core / Redundant Migration Cleanup: Removed obsolete `RemoveAll` migration calls from `RuleManager.cs` since config is reset cleanly from defaults on upgrade launch.
+
 VideoGenerator - Patch Notes | v1.2.5.0
 
 MEDIUM UPDATE

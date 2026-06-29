@@ -35,6 +35,9 @@ namespace VideoGenerator.Services
                     
                     if (localGroups != null)
                     {
+                        // Deduplicate local groups by Name to prevent duplicate groups from getting loaded
+                        localGroups = localGroups.GroupBy(g => g.Name, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).ToList();
+
                         bool mergedAny = false;
                         foreach (var def in defaults)
                         {

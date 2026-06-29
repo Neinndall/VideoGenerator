@@ -6,7 +6,7 @@ namespace VideoGenerator.Views.Models
     public partial class BackgroundModel : ObservableObject
     {
         [ObservableProperty]
-        private string _previewText = "DUMMY EVENT TEXT";
+        private string _previewText = "Placeholder Text";
 
         [ObservableProperty]
         private BitmapImage _previewImage;

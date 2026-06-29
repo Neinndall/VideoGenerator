@@ -17,6 +17,27 @@ namespace VideoGenerator
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            // 0. Clean AppData Directory ONCE for version v1.2.5.1 upgrade
+            try
+            {
+                string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoGenerator");
+                string migrationFlagFile = Path.Combine(appDataPath, "Config", ".migrated_v1.2.5.1");
+
+                if (!File.Exists(migrationFlagFile))
+                {
+                    if (Directory.Exists(appDataPath))
+                    {
+                        Directory.Delete(appDataPath, true);
+                    }
+                    Directory.CreateDirectory(Path.Combine(appDataPath, "Config"));
+                    File.WriteAllText(migrationFlagFile, "migrated");
+                }
+            }
+            catch (Exception)
+            {
+                // Silently ignore access violations or locks
+            }
+
             // 1. Global Exception Handling
             AppDomain.CurrentDomain.UnhandledException += (s, ev) => LogException(ev.ExceptionObject as Exception);
             DispatcherUnhandledException += (s, ev) => { LogException(ev.Exception); ev.Handled = true; };
@@ -74,6 +95,7 @@ namespace VideoGenerator
             services.AddSingleton<TranscriptionService>();
             services.AddSingleton<DialogueService>();
             services.AddSingleton<TaskCancellationService>();
+            services.AddSingleton<EventFilterService>();
 
             // --- Views (Singletons for state preservation) ---
             services.AddSingleton<MainWindow>();

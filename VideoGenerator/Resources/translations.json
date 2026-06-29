@@ -1,7 +1,7 @@
 {
   "EN": {
     "event_attack": "Attack",
-    "event_buff_receive_general": "Receive buff in General",
+    "event_buff_receive": "Receive buff",
     "event_buy_item": "Buy Item {item_name}",
     "event_death": "Death",
     "event_death_human": "Death (Human)",
@@ -135,7 +135,7 @@
   },
   "TR": {
     "event_attack": "Saldırı",
-    "event_buff_receive_general": "Genel güçlendirme al",
+    "event_buff_receive": "Güçlendirme al",
     "event_buy_item": "Eşya Al {item_name}",
     "event_death": "Ölüm",
     "event_death_human": "Ölüm (İnsan)",
@@ -269,7 +269,7 @@
   },
   "ES": {
     "event_attack": "Atacar",
-    "event_buff_receive_general": "Recibir mejora en General",
+    "event_buff_receive": "Recibir mejora",
     "event_buy_item": "Comprar {item_name}",
     "event_death": "Muerte",
     "event_death_human": "Muerte (Humano)",
