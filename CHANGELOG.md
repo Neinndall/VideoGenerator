@@ -13,6 +13,8 @@ Bug Fixes & Refinements
   - Core / Buff Receive Suffix Formatting: Added base translation key `event_buff_receive` ("Receive buff" / "Recibir mejora") and updated the default `SpellBuffReceive` rule to use it, preventing duplicate "general" suffixes like "Recibir mejora en General en General" by letting the parser append "en General" dynamically.
   - UI / Dashboard Searcher Selection Preservation: Updated `ApplyFilter` in `DashboardView.xaml.cs` to preserve the active selection if it remains in the filtered list after updating search queries or clearing filters. Added a `SelectionChanged` handler to automatically scroll the selected item back into view.
   - Architecture / Event Filter Decoupling: Created and registered `EventFilterService` to encapsulate all pipeline filtering and search matching logic, decoupling it from the dashboard view code-behind and improving testability and code organization.
+  - Core / AppData Upgrade Migration: Added logic inside `App.xaml.cs` to clear/delete the local `AppData/Local/VideoGenerator` directory exactly once when upgrading to version v1.2.5.1 (managed via a `.migrated_v1.2.5.1` flag file), ensuring a clean configuration sweep without losing settings on subsequent launches.
+  - Core / Redundant Migration Cleanup: Removed obsolete `RemoveAll` migration calls from `RuleManager.cs` since config is reset cleanly from defaults on upgrade launch.
 
 VideoGenerator - Patch Notes | v1.2.5.0
 

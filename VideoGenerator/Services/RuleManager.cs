@@ -50,16 +50,6 @@ namespace VideoGenerator.Services
                     
                     if (userRules != null)
                     {
-                        // Clean out legacy duplicate Respawn rules to allow the new unified rule to merge correctly
-                        userRules.RemoveAll(r => r.Keyword.Equals("Respawn", StringComparison.OrdinalIgnoreCase));
-                        userRules.RemoveAll(r => r.Keyword.Equals("Unique", StringComparison.OrdinalIgnoreCase));
-                        userRules.RemoveAll(r => r.Keyword.Equals("Shop2DOpen", StringComparison.OrdinalIgnoreCase));
-                        userRules.RemoveAll(r => r.Keyword.Equals("Shop3DOpen", StringComparison.OrdinalIgnoreCase));
-                        userRules.RemoveAll(r => r.Keyword.Equals("Move2DRiver", StringComparison.OrdinalIgnoreCase));
-                        userRules.RemoveAll(r => r.Keyword.Equals("Move3DRiver", StringComparison.OrdinalIgnoreCase));
-                        userRules.RemoveAll(r => r.Keyword.Equals("Spell2DRRankOne", StringComparison.OrdinalIgnoreCase));
-                        userRules.RemoveAll(r => r.Keyword.Equals("Spell2DRRankUp", StringComparison.OrdinalIgnoreCase));
-
                         // Deduplicate user rules by Keyword to clean up any past duplicates (like Death)
                         userRules = userRules.GroupBy(r => r.Keyword, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).ToList();
 
