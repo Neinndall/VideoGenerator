@@ -20,11 +20,11 @@ namespace VideoGenerator.Services
         {
             _parsers = new List<IEventParser>
             {
-                new DynamicRuleParser(translationService, ruleManager, groupManager, aliasManager, skinlineManager),
                 new ItemEventParser(translationService, dataFetcher),
                 new MonsterEventParser(translationService),
                 new SkinInteractionParser(translationService, dataFetcher, aliasManager),
-                new SpellOrAttackParser(translationService)
+                new SpellOrAttackParser(translationService),
+                new DynamicRuleParser(translationService, ruleManager, groupManager, aliasManager, skinlineManager)
             };
         }
 

@@ -42,10 +42,26 @@ namespace VideoGenerator.Services.Parsers
                 itemIdOrName = itemIdOrName[..^1];
             }
 
-            // Resolve item info from cached CommunityDragon items_data.json
-            var itemInfo = await _dataFetcher.GetItemInfoAsync(itemIdOrName);
-            string resolvedLookup = itemInfo?.Id.ToString() ?? itemIdOrName;
-            string displayItemName = itemInfo?.Name ?? Regex.Replace(itemIdOrName, @"(?<!^)(?=[A-Z])", " ");
+            bool isGeneral = itemIdOrName.Equals("General", StringComparison.OrdinalIgnoreCase);
+
+            string displayItemName;
+            string resolvedLookup;
+            string iconType;
+
+            if (isGeneral)
+            {
+                displayItemName = _translationService.GetText(language, "suffix_in_general").Trim();
+                resolvedLookup = "Generic";
+                iconType = "generic";
+            }
+            else
+            {
+                // Resolve item info from cached CommunityDragon items_data.json
+                var itemInfo = await _dataFetcher.GetItemInfoAsync(itemIdOrName, language);
+                resolvedLookup = itemInfo?.Id.ToString() ?? itemIdOrName;
+                displayItemName = itemInfo?.Name ?? Regex.Replace(itemIdOrName, @"(?<!^)(?=[A-Z])", " ");
+                iconType = "item";
+            }
 
             // Find key action
             string textKey = action.Equals("BuyItem", StringComparison.OrdinalIgnoreCase) ? "event_buy_item" : "event_use_item";
@@ -58,7 +74,7 @@ namespace VideoGenerator.Services.Parsers
                 OriginalFolder = folderName,
                 DisplayText = displayText,
                 IconLookupName = resolvedLookup,
-                IconType = "item"
+                IconType = iconType
             };
         }
     }

@@ -37,10 +37,11 @@ namespace VideoGenerator.Services
             }
 
             // 2. Sync CommunityDragon data (skins, skinlines, full items database)
+            string defaultLocale = AppConfig.GetCdragonLocale();
             await Task.WhenAll(
-                SyncCommunityDragonJsonAsync(AppConfig.SkinsDataUrl, AppConfig.SkinsCachePath),
-                SyncCommunityDragonJsonAsync(AppConfig.SkinLinesUrl, AppConfig.SkinLinesCachePath),
-                SyncCommunityDragonJsonAsync(AppConfig.ItemsDataUrl, AppConfig.ItemsCachePath)
+                SyncCommunityDragonJsonAsync(AppConfig.GetSkinsDataUrl(defaultLocale), AppConfig.GetSkinsCachePath(defaultLocale)),
+                SyncCommunityDragonJsonAsync(AppConfig.GetSkinLinesUrl(defaultLocale), AppConfig.GetSkinLinesCachePath(defaultLocale)),
+                SyncCommunityDragonJsonAsync(AppConfig.GetItemsDataUrl(defaultLocale), AppConfig.GetItemsCachePath(defaultLocale))
             );
 
             // 3. Fandom sync (Monsters/Structures) - These are lore-based, so we always try to merge new ones

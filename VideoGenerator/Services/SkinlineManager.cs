@@ -80,8 +80,8 @@ namespace VideoGenerator.Services
 
             try
             {
-                var skinLines = await _dataFetcher.GetSkinLinesAsync();
-                var allSkins = await _dataFetcher.GetSkinsDataAsync();
+                var skinLines = await _dataFetcher.GetSkinLinesAsync("EN");
+                var allSkins = await _dataFetcher.GetSkinsDataAsync("EN");
 
                 // Build a lookup: skinline id -> skinline name
                 var lineIdToName = new Dictionary<int, string>();
@@ -210,6 +210,50 @@ namespace VideoGenerator.Services
             {
                 Console.WriteLine($"Error saving skinlines to disk: {ex.Message}");
             }
+        }
+
+        public async Task<string> GetLocalizedDisplayNameAsync(string englishName, string language)
+        {
+            if (string.IsNullOrEmpty(englishName)) return englishName;
+
+            try
+            {
+                var enLines = await _dataFetcher.GetSkinLinesAsync("EN");
+                int targetId = -1;
+                foreach (var line in enLines)
+                {
+                    if (line.TryGetProperty("name", out var nameProp) &&
+                        englishName.Equals(nameProp.GetString(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (line.TryGetProperty("id", out var idProp))
+                        {
+                            targetId = idProp.GetInt32();
+                            break;
+                        }
+                    }
+                }
+
+                if (targetId != -1)
+                {
+                    var locLines = await _dataFetcher.GetSkinLinesAsync(language);
+                    foreach (var line in locLines)
+                    {
+                        if (line.TryGetProperty("id", out var idProp) && idProp.GetInt32() == targetId)
+                        {
+                            if (line.TryGetProperty("name", out var nameProp))
+                            {
+                                return nameProp.GetString() ?? englishName;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting localized skinline name: {ex.Message}");
+            }
+
+            return GetDisplayName(englishName);
         }
 
         private static string NormalizeName(string name)

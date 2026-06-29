@@ -45,30 +45,33 @@ namespace VideoGenerator.Services.Parsers
             string cleanFolder = StripOwnerPrefix(folderName);
             string normalizedFolder = NormalizeFolderName(cleanFolder);
 
-            foreach (var rule in _ruleManager.Rules.OrderByDescending(r => r.Keyword.Length))
+            foreach (var rule in _ruleManager.Rules.OrderByDescending(r => r.Keyword.Length).ThenBy(r => r.Type))
             {
                 string normalizedKeyword = NormalizeFolderName(rule.Keyword);
                 string prefix = "";
 
                 if (rule.Type == RuleType.Simple)
                 {
-                    bool isExactMatch = normalizedFolder.Equals(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
-                    bool isGeneralMatch = normalizedFolder.Equals(normalizedKeyword + "General", StringComparison.OrdinalIgnoreCase) ||
-                                          normalizedFolder.Equals(normalizedKeyword + "inGeneral", StringComparison.OrdinalIgnoreCase) ||
+                    // Strip 2D/3D infixes for matching (e.g. Kill3DBaronSteal -> KillBaronSteal)
+                    string cleanedFolder = Regex.Replace(normalizedFolder, @"(2D|3D)", "", RegexOptions.IgnoreCase);
+
+                    bool isExactMatch = cleanedFolder.Equals(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
+                    bool isGeneralMatch = cleanedFolder.Equals(normalizedKeyword + "General", StringComparison.OrdinalIgnoreCase) ||
+                                          cleanedFolder.Equals(normalizedKeyword + "inGeneral", StringComparison.OrdinalIgnoreCase) ||
                                           normalizedFolder.Equals(normalizedKeyword + "3DGeneral", StringComparison.OrdinalIgnoreCase) ||
                                           normalizedFolder.Equals(normalizedKeyword + "2DGeneral", StringComparison.OrdinalIgnoreCase);
 
                     bool isPrefixedGeneralMatch = !isExactMatch && !isGeneralMatch &&
-                        (normalizedFolder.EndsWith("General", StringComparison.OrdinalIgnoreCase) ||
-                         normalizedFolder.EndsWith("inGeneral", StringComparison.OrdinalIgnoreCase)) &&
-                        Regex.IsMatch(normalizedFolder, $@"(^|_){Regex.Escape(normalizedKeyword)}(?=_|$|General|inGeneral)", RegexOptions.IgnoreCase);
+                        (cleanedFolder.EndsWith("General", StringComparison.OrdinalIgnoreCase) ||
+                         cleanedFolder.EndsWith("inGeneral", StringComparison.OrdinalIgnoreCase)) &&
+                        Regex.IsMatch(cleanedFolder, $@"(^|_){Regex.Escape(normalizedKeyword)}(?=_|$|General|inGeneral)", RegexOptions.IgnoreCase);
 
                     if (isPrefixedGeneralMatch)
                     {
-                        int kwIndex = normalizedFolder.IndexOf(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
-                        if (kwIndex > 0 && normalizedFolder[kwIndex - 1] == '_')
+                        int kwIndex = cleanedFolder.IndexOf(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
+                        if (kwIndex > 0 && cleanedFolder[kwIndex - 1] == '_')
                         {
-                            prefix = normalizedFolder.Substring(0, kwIndex - 1);
+                            prefix = cleanedFolder.Substring(0, kwIndex - 1);
                         }
                     }
 
@@ -119,6 +122,11 @@ namespace VideoGenerator.Services.Parsers
                 targetName = targetName[..^1];
             }
 
+            if (rule.Keyword.Equals("Unique", StringComparison.OrdinalIgnoreCase))
+            {
+                targetName = Regex.Replace(targetName, "Emote$", "", RegexOptions.IgnoreCase).Trim('_');
+            }
+
             // --- IMPORTANT: Priority to Rule's IconLookup ---
             // If the rule already defines a specific icon (like 'Gold' or 'Assist Me'), we use it.
             string iconTarget;
@@ -145,7 +153,7 @@ namespace VideoGenerator.Services.Parsers
             // --- CASE A: GENERAL EVENT ---
             if (iconTarget.Equals("General", StringComparison.OrdinalIgnoreCase))
             {
-                if (iconType != "system" && iconType != "item") iconType = "generic";
+                if (iconType != "system" && iconType != "item" && iconType != "structure") iconType = "generic";
                 
                 iconTarget = string.IsNullOrEmpty(rule.IconLookup) ? "Generic" : rule.IconLookup;
 
@@ -218,36 +226,73 @@ namespace VideoGenerator.Services.Parsers
                     string themeDisplayName = _translationService.GetText(language, themeKey);
                     if (themeDisplayName == themeKey)
                     {
-                        // No localized name available: use the official skinline name
-                        themeDisplayName = _skinlineManager.GetDisplayName(displayTargetName);
+                        // No localized name available in translations.json: query localized CDragon database dynamically
+                        themeDisplayName = await _skinlineManager.GetLocalizedDisplayNameAsync(displayTargetName, language);
                     }
                     displayText = _translationService.GetText(language, rule.TranslationKey, themeDisplayName);
                 }
                 else
                 {
-                    if (_aliasManager.IsValidChampion(iconTarget))
+                    // If the rule already defines a specific icon type with a lookup, trust it
+                    bool ruleHasExplicitIcon = !string.IsNullOrEmpty(rule.IconLookup) &&
+                        (rule.IconType.Equals("monster", StringComparison.OrdinalIgnoreCase) ||
+                         rule.IconType.Equals("structure", StringComparison.OrdinalIgnoreCase) ||
+                         rule.IconType.Equals("system", StringComparison.OrdinalIgnoreCase));
+
+                    if (!ruleHasExplicitIcon)
                     {
-                        iconTarget = _aliasManager.GetInternalName(iconTarget);
-                        iconType = "champion";
-                        displayTargetName = cleanDisplayName;
-                    }
-                    else if (IsMonster(iconTarget))
-                    {
-                        iconType = "monster";
-                        displayTargetName = Regex.Replace(iconTarget, @"(?<!^)(?=[A-Z])", " ").Trim();
-                    }
-                    else if (IsStructure(iconTarget))
-                    {
-                        iconType = "structure";
-                        iconTarget = GetStructureLookupName(iconTarget);
-                        displayTargetName = iconTarget;
-                    }
-                    else if (iconType != "system" && iconType != "item")
-                    {
-                        iconType = "generic";
+                        if (_aliasManager.IsValidChampion(iconTarget))
+                        {
+                            iconTarget = _aliasManager.GetInternalName(iconTarget);
+                            iconType = "champion";
+                            displayTargetName = cleanDisplayName;
+                        }
+                        else if (IsMonster(iconTarget))
+                        {
+                            iconType = "monster";
+                            displayTargetName = Regex.Replace(iconTarget, @"(?<!^)(?=[A-Z])", " ").Trim();
+                        }
+                        else if (IsStructure(iconTarget))
+                        {
+                            iconType = "structure";
+                            iconTarget = GetStructureLookupName(iconTarget);
+                            displayTargetName = iconTarget;
+                        }
+                        else if (iconType != "system" && iconType != "item")
+                        {
+                            iconType = "generic";
+                        }
                     }
 
-                    displayText = _translationService.GetText(language, rule.TranslationKey, displayTargetName);
+                    string cleanTargetKey = iconTarget.ToLowerInvariant().Replace(" ", "_").Replace("_", "");
+                    string targetKey = $"target_{cleanTargetKey}";
+                    string translatedTarget = _translationService.GetText(language, targetKey);
+                    if (translatedTarget == targetKey)
+                    {
+                        // Prevent splitting acronyms (e.g., "ADC" shouldn't become "A D C")
+                        if (iconTarget.Length <= 4 && iconTarget.All(char.IsUpper))
+                        {
+                            translatedTarget = iconTarget;
+                        }
+                        else
+                        {
+                            translatedTarget = displayTargetName;
+                        }
+                    }
+
+                    // Special case for Spanish (ES): change "Matar a {0}" to "Matar al {0}" for specific roles
+                    if (language.Equals("ES", StringComparison.OrdinalIgnoreCase) && 
+                        rule.TranslationKey.Equals("interaction_kill_one", StringComparison.OrdinalIgnoreCase) &&
+                        (cleanTargetKey == "adc" || cleanTargetKey == "apc" || cleanTargetKey == "support" || cleanTargetKey == "jungle"))
+                    {
+                        string template = _translationService.GetText(language, rule.TranslationKey);
+                        template = template.Replace("Matar a {0}", "Matar al {0}").Replace("a {0}", "al {0}");
+                        displayText = template.Replace("{0}", translatedTarget);
+                    }
+                    else
+                    {
+                        displayText = _translationService.GetText(language, rule.TranslationKey, translatedTarget);
+                    }
                 }
             }
 
@@ -351,6 +396,7 @@ namespace VideoGenerator.Services.Parsers
             if (string.IsNullOrEmpty(folderName)) return string.Empty;
             string normalized = Regex.Replace(folderName, @"\b(2D|3D)\b", "", RegexOptions.IgnoreCase);
             normalized = Regex.Replace(normalized, @"2D|3D", "", RegexOptions.IgnoreCase);
+            normalized = Regex.Replace(normalized, "Reaspawn", "Respawn", RegexOptions.IgnoreCase);
             // Strip the "Skinline" prefix that Riot embeds before thematic names (e.g. FirstEncounterSkinlineAnimaSquad)
             normalized = Regex.Replace(normalized, @"\b(SkinLine|Skinline|skinline)\b", "", RegexOptions.IgnoreCase);
             normalized = Regex.Replace(normalized, @"SkinLine|Skinline|skinline", "", RegexOptions.IgnoreCase);

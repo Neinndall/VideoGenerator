@@ -41,6 +41,39 @@ namespace VideoGenerator.Services
             }
         }
 
+        private float _backgroundBrightness = 1.0f;
+        public float BackgroundBrightness
+        {
+            get => _backgroundBrightness;
+            set
+            {
+                if (SetProperty(ref _backgroundBrightness, value))
+                    QueueSave();
+            }
+        }
+
+        private float _backgroundContrast = 1.0f;
+        public float BackgroundContrast
+        {
+            get => _backgroundContrast;
+            set
+            {
+                if (SetProperty(ref _backgroundContrast, value))
+                    QueueSave();
+            }
+        }
+
+        private float _backgroundSaturate = 1.0f;
+        public float BackgroundSaturate
+        {
+            get => _backgroundSaturate;
+            set
+            {
+                if (SetProperty(ref _backgroundSaturate, value))
+                    QueueSave();
+            }
+        }
+
         private string _mediaSourceDirectory;
         public string MediaSourceDirectory
         {

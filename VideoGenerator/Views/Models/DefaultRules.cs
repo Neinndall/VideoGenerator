@@ -16,8 +16,16 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "Death", TranslationKey = "interaction_death_one", Section = "COMBAT", IconType = "champion", Type = RuleType.Target, ExtractsTarget = true },
                 new EventRule { Keyword = "Attack", TranslationKey = "event_attack", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillFirst", TranslationKey = "event_first_blood", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillFirstAllyTeam", TranslationKey = "event_kill_first_ally_team", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillFirstEnemyTeam", TranslationKey = "event_kill_first_enemy_team", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillPenta", TranslationKey = "event_penta_kill", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "KillTurret", TranslationKey = "event_turret_takedown", Section = "COMBAT", IconType = "structure", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillDouble", TranslationKey = "event_double_kill", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillTriple", TranslationKey = "event_triple_kill", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillQuadra", TranslationKey = "event_quadra_kill", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillTurret", TranslationKey = "event_turret_takedown", Section = "COMBAT", IconType = "structure", IconLookup = "Turret", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillBaronSteal", TranslationKey = "event_baron_steal", Section = "COMBAT", IconType = "monster", IconLookup = "Baron", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillDragonSteal", TranslationKey = "event_dragon_steal", Section = "COMBAT", IconType = "monster", IconLookup = "Dragon", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillElderSteal", TranslationKey = "event_elder_steal", Section = "COMBAT", IconType = "monster", IconLookup = "Elder Dragon", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillAllyAhead", TranslationKey = "event_kill_ally_ahead", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillAheadAllyTeam", TranslationKey = "event_kill_ally_ahead", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillAllyBehind", TranslationKey = "event_kill_ally_behind", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
@@ -48,9 +56,11 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "Move2DRiver", TranslationKey = "event_move_river", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Move3DRiver", TranslationKey = "event_move_river", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveLongAllSwords", TranslationKey = "event_move_long_all_swords", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "Recall", TranslationKey = "event_recall_general", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Recall", TranslationKey = "event_recall", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Respawn", Section = "MOVEMENT", TranslationKey = "event_respawn", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "LevelUp", TranslationKey = "event_level_up", Section = "ABILITIES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "MoveAllyNear", TranslationKey = "event_move_ally_near", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "MoveEnemyNear", TranslationKey = "event_move_enemy_near", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
 
                 // ==========================================
                 // 💰 ITEMS (Tienda y Objetos)
@@ -73,6 +83,7 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "Ping2DBait", TranslationKey = "event_ping_bait", Section = "PINGS", IconType = "system", IconLookup = "Bait", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Ping2DHold", TranslationKey = "event_ping_hold", Section = "PINGS", IconType = "system", IconLookup = "Hold", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Ping2DAllIn", TranslationKey = "event_ping_all_in", Section = "PINGS", IconType = "system", IconLookup = "All In", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Ping2DTarget", TranslationKey = "event_ping_target", Section = "PINGS", IconType = "system", IconLookup = "Target", Type = RuleType.Simple, ExtractsTarget = false },
 
                 // ==========================================
                 // ✨ ABILITIES (Habilidades y Rangos)
@@ -86,7 +97,12 @@ namespace VideoGenerator.Views.Models
                 // ==========================================
                 new EventRule { Keyword = "FirstEncounter", TranslationKey = "interaction_first_encounter_one", Section = "INTERACTIONS", IconType = "champion", Type = RuleType.Interaction, ExtractsTarget = true },
                 new EventRule { Keyword = "SecondEncounter", TranslationKey = "interaction_second_encounter_one", Section = "INTERACTIONS", IconType = "champion", Type = RuleType.Interaction, ExtractsTarget = true },
-                new EventRule { Keyword = "Respawn", TranslationKey = "interaction_respawn_class", Section = "INTERACTIONS", IconType = "champion", Type = RuleType.Target, ExtractsTarget = true }
+                new EventRule { Keyword = "GameEndDefeat", TranslationKey = "event_game_end_defeat", Section = "OTHER", IconType = "generic", IconLookup = "", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "GameEndVictory", TranslationKey = "event_game_end_victory", Section = "OTHER", IconType = "generic", IconLookup = "", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Unique", TranslationKey = "interaction_unique_emote", Section = "OTHER", IconType = "generic", Type = RuleType.Target, ExtractsTarget = true },
+                new EventRule { Keyword = "UniqueTransformAhead", TranslationKey = "event_unique_transform_ahead", Section = "OTHER", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "UniqueTransformBehinf", TranslationKey = "event_unique_transform_behind", Section = "OTHER", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "UniqueTransformGeneral", TranslationKey = "event_unique_transform_general", Section = "OTHER", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false }
             };
         }
     }

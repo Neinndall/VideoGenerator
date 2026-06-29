@@ -101,18 +101,14 @@ namespace VideoGenerator.Views
                 }
             };
 
-            foreach (var lang in _translationService.AvailableLanguages)
-                _model.AvailableLanguages.Add(lang);
-
-            if (_model.AvailableLanguages.Count > 0)
-                _model.SelectedLanguage = _model.AvailableLanguages.Contains("EN") ? "EN" : _model.AvailableLanguages[0];
-
             _model.PropertyChanged += async (s, e) => {
                 if (e.PropertyName == nameof(_model.SelectedEvent) && _model.SelectedEvent != null)
                 {
                     await UpdatePreviewAsync();
                 }
-                else if (e.PropertyName == nameof(_model.SelectedFilter) || e.PropertyName == nameof(_model.SelectedCharacter))
+                else if (e.PropertyName == nameof(_model.SelectedFilter) || 
+                         e.PropertyName == nameof(_model.SelectedCharacter) ||
+                         e.PropertyName == nameof(_model.SearchQuery))
                 {
                     ApplyFilter();
                 }
@@ -170,16 +166,25 @@ namespace VideoGenerator.Views
         {
             var characterFilter = _model.SelectedCharacter ?? "ALL";
             var filter = _model.SelectedFilter;
+            var search = _model.SearchQuery;
 
             var items = _model.ProcessedEvents.Where(ev => {
                 bool matchesChar = characterFilter == "ALL" || string.Equals(ev.CharacterName, characterFilter, StringComparison.OrdinalIgnoreCase);
                 if (!matchesChar) return false;
-                        return filter switch
-                            {
-                                "ERRORS" => ev.Status == "Missing Icon" || ev.Status == "No Audio",
-                                "PENDING" => ev.Status == "Pending" || ev.Status == "Pending Icon",
-                                _ => true
-                            };
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    bool matchesSearch = (ev.FolderName != null && ev.FolderName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                                         (ev.ParsedData != null && ev.ParsedData.DisplayText != null && ev.ParsedData.DisplayText.Contains(search, StringComparison.OrdinalIgnoreCase));
+                    if (!matchesSearch) return false;
+                }
+
+                return filter switch
+                {
+                    "ERRORS" => ev.Status == "Missing Icon" || ev.Status == "No Audio",
+                    "PENDING" => ev.Status == "Pending" || ev.Status == "Pending Icon",
+                    _ => true
+                };
             }).ToList();
 
             _model.FilteredProcessedEvents.Clear();
@@ -363,7 +368,7 @@ namespace VideoGenerator.Views
             string text = QuickEditDisplayText.Text;
             string iconName = QuickEditIconLookup.Text;
             string iconType = QuickEditIconType.SelectedValue?.ToString() ?? "generic";
-            string selectedLang = _model.SelectedLanguage ?? "EN";
+            string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
 
             if (iconType == "item" && !string.IsNullOrEmpty(iconName))
             {
@@ -457,7 +462,7 @@ namespace VideoGenerator.Views
             _logger.Logs.Clear();
             _logger.LogInfo($">>> ANALYZING: {_model.AudioPath}");
 
-            string selectedLang = _model.SelectedLanguage ?? "EN";
+            string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
 
             try {
                 var reportProgress = new Action<double>(value => Application.Current.Dispatcher.Invoke(() => _model.ProgressValue = value));
@@ -569,7 +574,7 @@ namespace VideoGenerator.Views
             try {
                 var eventsToPrepare = _model.FilteredProcessedEvents.ToList();
                 var reportProgress = new Action<double>(value => Application.Current.Dispatcher.Invoke(() => _model.ProgressValue = value));
-                string selectedLang = _model.SelectedLanguage ?? "EN";
+                string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
 
                 await Task.Run(async () => {
                     int total = eventsToPrepare.Count;
@@ -657,7 +662,7 @@ namespace VideoGenerator.Views
                                     ev.ParsedData.Dialogue = transcription;
                                 }
 
-                                string selectedLang = _model.SelectedLanguage ?? "EN";
+                                string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
                                 _dialogueService.SetDialogue(selectedLang, ev.FolderName, transcription);
 
                                 if (_model.SelectedEvent == ev)
@@ -679,7 +684,7 @@ namespace VideoGenerator.Views
                                 {
                                     ev.ParsedData.Dialogue = cleaned;
                                 }
-                                string selectedLang = _model.SelectedLanguage ?? "EN";
+                                string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
                                 _dialogueService.SetDialogue(selectedLang, ev.FolderName, cleaned);
 
                                 if (_model.SelectedEvent == ev)
@@ -766,7 +771,7 @@ namespace VideoGenerator.Views
                 _dialogueService,
                 _imageGenerator,
                 _videoService,
-                _model.SelectedLanguage,
+                AppSettings.Instance.DefaultDictionaryLanguage ?? "EN",
                 _model.SelectedEvent
             );
             dialog.Owner = Application.Current.MainWindow;
@@ -912,7 +917,7 @@ namespace VideoGenerator.Views
                             ev.ParsedData.Dialogue = transcription;
                         }
                         QuickEditDialogue.Text = transcription;
-                        string selectedLang = _model.SelectedLanguage ?? "EN";
+                        string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
                         _dialogueService.SetDialogue(selectedLang, ev.FolderName, transcription);
                         _logger.LogInfo($"Successfully transcribed: {transcription}");
                         await UpdatePreviewAsync();
@@ -989,6 +994,11 @@ namespace VideoGenerator.Views
                     PreviewContainerGrid.Margin = _prevContainerMargin;
                 }
             }
+        }
+
+        private void ClearSearch_Click(object sender, RoutedEventArgs e)
+        {
+            _model.SearchQuery = string.Empty;
         }
     }
 }

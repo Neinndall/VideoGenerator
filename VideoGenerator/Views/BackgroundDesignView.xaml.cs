@@ -69,6 +69,9 @@ namespace VideoGenerator.Views
 
             AppSettings.Instance.PropertyChanged += (s, e) => {
                 if (e.PropertyName == nameof(AppSettings.CustomBackgroundPath) || 
+                    e.PropertyName == nameof(AppSettings.BackgroundBrightness) ||
+                    e.PropertyName == nameof(AppSettings.BackgroundContrast) ||
+                    e.PropertyName == nameof(AppSettings.BackgroundSaturate) ||
                     e.PropertyName == nameof(AppSettings.TextVerticalOffset) ||
                     e.PropertyName == nameof(AppSettings.IconAlignment) ||
                     e.PropertyName == nameof(AppSettings.IconVerticalOffset) ||
@@ -242,6 +245,9 @@ namespace VideoGenerator.Views
             if (MessageBox.Show("Are you sure you want to reset all visual layout parameters to their default values?", "Reset Defaults", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 AppSettings.Instance.TextVerticalOffset = -8f;
+                AppSettings.Instance.BackgroundBrightness = 1.0f;
+                AppSettings.Instance.BackgroundContrast = 1.0f;
+                AppSettings.Instance.BackgroundSaturate = 1.0f;
                 AppSettings.Instance.IconVerticalOffset = 0f;
                 AppSettings.Instance.IconAlignment = "Left";
                 AppSettings.Instance.SelectedFontName = "Segoe UI";

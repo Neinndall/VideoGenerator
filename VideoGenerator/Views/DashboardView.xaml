@@ -45,8 +45,8 @@
             <Border Style="{StaticResource ModernContainer}" Margin="0,0,16,0" Padding="10">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/> <!-- Directory expands dynamically -->
-                        <ColumnDefinition Width="Auto"/> <!-- Lang dropdown -->
+                        <ColumnDefinition Width="*"/>    <!-- Path Selector -->
+                        <ColumnDefinition Width="Auto"/> <!-- Search Box (Hidden until processed) -->
                         <ColumnDefinition Width="Auto"/> <!-- Character filter (Hidden until processed) -->
                     </Grid.ColumnDefinitions>
 
@@ -67,13 +67,25 @@
                         </Grid>
                     </StackPanel>
 
-                    <!-- Lang -->
-                    <StackPanel Grid.Column="1" Width="130" Margin="0,0,12,0" VerticalAlignment="Center">
-                        <ComboBox ItemsSource="{Binding DashboardModel.AvailableLanguages}" 
-                                  SelectedItem="{Binding DashboardModel.SelectedLanguage}"
-                                  IsEnabled="{Binding DashboardModel.IsAnalyzed, Converter={StaticResource InverseBooleanConverter}}"
-                                  materialDesign:HintAssist.Hint="Target Lang"
-                                  Style="{StaticResource ModernComboBoxStyle}" Height="42" Padding="12,0"/>
+                    <!-- Search Box (Only visible after analysis is complete) -->
+                    <StackPanel Grid.Column="1" Width="180" Margin="0,0,12,0" VerticalAlignment="Center"
+                                Visibility="{Binding DashboardModel.IsAnalyzed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid>
+                            <TextBox x:Name="SearchTextBox"
+                                     Text="{Binding DashboardModel.SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="Search Event..."
+                                     materialDesign:HintAssist.IsFloating="True"
+                                     Style="{StaticResource CompactModernTextBox}" 
+                                     Height="42"
+                                     Padding="10,4,26,4"/>
+                            
+                            <Button Style="{StaticResource MaterialDesignIconButton}" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,2,0"
+                                    Width="24" Height="24" Click="ClearSearch_Click"
+                                    Visibility="{Binding DashboardModel.SearchQuery, Converter={StaticResource NullToVisibilityConverter}}">
+                                <materialDesign:PackIcon Kind="Close" Width="14" Height="14" Foreground="#888888"/>
+                            </Button>
+                        </Grid>
                     </StackPanel>
 
                     <!-- Character Selector (Only visible after analysis is complete) -->

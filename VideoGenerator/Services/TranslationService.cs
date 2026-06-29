@@ -113,6 +113,32 @@ namespace VideoGenerator.Services
                                     localData[lang][keyPair.Key] = keyPair.Value;
                                     mergedAny = true;
                                 }
+                                else
+                                {
+                                    // Migration for legacy default values
+                                    string currentVal = localData[lang][keyPair.Key];
+                                    if (keyPair.Key == "event_use_item" && currentVal == "Usar objeto {item_name}")
+                                    {
+                                        localData[lang][keyPair.Key] = keyPair.Value;
+                                        mergedAny = true;
+                                    }
+                                    else if (keyPair.Key == "event_buy_item" && currentVal == "Comprar objeto {item_name}")
+                                    {
+                                        localData[lang][keyPair.Key] = keyPair.Value;
+                                        mergedAny = true;
+                                    }
+                                    else if (keyPair.Key == "interaction_move_first_target" && 
+                                             (currentVal == "Primer Movimiento hacia {0}" || currentVal == "First Movement towards {0}"))
+                                    {
+                                        localData[lang][keyPair.Key] = keyPair.Value;
+                                        mergedAny = true;
+                                    }
+                                    else if (keyPair.Key == "event_respawn" && currentVal == "Reaparición")
+                                    {
+                                        localData[lang][keyPair.Key] = keyPair.Value;
+                                        mergedAny = true;
+                                    }
+                                }
                             }
                         }
 

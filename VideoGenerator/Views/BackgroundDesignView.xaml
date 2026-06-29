@@ -75,6 +75,12 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="8"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="12"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="12"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="12"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="110"/>
@@ -124,6 +130,48 @@
                                                 </Button>
                                             </Grid>
                                         </Border>
+
+                                        <!-- Row 6: Background Brightness -->
+                                        <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,4,0,0">
+                                            <Grid Margin="0,0,0,4">
+                                                <TextBlock Text="BACKGROUND BRIGHTNESS" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundBrightness, StringFormat={}{0:P0}}" 
+                                                           HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                            </Grid>
+                                            <Slider Minimum="0.0" Maximum="2.0" 
+                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundBrightness}"
+                                                    Style="{StaticResource ModernSlider}"
+                                                    TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                                    Margin="0,4,0,0"/>
+                                        </StackPanel>
+
+                                        <!-- Row 8: Background Contrast -->
+                                        <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,4,0,0">
+                                            <Grid Margin="0,0,0,4">
+                                                <TextBlock Text="BACKGROUND CONTRAST" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundContrast, StringFormat={}{0:P0}}" 
+                                                           HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                            </Grid>
+                                            <Slider Minimum="0.0" Maximum="2.0" 
+                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundContrast}"
+                                                    Style="{StaticResource ModernSlider}"
+                                                    TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                                    Margin="0,4,0,0"/>
+                                        </StackPanel>
+
+                                        <!-- Row 10: Background Color / Saturation -->
+                                        <StackPanel Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,4,0,0">
+                                            <Grid Margin="0,0,0,4">
+                                                <TextBlock Text="BACKGROUND SATURATION" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundSaturate, StringFormat={}{0:P0}}" 
+                                                           HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                            </Grid>
+                                            <Slider Minimum="0.0" Maximum="2.0" 
+                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundSaturate}"
+                                                    Style="{StaticResource ModernSlider}"
+                                                    TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                                    Margin="0,4,0,0"/>
+                                        </StackPanel>
                                     </Grid>
                                 </StackPanel>
                             </Border>
