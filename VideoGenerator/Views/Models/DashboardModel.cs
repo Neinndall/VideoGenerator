@@ -41,6 +41,9 @@ namespace VideoGenerator.Views.Models
         [ObservableProperty]
         private string _selectedCharacter = "ALL"; // ALL, Ahri, Lucian, etc.
 
+        [ObservableProperty]
+        private string _searchQuery = string.Empty;
+
         public ObservableCollection<string> CharactersList { get; } = new();
         public ObservableCollection<PreviewEventModel> FilteredProcessedEvents { get; } = new();
 

@@ -129,6 +129,17 @@ namespace VideoGenerator.Services
                     Size = new Size(HudTextures.CanvasWidth, HudTextures.CanvasHeight), 
                     Mode = ResizeMode.Crop 
                 }));
+
+                // Apply brightness, contrast and saturation settings
+                float brightness = AppSettings.Instance.BackgroundBrightness;
+                float contrast = AppSettings.Instance.BackgroundContrast;
+                float saturate = AppSettings.Instance.BackgroundSaturate;
+                loadedImage.Mutate(x => {
+                    x.Brightness(brightness);
+                    x.Contrast(contrast);
+                    x.Saturate(saturate);
+                });
+
                 image.Mutate(x => x.DrawImage(loadedImage, 1f));
 
                 // 2. Draw HUD Ribbon (Semi-transparent background, no outline to prevent clashing with pre-designed default backgrounds)

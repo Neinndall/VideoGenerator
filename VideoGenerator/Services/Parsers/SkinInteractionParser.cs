@@ -49,7 +49,7 @@ namespace VideoGenerator.Services.Parsers
                 int skinId = int.Parse(match.Groups[2].Value);
 
                 string actualChampionName = rawChampionName;
-                string[] prefixes = { "Kill", "FirstEncounter", "SecondEncounter", "MoveFirstAlly", "Move", "Assist", "AttackNear", "Death" };
+                string[] prefixes = { "Kill", "FirstEncounter", "SecondEncounter", "MoveFirstAlly", "MoveFirst", "Move", "Assist", "AttackNear", "Death" };
                 foreach (var prefix in prefixes)
                 {
                     if (actualChampionName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
@@ -76,7 +76,7 @@ namespace VideoGenerator.Services.Parsers
                 // Clean the champion name through AliasManager
                 actualChampionName = _aliasManager.GetInternalName(actualChampionName);
 
-                string skinName = await FindSkinNameAsync(actualChampionName, skinId);
+                string skinName = await FindSkinNameAsync(actualChampionName, skinId, language);
                 if (skinName != null)
                 {
                     string displayName = GetDisplaySkinName(actualChampionName, skinName, out string officialChampionName);
@@ -95,35 +95,39 @@ namespace VideoGenerator.Services.Parsers
             string iconType = "champion";
             string iconLookup = lastChampionWithSkin;
 
-            if (folderName.Contains("Kill", StringComparison.OrdinalIgnoreCase))
+            if (workingFolder.Contains("Kill", StringComparison.OrdinalIgnoreCase))
             {
                 key = processedChampions.Count == 1 ? "interaction_kill_one" : "interaction_kill_two";
             }
-            else if (folderName.Contains("Death", StringComparison.OrdinalIgnoreCase))
+            else if (workingFolder.Contains("Death", StringComparison.OrdinalIgnoreCase))
             {
                 key = processedChampions.Count == 1 ? "interaction_death_one" : "interaction_death_two";
             }
-            else if (folderName.Contains("Assist", StringComparison.OrdinalIgnoreCase))
+            else if (workingFolder.Contains("Assist", StringComparison.OrdinalIgnoreCase))
             {
                 key = "interaction_assist_one";
             }
-            else if (folderName.Contains("FirstEncounter", StringComparison.OrdinalIgnoreCase))
+            else if (workingFolder.Contains("FirstEncounter", StringComparison.OrdinalIgnoreCase))
             {
                 key = processedChampions.Count == 1 ? "interaction_first_encounter_one" : "interaction_first_encounter_two";
             }
-            else if (folderName.Contains("AttackNear", StringComparison.OrdinalIgnoreCase))
+            else if (workingFolder.Contains("AttackNear", StringComparison.OrdinalIgnoreCase))
             {
                 key = "interaction_attack_near_one";
             }
-            else if (folderName.Contains("Buff", StringComparison.OrdinalIgnoreCase) || folderName.Contains("Receive", StringComparison.OrdinalIgnoreCase))
+            else if (workingFolder.Contains("MoveFirst", StringComparison.OrdinalIgnoreCase))
+            {
+                key = "interaction_move_first_target";
+            }
+            else if (workingFolder.Contains("Buff", StringComparison.OrdinalIgnoreCase) || workingFolder.Contains("Receive", StringComparison.OrdinalIgnoreCase))
             {
                 key = "interaction_buff_receive";
             }
-            else if (folderName.Contains("Ally", StringComparison.OrdinalIgnoreCase))
+            else if (workingFolder.Contains("Ally", StringComparison.OrdinalIgnoreCase))
             {
                 key = "interaction_move_first_ally";
             }
-            else if (folderName.Contains("Enemy", StringComparison.OrdinalIgnoreCase))
+            else if (workingFolder.Contains("Enemy", StringComparison.OrdinalIgnoreCase))
             {
                 key = "interaction_move_first_enemy";
             }
@@ -157,9 +161,9 @@ namespace VideoGenerator.Services.Parsers
             return folderName;
         }
 
-        private async Task<string> FindSkinNameAsync(string championName, int skinId)
+        private async Task<string> FindSkinNameAsync(string championName, int skinId, string language)
         {
-            var skinsData = await _dataFetcher.GetSkinsDataAsync();
+            var skinsData = await _dataFetcher.GetSkinsDataAsync(language);
             if (skinsData == null) return null;
 
             string Normalize(string input) => input?.Replace("'", "").Replace(" ", "").Replace("_", "").ToLowerInvariant() ?? "";

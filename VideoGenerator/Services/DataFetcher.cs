@@ -57,18 +57,68 @@ namespace VideoGenerator.Services
             }
         }
 
-        public async Task<Dictionary<string, JsonElement>> GetSkinsDataAsync()
+        private async Task EnsureFileSyncedAsync(string url, string path)
         {
-            string locale = AppConfig.GetCdragonLocale();
+            if (File.Exists(path)) return;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                var bytes = await _httpClient.GetByteArrayAsync(url);
+                await File.WriteAllBytesAsync(path, bytes);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error downloading database on the fly from {url}: {ex.Message}");
+            }
+        }
+
+        public async Task<Dictionary<string, JsonElement>> GetSkinsDataAsync(string language = null)
+        {
+            string locale = AppConfig.GetCdragonLocale(language);
             if (_skinsCache != null && _loadedSkinsLocale == locale) return _skinsCache;
 
-            string cachePath = AppConfig.SkinsCachePath;
+            string cachePath = AppConfig.GetSkinsCachePath(locale);
+            await EnsureFileSyncedAsync(AppConfig.GetSkinsDataUrl(locale), cachePath);
+
             if (File.Exists(cachePath))
             {
                 try
                 {
                     string cachedJson = await File.ReadAllTextAsync(cachePath);
-                    _skinsCache = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
+                    var rawSkins = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
+                    if (rawSkins != null)
+                    {
+                        var extraSkins = new Dictionary<string, JsonElement>();
+                        foreach (var kvp in rawSkins)
+                        {
+                            var skinElement = kvp.Value;
+                            if (skinElement.TryGetProperty("questSkinInfo", out var questInfoProp) && 
+                                questInfoProp.ValueKind == JsonValueKind.Object)
+                            {
+                                if (questInfoProp.TryGetProperty("tiers", out var tiersProp) && 
+                                    tiersProp.ValueKind == JsonValueKind.Array)
+                                {
+                                    foreach (var tier in tiersProp.EnumerateArray())
+                                    {
+                                        if (tier.TryGetProperty("id", out var idProp))
+                                        {
+                                            string tierIdStr = idProp.ToString();
+                                            if (!rawSkins.ContainsKey(tierIdStr) && !extraSkins.ContainsKey(tierIdStr))
+                                            {
+                                                extraSkins[tierIdStr] = tier;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        foreach (var kvp in extraSkins)
+                        {
+                            rawSkins[kvp.Key] = kvp.Value;
+                        }
+                        _skinsCache = rawSkins;
+                    }
                     _loadedSkinsLocale = locale;
                     return _skinsCache ?? new Dictionary<string, JsonElement>();
                 }
@@ -81,12 +131,14 @@ namespace VideoGenerator.Services
             return new Dictionary<string, JsonElement>();
         }
 
-        public async Task<List<JsonElement>> GetSkinLinesAsync()
+        public async Task<List<JsonElement>> GetSkinLinesAsync(string language = null)
         {
-            string locale = AppConfig.GetCdragonLocale();
+            string locale = AppConfig.GetCdragonLocale(language);
             if (_skinLinesCache != null && _loadedSkinlinesLocale == locale) return _skinLinesCache;
 
-            string cachePath = AppConfig.SkinLinesCachePath;
+            string cachePath = AppConfig.GetSkinLinesCachePath(locale);
+            await EnsureFileSyncedAsync(AppConfig.GetSkinLinesUrl(locale), cachePath);
+
             if (File.Exists(cachePath))
             {
                 try
@@ -105,12 +157,14 @@ namespace VideoGenerator.Services
             return new List<JsonElement>();
         }
 
-        private async Task<Dictionary<int, ItemData>> GetItemsDataAsync()
+        private async Task<Dictionary<int, ItemData>> GetItemsDataAsync(string language = null)
         {
-            string locale = AppConfig.GetCdragonLocale();
+            string locale = AppConfig.GetCdragonLocale(language);
             if (_itemsCache != null && _loadedItemsLocale == locale) return _itemsCache;
 
-            string cachePath = AppConfig.ItemsCachePath;
+            string cachePath = AppConfig.GetItemsCachePath(locale);
+            await EnsureFileSyncedAsync(AppConfig.GetItemsDataUrl(locale), cachePath);
+
             if (File.Exists(cachePath))
             {
                 try
@@ -257,7 +311,7 @@ namespace VideoGenerator.Services
         {
             if (_communityItemNameToIdCache != null) return _communityItemNameToIdCache;
 
-            var itemsData = await GetItemsDataAsync();
+            var itemsData = await GetItemsDataAsync("EN");
             var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var item in itemsData.Values)
@@ -277,6 +331,7 @@ namespace VideoGenerator.Services
                 }
             }
 
+            map["Ward"] = 3340;
             _communityItemNameToIdCache = map;
             return map;
         }
@@ -309,11 +364,11 @@ namespace VideoGenerator.Services
             return new MonsterDatabase();
         }
 
-        public async Task<(int Id, string Name)?> GetItemInfoAsync(string itemName)
+        public async Task<(int Id, string Name)?> GetItemInfoAsync(string itemName, string language = null)
         {
             if (string.IsNullOrEmpty(itemName)) return null;
 
-            var itemsData = await GetItemsDataAsync();
+            var itemsData = await GetItemsDataAsync(language);
             if (itemsData == null || itemsData.Count == 0) return null;
 
             // Direct numeric ID

@@ -39,7 +39,13 @@ namespace VideoGenerator.Views.Models
                 new ThematicGroup { Name = "Fighter", Category = "Class", ChampionsRaw = "Darius, Garen, Sett, Lee Sin, Riven, Aatrox, Jax, Vi, Warwick, Olaf" },
                 new ThematicGroup { Name = "Mage", Category = "Class", ChampionsRaw = "Lux, Ahri, Veigar, Syndra, Orianna, Hwei, Viktor, Malzahar, Brand, Ryze" },
                 new ThematicGroup { Name = "Marksmen", Category = "Class", ChampionsRaw = "Ashe, Caitlyn, Jinx, Ezreal, Jhin, Vayne, Kai'Sa, Lucian, Miss Fortune, Samira" },
-                new ThematicGroup { Name = "Tank", Category = "Class", ChampionsRaw = "Malphite, Ornn, Sion, Leona, Braum, K'Sante, Nautilus, Zac, Alistar, Cho'Gath" }
+                new ThematicGroup { Name = "Tank", Category = "Class", ChampionsRaw = "Malphite, Ornn, Sion, Leona, Braum, K'Sante, Nautilus, Zac, Alistar, Cho'Gath" },
+
+                // Roles
+                new ThematicGroup { Name = "ADC", Category = "Role", ChampionsRaw = "Ashe, Caitlyn, Jinx, Ezreal, Jhin, Vayne, Kai'Sa, Lucian, Miss Fortune, Samira, Aphelios, Draven, Kalista, Kog'Maw, Nilah, Sivir, Tristana, Twitch, Varus, Xayah, Zeri" },
+                new ThematicGroup { Name = "APC", Category = "Role", ChampionsRaw = "Syndra, Veigar, Ziggs, Karthus, Cassiopeia, Brand, Seraphine, Hwei" },
+                new ThematicGroup { Name = "Support", Category = "Role", ChampionsRaw = "Lulu, Janna, Soraka, Nami, Sona, Milio, Yuumi, Renata, Karma, Leona, Braum, Nautilus, Alistar, Thresh, Pyke, Rakan, Taric, Bard, Blitzcrank, Senna" },
+                new ThematicGroup { Name = "Jungle", Category = "Role", ChampionsRaw = "Lee Sin, Vi, Warwick, Olaf, Graves, Rengar, Kha'Zix, Evelynn, Shaco, Sejuani, Zac, Hecarim, Nocturne, Lillia, Ivern, Nidalee, Nunu, Kindred, Amumu, Master Yi" }
             };
 
             foreach (var group in groups)
