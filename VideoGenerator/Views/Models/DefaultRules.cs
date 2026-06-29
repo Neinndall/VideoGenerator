@@ -31,7 +31,6 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "KillAllyBehind", TranslationKey = "event_kill_ally_behind", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillBehindAllyTeam", TranslationKey = "event_kill_ally_behind", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "DeathHuman", TranslationKey = "event_death_human", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "Death", TranslationKey = "event_death", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
 
                 // ==========================================
                 // 🗣️ EMOTES (Risas, Bromas, Respuestas)
@@ -53,8 +52,7 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "MoveFirstGeneral", TranslationKey = "event_move_first", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveLong", TranslationKey = "event_move_long", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveStandard", TranslationKey = "event_move_standard", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "Move2DRiver", TranslationKey = "event_move_river", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "Move3DRiver", TranslationKey = "event_move_river", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "MoveRiver", TranslationKey = "event_move_river", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveLongAllSwords", TranslationKey = "event_move_long_all_swords", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Recall", TranslationKey = "event_recall", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Respawn", Section = "MOVEMENT", TranslationKey = "event_respawn", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
@@ -67,8 +65,7 @@ namespace VideoGenerator.Views.Models
                 // ==========================================
                 new EventRule { Keyword = "BuyItem", TranslationKey = "event_buy_item", Section = "ITEMS", IconType = "item", Type = RuleType.Target, ExtractsTarget = true },
                 new EventRule { Keyword = "UseItem", TranslationKey = "event_use_item", Section = "ITEMS", IconType = "item", Type = RuleType.Target, ExtractsTarget = true },
-                new EventRule { Keyword = "Shop2DOpen", TranslationKey = "event_open_shop", Section = "ITEMS", IconType = "system", IconLookup = "Gold", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "Shop3DOpen", TranslationKey = "event_open_shop", Section = "ITEMS", IconType = "system", IconLookup = "Gold", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "ShopOpen", TranslationKey = "event_open_shop", Section = "ITEMS", IconType = "system", IconLookup = "Gold", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Shop", TranslationKey = "event_shop_open", Section = "ITEMS", IconType = "system", IconLookup = "Gold", Type = RuleType.Simple, ExtractsTarget = false },
 
                 // ==========================================
@@ -88,9 +85,9 @@ namespace VideoGenerator.Views.Models
                 // ==========================================
                 // ✨ ABILITIES (Habilidades y Rangos)
                 // ==========================================
-                new EventRule { Keyword = "SpellBuffReceive", TranslationKey = "event_buff_receive_general", Section = "ABILITIES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "Spell2DRRankOne", TranslationKey = "event_spell_r_rank_one", Section = "ABILITIES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "Spell2DRRankUp", TranslationKey = "event_spell_rank_up", Section = "ABILITIES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "SpellBuffReceive", TranslationKey = "event_buff_receive", Section = "ABILITIES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "SpellRRankOne", TranslationKey = "event_spell_r_rank_one", Section = "ABILITIES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "SpellRRankUp", TranslationKey = "event_spell_rank_up", Section = "ABILITIES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
 
                 // ==========================================
                 // 🤝 INTERACTIONS (Encuentros Lore)

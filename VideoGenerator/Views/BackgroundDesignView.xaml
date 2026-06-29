@@ -139,10 +139,11 @@
                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
                                             </Grid>
                                             <Slider Minimum="0.0" Maximum="2.0" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundBrightness}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    TickFrequency="0.05" IsSnapToTickEnabled="True"
-                                                    Margin="0,4,0,0"/>
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundBrightness}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="2"
+                                                     Margin="0,4,0,0"/>
                                         </StackPanel>
 
                                         <!-- Row 8: Background Contrast -->
@@ -153,10 +154,11 @@
                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
                                             </Grid>
                                             <Slider Minimum="0.0" Maximum="2.0" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundContrast}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    TickFrequency="0.05" IsSnapToTickEnabled="True"
-                                                    Margin="0,4,0,0"/>
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundContrast}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="2"
+                                                     Margin="0,4,0,0"/>
                                         </StackPanel>
 
                                         <!-- Row 10: Background Color / Saturation -->
@@ -167,10 +169,11 @@
                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
                                             </Grid>
                                             <Slider Minimum="0.0" Maximum="2.0" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundSaturate}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    TickFrequency="0.05" IsSnapToTickEnabled="True"
-                                                    Margin="0,4,0,0"/>
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BackgroundSaturate}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="2"
+                                                     Margin="0,4,0,0"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -229,9 +232,11 @@
                                                            HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
                                             </Grid>
                                             <Slider Minimum="-100" Maximum="100" 
-                                                    Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=TextVerticalOffset}"
-                                                    Style="{StaticResource ModernSlider}"
-                                                    Margin="0,4,0,0"/>
+                                                     Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=TextVerticalOffset}"
+                                                     Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="1" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="0"
+                                                     Margin="0,4,0,0"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -293,6 +298,8 @@
                                              <Slider Minimum="-600" Maximum="200" 
                                                      Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconVerticalOffset}"
                                                      Style="{StaticResource ModernSlider}"
+                                                     TickFrequency="5" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="0"
                                                      Margin="0,4,0,0"/>
                                          </StackPanel>
 
@@ -318,6 +325,7 @@
                                                      Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=IconBorderThickness}"
                                                      Style="{StaticResource ModernSlider}"
                                                      TickFrequency="0.5" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="1"
                                                      Margin="0,4,0,0"/>
                                          </StackPanel>
                                      </Grid>
@@ -376,6 +384,7 @@
                                                      Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleTextSize}"
                                                      Style="{StaticResource ModernSlider}"
                                                      TickFrequency="1" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="0"
                                                      Margin="0,4,0,0"/>
                                          </StackPanel>
  
@@ -390,6 +399,7 @@
                                                      Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHeight}"
                                                      Style="{StaticResource ModernSlider}"
                                                      TickFrequency="5" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="0"
                                                      Margin="0,4,0,0"/>
                                          </StackPanel>
  
@@ -404,6 +414,7 @@
                                                      Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleOpacity}"
                                                      Style="{StaticResource ModernSlider}"
                                                      TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="2"
                                                      Margin="0,4,0,0"/>
                                          </StackPanel>
  
@@ -418,6 +429,7 @@
                                                      Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleVerticalOffset}"
                                                      Style="{StaticResource ModernSlider}"
                                                      TickFrequency="5" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="0"
                                                      Margin="0,4,0,0"/>
                                          </StackPanel>
  
@@ -432,6 +444,7 @@
                                                      Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleWidth}"
                                                      Style="{StaticResource ModernSlider}"
                                                      TickFrequency="10" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="0"
                                                      Margin="0,4,0,0"/>
                                          </StackPanel>
  
@@ -446,6 +459,7 @@
                                                      Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleHorizontalOffset}"
                                                      Style="{StaticResource ModernSlider}"
                                                      TickFrequency="5" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="0"
                                                      Margin="0,4,0,0"/>
                                          </StackPanel>
 
@@ -471,6 +485,7 @@
                                                      Value="{Binding Source={x:Static services:AppSettings.Instance}, Path=BubbleBorderThickness}"
                                                      Style="{StaticResource ModernSlider}"
                                                      TickFrequency="0.5" IsSnapToTickEnabled="True"
+                                                     AutoToolTipPrecision="1"
                                                      Margin="0,4,0,0"/>
                                          </StackPanel>
                                     </Grid>
