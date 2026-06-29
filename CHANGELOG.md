@@ -1,6 +1,6 @@
-VideoGenerator - Patch Notes | v1.2.4.4
+VideoGenerator - Patch Notes | v1.2.5.0
 
-MINOR UPDATE
+MEDIUM UPDATE
 This version introduces a real-time event pipeline search bar, reorders event parser execution priorities to fix localization hijackings, cleans up Spanish translation templates, adds explicit mapping overrides for generic item/ward names, and solves multiple rule synchronization and icon category bugs.
 
 New Features
