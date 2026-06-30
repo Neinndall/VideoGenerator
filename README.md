@@ -44,7 +44,7 @@ FFmpeg binaries are embedded and extracted automatically when required. Whisper 
 From the application project directory:
 
 ```powershell
-cd VideoGenerator_v1.2.6.0
+cd VideoGenerator
 dotnet restore
 dotnet build -c Release
 dotnet run -c Release
