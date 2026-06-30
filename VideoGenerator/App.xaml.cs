@@ -95,6 +95,7 @@ namespace VideoGenerator
             services.AddSingleton<TranscriptionService>();
             services.AddSingleton<DialogueService>();
             services.AddSingleton<TaskCancellationService>();
+            services.AddSingleton<ProgressService>();
             services.AddSingleton<EventFilterService>();
 
             // --- Views (Singletons for state preservation) ---
