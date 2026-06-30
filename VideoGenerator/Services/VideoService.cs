@@ -5,6 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Threading;
+using System.Security.Cryptography;
+using System.Text;
 using VideoGenerator.Models;
 
 namespace VideoGenerator.Services
@@ -73,12 +76,89 @@ namespace VideoGenerator.Services
             }
         }
 
-        public async Task<bool> CreateVideoAsync(string imagePath, List<string> audioPaths, string outputPath, double silenceDuration, string dialogue = "")
+        public static int CalculateVideoWorkUnits(int imageCount, int audioCount, double silenceDuration)
         {
-            return await CreateVideoAsync(new List<string> { imagePath }, audioPaths, outputPath, silenceDuration, dialogue);
+            if (imageCount > 1)
+            {
+                int silenceUnits = silenceDuration > 0 ? 1 : 0;
+                int appendedSilenceUnits = silenceDuration > 0 ? Math.Max(0, audioCount - 1) : 0;
+                return silenceUnits + appendedSilenceUnits + audioCount + 1;
+            }
+
+            if (audioCount > 1)
+                return (silenceDuration > 0 ? 1 : 0) + 2;
+
+            return 1;
         }
 
-        public async Task<bool> CreateVideoAsync(List<string> imagePaths, List<string> audioPaths, string outputPath, double silenceDuration, string dialogue = "")
+        public async Task<bool> CreateVideoAsync(
+            string imagePath,
+            List<string> audioPaths,
+            string outputPath,
+            double silenceDuration,
+            string dialogue = "",
+            Action<string> onWorkCompleted = null,
+            CancellationToken cancellationToken = default)
+        {
+            return await CreateVideoAsync(new List<string> { imagePath }, audioPaths, outputPath, silenceDuration, dialogue, onWorkCompleted, cancellationToken);
+        }
+
+        public async Task<string> MergeAudioFamilyAsync(
+            IReadOnlyList<string> audioPaths,
+            string eventName,
+            string familyName,
+            string eventPath,
+            CancellationToken cancellationToken = default)
+        {
+            if (audioPaths == null || audioPaths.Count == 0)
+                throw new ArgumentException("An audio family must contain at least one file.", nameof(audioPaths));
+
+            await EnsureBinariesReadyAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            string Sanitize(string value) => string.Concat(value.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+            string familyCacheDir = Path.Combine(AppConfig.CacheDir, "AudioFamilies");
+            Directory.CreateDirectory(familyCacheDir);
+            string sourceId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(eventPath)))[..12];
+            string outputPath = Path.Combine(familyCacheDir, $"{Sanitize(eventName)}_{Sanitize(familyName)}_{sourceId}.wav");
+            string concatPath = Path.Combine(familyCacheDir, $"concat_{Guid.NewGuid():N}.txt");
+
+            try
+            {
+                using (var writer = new StreamWriter(concatPath))
+                {
+                    foreach (string audioPath in audioPaths)
+                    {
+                        string escapedPath = Path.GetFullPath(audioPath).Replace("\\", "/").Replace("'", "'\\''");
+                        writer.WriteLine($"file '{escapedPath}'");
+                    }
+                }
+
+                bool result = await FFMpegArguments
+                    .FromFileInput(concatPath, true, options => options.WithCustomArgument("-f concat -safe 0"))
+                    .OutputToFile(outputPath, true, options => options.WithAudioCodec("pcm_s16le"))
+                    .CancellableThrough(cancellationToken)
+                    .ProcessAsynchronously();
+
+                if (!result || !File.Exists(outputPath))
+                    throw new InvalidOperationException($"FFmpeg could not merge audio family '{familyName}'.");
+
+                return outputPath;
+            }
+            finally
+            {
+                try { if (File.Exists(concatPath)) File.Delete(concatPath); } catch { }
+            }
+        }
+
+        public async Task<bool> CreateVideoAsync(
+            List<string> imagePaths,
+            List<string> audioPaths,
+            string outputPath,
+            double silenceDuration,
+            string dialogue = "",
+            Action<string> onWorkCompleted = null,
+            CancellationToken cancellationToken = default)
         {
             string tempAudioPath = null;
             string silentAudioPath = null;
@@ -109,7 +189,9 @@ namespace VideoGenerator.Services
                             .OutputToFile(silentAudioPath, true, options => options
                                 .WithAudioCodec("pcm_s16le")
                                 .WithDuration(TimeSpan.FromSeconds(silenceDuration)))
+                            .CancellableThrough(cancellationToken)
                             .ProcessAsynchronously();
+                        onWorkCompleted?.Invoke("Created silence track");
                     }
 
                     for (int i = 0; i < audioPaths.Count; i++)
@@ -137,9 +219,11 @@ namespace VideoGenerator.Services
                                     .WithCustomArgument("-f concat -safe 0"))
                                 .OutputToFile(tempClipAudioPath, true, options => options
                                     .WithAudioCodec("pcm_s16le"))
+                                .CancellableThrough(cancellationToken)
                                 .ProcessAsynchronously();
 
                             clipAudioInput = tempClipAudioPath;
+                            onWorkCompleted?.Invoke($"Appended silence to audio {i + 1}/{audioPaths.Count}");
                         }
 
                         // Generate the temporary video clip
@@ -158,9 +242,11 @@ namespace VideoGenerator.Services
                                 .WithAudioBitrate(192)
                                 .WithDuration(duration)
                                 .WithCustomArgument(customArgs))
+                            .CancellableThrough(cancellationToken)
                             .ProcessAsynchronously();
 
                         tempClips.Add(clipOutputPath);
+                        onWorkCompleted?.Invoke($"Created temporary clip {i + 1}/{audioPaths.Count}");
 
                         // Clean up temporary audio files for this clip
                         try
@@ -186,7 +272,9 @@ namespace VideoGenerator.Services
                             .WithCustomArgument("-f concat -safe 0"))
                         .OutputToFile(outputPath, true, options => options
                             .WithCustomArgument("-c copy"))
+                        .CancellableThrough(cancellationToken)
                         .ProcessAsynchronously();
+                    onWorkCompleted?.Invoke("Concatenated final video");
 
                     // Clean up temporary clips
                     foreach (var clip in tempClips)
@@ -218,7 +306,9 @@ namespace VideoGenerator.Services
                                 .OutputToFile(silentAudioPath, true, options => options
                                     .WithAudioCodec("pcm_s16le")
                                     .WithDuration(TimeSpan.FromSeconds(silenceDuration)))
+                                .CancellableThrough(cancellationToken)
                                 .ProcessAsynchronously();
+                            onWorkCompleted?.Invoke("Created silence track");
                         }
 
                         // 2. Create Concat List
@@ -245,7 +335,9 @@ namespace VideoGenerator.Services
                                 .WithCustomArgument("-f concat -safe 0"))
                             .OutputToFile(tempAudioPath, true, options => options
                                 .WithAudioCodec("pcm_s16le"))
+                            .CancellableThrough(cancellationToken)
                             .ProcessAsynchronously();
+                        onWorkCompleted?.Invoke("Combined event audio");
 
                         finalAudioInput = tempAudioPath;
                     }
@@ -276,7 +368,9 @@ namespace VideoGenerator.Services
                             .WithAudioBitrate(192)
                             .WithDuration(duration)
                             .WithCustomArgument(customArgs))
+                        .CancellableThrough(cancellationToken)
                         .ProcessAsynchronously();
+                    onWorkCompleted?.Invoke("Encoded final video");
 
                     if (result)
                     {

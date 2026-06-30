@@ -140,6 +140,17 @@ namespace VideoGenerator.Services
             }
         }
 
+        private bool _mergeAudioFamilies = false;
+        public bool MergeAudioFamilies
+        {
+            get => _mergeAudioFamilies;
+            set
+            {
+                if (SetProperty(ref _mergeAudioFamilies, value))
+                    QueueSave();
+            }
+        }
+
         private string _defaultDictionaryLanguage = "ALL";
         public string DefaultDictionaryLanguage
         {

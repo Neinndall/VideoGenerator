@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
         xmlns:services="clr-namespace:VideoGenerator.Services"
         xmlns:converters="clr-namespace:VideoGenerator.Views.Converters"
         mc:Ignorable="d"
@@ -142,11 +143,37 @@
                                         </Button>
 
                                         <!-- Subtitle Edit Box -->
-                                        <TextBox Grid.Column="1" Text="{Binding Dialogue, UpdateSourceTrigger=PropertyChanged}"
-                                                 materialDesign:HintAssist.Hint="Dialogue Transcript (Segment)"
-                                                 Style="{StaticResource CompactModernTextBox}"
-                                                 AcceptsReturn="True" TextWrapping="Wrap"
-                                                 Height="60" VerticalContentAlignment="Top" Padding="12,8"/>
+                                        <Grid Grid.Column="1">
+                                            <TextBox x:Name="DialogueTextBox"
+                                                     Text="{Binding Dialogue, UpdateSourceTrigger=PropertyChanged}"
+                                                     materialDesign:HintAssist.Hint="Dialogue Transcript (Segment)"
+                                                     Style="{StaticResource CompactModernTextBox}"
+                                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                                     Height="60" MinHeight="60" MaxHeight="360"
+                                                     VerticalContentAlignment="Top" Padding="12,8,20,12"
+                                                     VerticalScrollBarVisibility="Auto"/>
+
+                                            <primitives:Thumb Width="16" Height="16"
+                                                              HorizontalAlignment="Right"
+                                                              VerticalAlignment="Bottom"
+                                                              Margin="0,0,3,3"
+                                                              Cursor="SizeNS"
+                                                              Tag="{Binding ElementName=DialogueTextBox}"
+                                                              DragDelta="DialogueResizeThumb_DragDelta"
+                                                              ToolTip="Drag to resize transcript">
+                                                <primitives:Thumb.Template>
+                                                    <ControlTemplate TargetType="primitives:Thumb">
+                                                        <Grid Background="Transparent">
+                                                            <Path Data="M 3,13 L 13,3 M 8,13 L 13,8"
+                                                                  Stroke="{StaticResource TextMutedBrush}"
+                                                                  StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round"
+                                                                  StrokeEndLineCap="Round"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </primitives:Thumb.Template>
+                                            </primitives:Thumb>
+                                        </Grid>
 
                                         <!-- Validated Toggle -->
                                         <StackPanel Grid.Column="2" Margin="20,0,0,0" VerticalAlignment="Center">

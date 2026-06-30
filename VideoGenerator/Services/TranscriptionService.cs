@@ -88,7 +88,6 @@ namespace VideoGenerator.Services
             {
                 // Whisper requires 16kHz, single-channel, 16-bit PCM WAV.
                 // We use FFmpeg to convert any audio format (wav, mp3, ogg, wem) to this format.
-                _logger.LogInfo($"Converting audio to 16kHz mono WAV: {Path.GetFileName(audioFilePath)}");
                 bool convertResult = await FFMpegArguments
                     .FromFileInput(audioFilePath)
                     .OutputToFile(tempWavPath, true, options => options
@@ -128,7 +127,6 @@ namespace VideoGenerator.Services
 
                 using var fileStream = new FileStream(tempWavPath, FileMode.Open, FileAccess.Read);
                 
-                _logger.LogInfo($"Transcribing audio: {Path.GetFileName(audioFilePath)}...");
                 var transcriptionText = "";
                 await foreach (var segment in processor.ProcessAsync(fileStream, cancellationToken))
                 {
@@ -143,7 +141,7 @@ namespace VideoGenerator.Services
                     cleanedResult = DialogueService.CleanDialogue(cleanedResult);
                 }
 
-                _logger.LogInfo($"Transcription result: \"{cleanedResult}\"");
+                _logger.LogDebug($"Transcription completed: {Path.GetFileName(audioFilePath)} | Characters: {cleanedResult.Length}");
                 return cleanedResult;
             }
             catch (OperationCanceledException)
@@ -171,7 +169,11 @@ namespace VideoGenerator.Services
             }
         }
 
-        public async Task<string> TranscribeAudiosAsync(System.Collections.Generic.IEnumerable<string> audioFilePaths, Action<string> onAudioStart = null, CancellationToken cancellationToken = default)
+        public async Task<string> TranscribeAudiosAsync(
+            System.Collections.Generic.IEnumerable<string> audioFilePaths,
+            Action<string> onAudioStart = null,
+            Action<string> onAudioComplete = null,
+            CancellationToken cancellationToken = default)
         {
             if (audioFilePaths == null) return string.Empty;
 
@@ -181,6 +183,7 @@ namespace VideoGenerator.Services
                 cancellationToken.ThrowIfCancellationRequested();
                 onAudioStart?.Invoke(path);
                 string text = await TranscribeAudioAsync(path, cancellationToken);
+                onAudioComplete?.Invoke(path);
                 if (!string.IsNullOrEmpty(text))
                 {
                     results.Add(text);
@@ -190,4 +193,3 @@ namespace VideoGenerator.Services
         }
     }
 }
-

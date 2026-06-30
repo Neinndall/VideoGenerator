@@ -36,6 +36,12 @@ namespace VideoGenerator.Services
             AddToCollection(message);
         }
 
+        public void LogDebug(string message)
+        {
+            // Technical diagnostics remain available on disk without flooding the UI console.
+            WriteToFile(_infoLogPath, "DEBUG", message);
+        }
+
         public void LogWarn(string message)
         {
             WriteToFile(_infoLogPath, "WARN", message);

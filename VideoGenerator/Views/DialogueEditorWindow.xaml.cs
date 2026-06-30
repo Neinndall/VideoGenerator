@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using VideoGenerator.Models;
 using VideoGenerator.Services;
@@ -67,6 +68,14 @@ namespace VideoGenerator.Views
         }
 
         public ObservableCollection<DialoguePartItem> CurrentParts { get; } = new();
+
+        private void DialogueResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            if (sender is not Thumb { Tag: TextBox textBox }) return;
+
+            double currentHeight = double.IsNaN(textBox.Height) ? textBox.ActualHeight : textBox.Height;
+            textBox.Height = Math.Clamp(currentHeight + e.VerticalChange, textBox.MinHeight, textBox.MaxHeight);
+        }
 
         public DialogueEditorWindow(
             IEnumerable<PreviewEventModel> events,

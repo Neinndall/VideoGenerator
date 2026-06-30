@@ -146,11 +146,11 @@
                                 <Setter Property="Kind" Value="CheckCircleOutline"/>
                                 <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsEngineBusy}" Value="True">
+                                    <DataTrigger Binding="{Binding Progress.IsBusy}" Value="True">
                                         <Setter Property="Kind" Value="Sync"/>
                                         <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding EngineStatusText}" Value="CANCELED - TASK ANNULLED">
+                                    <DataTrigger Binding="{Binding Progress.StatusText}" Value="CANCELED - TASK ANNULLED">
                                         <Setter Property="Kind" Value="AlertCircleOutline"/>
                                         <Setter Property="Foreground" Value="{StaticResource CancelBrush}"/>
                                     </DataTrigger>
@@ -160,7 +160,8 @@
                     </materialDesign:PackIcon>
 
                     <!-- Status Label -->
-                    <TextBlock Text="{Binding EngineStatusText}" 
+                    <TextBlock Text="{Binding Progress.StatusText}" 
+                               ToolTip="{Binding Progress.StatusText}"
                                FontSize="11" 
                                FontWeight="Bold" 
                                VerticalAlignment="Center" 
@@ -170,10 +171,10 @@
                             <Style TargetType="TextBlock">
                                 <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsEngineBusy}" Value="True">
+                                    <DataTrigger Binding="{Binding Progress.IsBusy}" Value="True">
                                         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding EngineStatusText}" Value="CANCELED - TASK ANNULLED">
+                                    <DataTrigger Binding="{Binding Progress.StatusText}" Value="CANCELED - TASK ANNULLED">
                                         <Setter Property="Foreground" Value="{StaticResource CancelBrush}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -184,22 +185,22 @@
 
                 <!-- Middle: Modern Progress Bar -->
                 <local:ModernProgressBar Grid.Column="1" 
-                                         Value="{Binding EngineProgressBarValue, Mode=OneWay}"
-                                         IsIndeterminate="{Binding IsEngineIndeterminate, Mode=OneWay}"
-                                         Visibility="{Binding IsEngineBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                         Value="{Binding Progress.Value, Mode=OneWay}"
+                                         IsIndeterminate="{Binding Progress.IsIndeterminate, Mode=OneWay}"
+                                         Visibility="{Binding Progress.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
                                          VerticalAlignment="Center"
                                          Height="6"
                                          Margin="0,0,16,0"/>
 
                 <!-- Right: Progress Percentage Text -->
                 <TextBlock Grid.Column="2" 
-                           Text="{Binding EngineProgressBarValue, StringFormat={}{0:F1}%}"
+                           Text="{Binding Progress.Value, StringFormat={}{0:F1}%}"
                            FontSize="11" 
                            FontWeight="Bold" 
                            Foreground="{StaticResource AccentBrushLight}"
                            VerticalAlignment="Center"
                            Margin="0,0,16,0"
-                           Visibility="{Binding IsEngineBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                           Visibility="{Binding Progress.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                 <!-- Far Right: Cancel Button -->
                 <Button Grid.Column="3" 
@@ -207,7 +208,7 @@
                         Style="{StaticResource ModernCancelButton}"
                         Height="28" Padding="12,0"
                         VerticalAlignment="Center"
-                        Visibility="{Binding IsEngineBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        Visibility="{Binding Progress.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="CloseCircleOutline" Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
                         <TextBlock Text="CANCEL (ESC)" FontSize="9" FontWeight="Black" VerticalAlignment="Center"/>

@@ -34,6 +34,22 @@ namespace VideoGenerator.Views.Models
             set => SetProperty(ref _audioFiles, value);
         }
 
+        public List<string> DirectAudioFiles { get; set; } = new();
+
+        private List<AudioFamilyModel> _audioFamilies = new();
+        public List<AudioFamilyModel> AudioFamilies
+        {
+            get => _audioFamilies;
+            set => SetProperty(ref _audioFamilies, value);
+        }
+
+        private bool _areAudioFamiliesMerged;
+        public bool AreAudioFamiliesMerged
+        {
+            get => _areAudioFamiliesMerged;
+            set => SetProperty(ref _areAudioFamiliesMerged, value);
+        }
+
         private string _status; // "Ready", "Missing Icon", "No Audio", "Pending Translation"
         public string Status
         {
@@ -54,5 +70,11 @@ namespace VideoGenerator.Views.Models
             get => _dialogue;
             set => SetProperty(ref _dialogue, value);
         }
+    }
+
+    public class AudioFamilyModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public List<string> AudioFiles { get; set; } = new();
     }
 }

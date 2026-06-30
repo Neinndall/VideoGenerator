@@ -31,6 +31,7 @@ namespace VideoGenerator.Views
         private readonly TranscriptionService _transcriptionService;
         private readonly DialogueService _dialogueService;
         private readonly EventFilterService _eventFilterService;
+        private readonly ProgressService _progressService;
 
         public DashboardView(
             DataFetcher dataFetcher,
@@ -43,7 +44,8 @@ namespace VideoGenerator.Views
             TranscriptionService transcriptionService,
             DialogueService dialogueService,
             TaskCancellationService cancellationService,
-            EventFilterService eventFilterService)
+            EventFilterService eventFilterService,
+            ProgressService progressService)
         {
             InitializeComponent();
             _dataFetcher = dataFetcher;
@@ -57,6 +59,7 @@ namespace VideoGenerator.Views
             _dialogueService = dialogueService;
             _cancellationService = cancellationService;
             _eventFilterService = eventFilterService;
+            _progressService = progressService;
             
             DataContext = this;
             DashboardModel = _model;
@@ -67,6 +70,99 @@ namespace VideoGenerator.Views
 
         public DashboardModel DashboardModel { get; }
         public LogService LogService { get; }
+
+        private static bool IsSupportedAudioFile(string path)
+        {
+            string extension = Path.GetExtension(path);
+            return extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".wav", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".ogg", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static List<string> GetDirectAudioFiles(string directory)
+        {
+            return Directory.GetFiles(directory)
+                .Where(IsSupportedAudioFile)
+                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static bool IsAudioFamilyDirectory(string directory)
+        {
+            return Regex.IsMatch(Path.GetFileName(directory), @"^\[[^\]]+\](?:\s+.+)?$", RegexOptions.CultureInvariant);
+        }
+
+        private async Task EnsureAudioFamiliesMergedAsync(
+            PreviewEventModel ev,
+            CancellationToken token,
+            Action<AudioFamilyModel> onFamilyMerged = null)
+        {
+            if (!AppSettings.Instance.MergeAudioFamilies || ev.AudioFamilies.Count == 0 || ev.AreAudioFamiliesMerged)
+                return;
+
+            var mergedTracks = new List<string>(ev.DirectAudioFiles);
+            if (onFamilyMerged == null)
+                _progressService.Report(0);
+
+            for (int index = 0; index < ev.AudioFamilies.Count; index++)
+            {
+                var family = ev.AudioFamilies[index];
+                token.ThrowIfCancellationRequested();
+                _progressService.SetStatus($"Merging audio family: {family.Name}");
+                string mergedPath = await _videoService.MergeAudioFamilyAsync(
+                    family.AudioFiles,
+                    ev.FolderName,
+                    family.Name,
+                    ev.FolderPath,
+                    token);
+                mergedTracks.Add(mergedPath);
+
+                if (onFamilyMerged != null)
+                {
+                    onFamilyMerged(family);
+                }
+                else
+                {
+                    double progress = (double)(index + 1) / ev.AudioFamilies.Count * 100.0;
+                    _progressService.Report(progress, $"Merged audio family: {family.Name} ({progress:0}%)");
+                }
+            }
+
+            ev.AudioFiles = mergedTracks;
+            ev.AreAudioFamiliesMerged = true;
+        }
+
+        private async Task EnsureAudioFamiliesMergedAsync(
+            IReadOnlyList<PreviewEventModel> events,
+            CancellationToken token,
+            Action<AudioFamilyModel> onFamilyMerged = null)
+        {
+            var pendingEvents = events
+                .Where(ev => AppSettings.Instance.MergeAudioFamilies &&
+                             ev.AudioFamilies.Count > 0 &&
+                             !ev.AreAudioFamiliesMerged)
+                .ToList();
+            int totalFamilies = pendingEvents.Sum(ev => ev.AudioFamilies.Count);
+            if (totalFamilies == 0) return;
+
+            int completedFamilies = 0;
+            _progressService.Report(0);
+
+            foreach (var ev in pendingEvents)
+            {
+                await EnsureAudioFamiliesMergedAsync(ev, token, family =>
+                {
+                    if (onFamilyMerged != null)
+                    {
+                        onFamilyMerged(family);
+                        return;
+                    }
+                    completedFamilies++;
+                    double progress = (double)completedFamilies / totalFamilies * 100.0;
+                    _progressService.Report(progress, $"Merging audio families: {completedFamilies}/{totalFamilies} ({progress:0}%)");
+                });
+            }
+        }
 
         private void InitializeData()
         {
@@ -432,12 +528,8 @@ namespace VideoGenerator.Views
 
         private void HandleCancellation()
         {
-            _model.ProgressValue = 0;
+            _progressService.Cancel();
             _logger.LogWarn("TASK CANCELED - OPERATION ABORTED BY USER.");
-            if (Application.Current.MainWindow is MainWindow mainWindow)
-            {
-                mainWindow.EngineStatusText = "CANCELED - TASK ANNULLED";
-            }
         }
 
         private void SelectFolder_Click(object sender, RoutedEventArgs e)
@@ -462,27 +554,46 @@ namespace VideoGenerator.Views
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
+            _progressService.Start("Analyzing audio folders", false);
             _model.ProcessedEvents.Clear();
             _model.FilteredProcessedEvents.Clear();
             _model.CharactersList.Clear();
             _model.CharactersList.Add("ALL");
             _model.SelectedCharacter = "ALL";
-            _model.ProgressValue = 0;
             _logger.Logs.Clear();
             _logger.LogInfo($">>> ANALYZING: {_model.AudioPath}");
 
             string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
 
             try {
-                var reportProgress = new Action<double>(value => Application.Current.Dispatcher.Invoke(() => _model.ProgressValue = value));
+                var reportProgress = new Action<double>(value => _progressService.Report(value));
                 await Task.Run(async () => {
-                    var allDirs = Directory.GetDirectories(_model.AudioPath, "*", SearchOption.AllDirectories)
+                    var discoveredDirs = Directory.GetDirectories(_model.AudioPath, "*", SearchOption.AllDirectories)
                         .Concat(new[] { _model.AudioPath })
                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    var familyDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (string candidate in discoveredDirs)
+                    {
+                        try
+                        {
+                            foreach (string child in Directory.GetDirectories(candidate))
+                            {
+                                if (IsAudioFamilyDirectory(child) && GetDirectAudioFiles(child).Count > 0)
+                                    familyDirectories.Add(child);
+                            }
+                        }
+                        catch { }
+                    }
+
+                    var allDirs = discoveredDirs
                         .Where(dir => {
-                            if (dir.Contains("cast3D") || dir.Contains("cast2D")) return false;
+                            if (familyDirectories.Contains(dir)) return false;
+                            if (Path.GetFileName(dir).Contains("_cast3D", StringComparison.OrdinalIgnoreCase)) return false;
                             try {
-                                return Directory.GetFiles(dir).Any(f => f.EndsWith(".mp3") || f.EndsWith(".wav") || f.EndsWith(".ogg"));
+                                return GetDirectAudioFiles(dir).Count > 0 ||
+                                       Directory.GetDirectories(dir).Any(familyDirectories.Contains);
                             } catch { return false; }
                         })
                         .ToList();
@@ -492,11 +603,21 @@ namespace VideoGenerator.Views
 
                     foreach (var dir in allDirs) {
                         token.ThrowIfCancellationRequested();
-                        Application.Current.Dispatcher.Invoke(() => {
-                            _model.StatusText = $"Analyzing: {Path.GetFileName(dir)}";
-                        });
+                        _progressService.SetStatus($"Analyzing: {Path.GetFileName(dir)}");
                         try {
-                            var audioFiles = Directory.GetFiles(dir).Where(f => f.EndsWith(".mp3") || f.EndsWith(".wav") || f.EndsWith(".ogg")).ToList();
+                            var directAudioFiles = GetDirectAudioFiles(dir);
+                            var audioFamilies = Directory.GetDirectories(dir)
+                                    .Where(familyDirectories.Contains)
+                                    .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
+                                    .Select(familyDir => new AudioFamilyModel
+                                    {
+                                        Name = Path.GetFileName(familyDir),
+                                        AudioFiles = GetDirectAudioFiles(familyDir)
+                                    })
+                                    .ToList();
+                            var audioFiles = directAudioFiles
+                                .Concat(audioFamilies.SelectMany(f => f.AudioFiles))
+                                .ToList();
                             string folderName = Path.GetFileName(dir);
                             var parsedEvent = await _nameParser.ParseFolderNameAsync(folderName, selectedLang);
                             token.ThrowIfCancellationRequested();
@@ -534,6 +655,8 @@ namespace VideoGenerator.Views
                                 FolderPath = dir, 
                                 ParsedData = parsedEvent ?? new ParsedEvent { OriginalFolder = folderName, DisplayText = folderName }, 
                                 AudioFiles = audioFiles, 
+                                DirectAudioFiles = directAudioFiles,
+                                AudioFamilies = audioFamilies,
                                 Status = status,
                                 Dialogue = dialogueVal
                             };
@@ -568,7 +691,11 @@ namespace VideoGenerator.Views
             } catch (Exception ex) { 
                 _logger.LogError("Critical analysis failure", ex); 
             }
-            finally { _model.IsProcessing = false; }
+            finally
+            {
+                _model.IsProcessing = false;
+                _progressService.Complete();
+            }
         }
 
         private async void PrepareTranscription_Click(object sender, RoutedEventArgs e)
@@ -578,67 +705,88 @@ namespace VideoGenerator.Views
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
-            _model.ProgressValue = 0;
             _logger.LogInfo(">>> STARTING BATCH PREPARATION (STAGE 1)...");
             try {
                 var eventsToPrepare = _model.FilteredProcessedEvents.ToList();
-                var reportProgress = new Action<double>(value => Application.Current.Dispatcher.Invoke(() => _model.ProgressValue = value));
                 string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
 
                 await Task.Run(async () => {
-                    int total = eventsToPrepare.Count;
-                    int processedCount = 0;
+                    var transcriptionBudgets = new Dictionary<PreviewEventModel, int>();
+                    var imageBudgets = new Dictionary<PreviewEventModel, int>();
+                    int mergeWork = eventsToPrepare
+                        .Where(ev => AppSettings.Instance.MergeAudioFamilies && !ev.AreAudioFamiliesMerged)
+                        .SelectMany(ev => ev.AudioFamilies)
+                        .Sum(family => family.AudioFiles.Count);
+                    int iconWork = 0;
+                    int transcriptionWork = 0;
+                    int imageWork = 0;
 
-                    // Calculate total audios to transcribe
-                    int totalAudiosToTranscribe = 0;
                     foreach (var ev in eventsToPrepare)
                     {
-                        if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null) continue;
-                        bool shouldTranscribe = AppSettings.Instance.EnableTranscriptions && ev.AudioFiles.Count > 0 &&
+                        bool canPrepare = ev.Status != "No Audio" && ev.ParsedData != null;
+                        int plannedAudioCount = AppSettings.Instance.MergeAudioFamilies && ev.AudioFamilies.Count > 0
+                            ? ev.DirectAudioFiles.Count + ev.AudioFamilies.Count
+                            : ev.AudioFiles.Count;
+                        bool shouldTranscribe = canPrepare && AppSettings.Instance.EnableTranscriptions && plannedAudioCount > 0 &&
                             (string.IsNullOrEmpty(ev.Dialogue) || AppSettings.Instance.ForceBatchRetranscribe);
-                        if (shouldTranscribe)
-                        {
-                            totalAudiosToTranscribe += ev.AudioFiles.Count;
-                        }
+                        int transcriptionBudget = shouldTranscribe ? plannedAudioCount : 0;
+                        int existingParts = string.IsNullOrEmpty(ev.Dialogue)
+                            ? 0
+                            : ev.Dialogue.Split(new[] { "||" }, StringSplitOptions.None).Length;
+                        int imageBudget = canPrepare
+                            ? (plannedAudioCount > 1 && (shouldTranscribe || existingParts > 1) ? plannedAudioCount : 1)
+                            : 0;
+
+                        transcriptionBudgets[ev] = transcriptionBudget;
+                        imageBudgets[ev] = imageBudget;
+                        transcriptionWork += transcriptionBudget;
+                        imageWork += imageBudget;
+
+                        if (ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
+                            iconWork++;
                     }
 
-                    int completedAudiosCount = 0;
-                    reportProgress(0.0);
+                    int totalWork = mergeWork + iconWork + transcriptionWork + imageWork;
+                    var workSummary = new List<string>
+                    {
+                        $"{transcriptionWork} audio",
+                        $"{imageWork} HUD"
+                    };
+                    if (iconWork > 0) workSummary.Add($"{iconWork} icons");
+                    if (mergeWork > 0) workSummary.Add($"{mergeWork} merge");
+                    _progressService.StartWork(
+                        $"Preparing: {string.Join(" + ", workSummary)}",
+                        totalWork);
+
+                    await EnsureAudioFamiliesMergedAsync(eventsToPrepare, token, family =>
+                    {
+                        _progressService.Advance(
+                            family.AudioFiles.Count,
+                            $"Merged audio: {family.Name}");
+                    });
 
                     foreach (var ev in eventsToPrepare) {
                         token.ThrowIfCancellationRequested();
-                        double baseProgress = (double)processedCount / total * 100.0;
-                        double stepWeight = 100.0 / total;
-
-                        Application.Current.Dispatcher.Invoke(() => {
-                            _model.StatusText = $"Preparing: {ev.FolderName}";
-                            if (totalAudiosToTranscribe == 0)
-                            {
-                                reportProgress(baseProgress + stepWeight * 0.1);
-                            }
-                        });
+                        _progressService.SetStatus($"Preparing: {ev.FolderName}");
 
                         // 1. Resolve pending icon
                         if (ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
                         {
-                            Application.Current.Dispatcher.Invoke(() => {
-                                _model.StatusText = $"Resolving icon for: {ev.FolderName}";
-                            });
+                            _progressService.SetStatus($"Resolving icon for: {ev.FolderName}");
                             string iconPath = await ResolveIconPathAsync(ev.ParsedData);
                             token.ThrowIfCancellationRequested();
                             Application.Current.Dispatcher.Invoke(() => {
                                 ev.ParsedData.IconPath = string.IsNullOrEmpty(iconPath) ? "MISSING" : iconPath;
                                 ev.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
                             });
+                            _progressService.Advance(1, $"Resolved icon: {ev.FolderName}");
                         }
 
                         if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null)
                         {
-                            processedCount++;
-                            if (totalAudiosToTranscribe == 0)
-                            {
-                                reportProgress((double)processedCount / total * 100.0);
-                            }
+                            int skippedWork = transcriptionBudgets[ev] + imageBudgets[ev];
+                            if (skippedWork > 0)
+                                _progressService.Advance(skippedWork, $"Skipped invalid event: {ev.FolderName}");
                             continue;
                         }
 
@@ -648,18 +796,16 @@ namespace VideoGenerator.Views
 
                         if (shouldTranscribe)
                         {
-                            _logger.LogInfo($"Auto-transcribing for {ev.FolderName}...");
                             string transcription = await _transcriptionService.TranscribeAudiosAsync(ev.AudioFiles, 
                                 (audioPath) => {
-                                    completedAudiosCount++;
-                                    Application.Current.Dispatcher.Invoke(() => {
-                                        _model.StatusText = $"Transcribing: {Path.GetFileName(audioPath)}";
-                                        if (totalAudiosToTranscribe > 0)
-                                        {
-                                            _model.ProgressValue = (double)completedAudiosCount / totalAudiosToTranscribe * 100.0;
-                                        }
-                                    });
-                                }, 
+                                    _progressService.SetStatus($"Transcribing: {Path.GetFileName(audioPath)}");
+                                },
+                                (audioPath) =>
+                                {
+                                    _progressService.Advance(
+                                        1,
+                                        $"Transcribed: {Path.GetFileName(audioPath)}");
+                                },
                                 token);
                             token.ThrowIfCancellationRequested();
                             if (!string.IsNullOrEmpty(transcription))
@@ -712,34 +858,36 @@ namespace VideoGenerator.Views
                                       .Select(s => s.Trim())
                                       .ToArray();
 
-                        if (totalAudiosToTranscribe == 0)
-                        {
-                            reportProgress(baseProgress + stepWeight * 0.55);
-                        }
-
                         // 2. Pre-render HUD image files
+                        int generatedImages = 0;
                         if (dialogueParts.Length > 1 && ev.AudioFiles.Count > 1)
                         {
                             for (int i = 0; i < ev.AudioFiles.Count; i++)
                             {
                                 token.ThrowIfCancellationRequested();
-                                Application.Current.Dispatcher.Invoke(() => {
-                                    _model.StatusText = $"Generating HUD image: {ev.FolderName}";
-                                });
+                                _progressService.SetStatus($"Generating HUD image: {ev.FolderName}");
                                 string partDialogue = i < dialogueParts.Length ? dialogueParts[i] : "";
                                 string oldDialogue = ev.ParsedData.Dialogue;
                                 ev.ParsedData.Dialogue = partDialogue;
                                 await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName);
                                 ev.ParsedData.Dialogue = oldDialogue;
+                                generatedImages++;
+                                _progressService.Advance(1, $"Generated HUD: {ev.FolderName}");
                             }
                         }
                         else
                         {
                             token.ThrowIfCancellationRequested();
-                            Application.Current.Dispatcher.Invoke(() => {
-                                _model.StatusText = $"Generating HUD image for {ev.FolderName}";
-                            });
+                            _progressService.SetStatus($"Generating HUD image for {ev.FolderName}");
                             await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
+                            generatedImages = 1;
+                            _progressService.Advance(1, $"Generated HUD: {ev.FolderName}");
+                        }
+
+                        int unusedImageBudget = imageBudgets[ev] - generatedImages;
+                        if (unusedImageBudget > 0)
+                        {
+                            _progressService.Advance(unusedImageBudget, $"Completed image set: {ev.FolderName}");
                         }
 
                         token.ThrowIfCancellationRequested();
@@ -747,13 +895,8 @@ namespace VideoGenerator.Views
                             ev.Status = "Ready";
                         });
 
-                        processedCount++;
-                        if (totalAudiosToTranscribe == 0)
-                        {
-                            reportProgress((double)processedCount / total * 100.0);
-                        }
                     }
-                    reportProgress(100.0);
+                    _progressService.FinishWork("Preparation complete - opening dialogue editor");
                 }, token);
                 _logger.LogInfo(">>> BATCH PREPARATION COMPLETE. You can now REVIEW DIALOGUES or RENDER VIDEOS.");
 
@@ -766,13 +909,75 @@ namespace VideoGenerator.Views
             } catch (Exception ex) { 
                 _logger.LogError("Preparation failed", ex); 
             }
-            finally { _model.IsProcessing = false; }
+            finally
+            {
+                _model.IsProcessing = false;
+                _progressService.Complete();
+            }
         }
 
-        private void ReviewDialogues_Click(object sender, RoutedEventArgs e)
+        private async void ReviewDialogues_Click(object sender, RoutedEventArgs e)
         {
             var events = _model.FilteredProcessedEvents.ToList();
             if (events.Count == 0) return;
+
+            bool hasPendingFamilies = events.Any(ev =>
+                AppSettings.Instance.MergeAudioFamilies &&
+                ev.AudioFamilies.Count > 0 &&
+                !ev.AreAudioFamiliesMerged);
+            int pendingSourceAudios = events
+                .Where(ev => AppSettings.Instance.MergeAudioFamilies &&
+                             ev.AudioFamilies.Count > 0 &&
+                             !ev.AreAudioFamiliesMerged)
+                .SelectMany(ev => ev.AudioFamilies)
+                .Sum(family => family.AudioFiles.Count);
+            bool ownsProcessingState = hasPendingFamilies && !_model.IsProcessing;
+            CancellationToken mergeToken = ownsProcessingState
+                ? _cancellationService.CreateNewToken()
+                : CancellationToken.None;
+
+            try
+            {
+                if (ownsProcessingState)
+                {
+                    _model.IsProcessing = true;
+                    _progressService.StartWork($"Review: merging {pendingSourceAudios} audio", pendingSourceAudios);
+                }
+
+                if (ownsProcessingState)
+                {
+                    await EnsureAudioFamiliesMergedAsync(events, mergeToken, family =>
+                        _progressService.Advance(
+                            family.AudioFiles.Count,
+                            $"Merged audio: {family.Name}"));
+                    _progressService.FinishWork("Audio families ready - opening dialogue editor");
+                }
+                else
+                {
+                    await EnsureAudioFamiliesMergedAsync(events, mergeToken);
+                }
+
+                if (ownsProcessingState)
+                    await Task.Delay(250, mergeToken);
+            }
+            catch (OperationCanceledException)
+            {
+                HandleCancellation();
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to prepare audio families for dialogue review", ex);
+                return;
+            }
+            finally
+            {
+                if (ownsProcessingState)
+                {
+                    _model.IsProcessing = false;
+                    _progressService.Complete();
+                }
+            }
 
             var dialog = new DialogueEditorWindow(
                 events,
@@ -798,33 +1003,51 @@ namespace VideoGenerator.Views
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
-            _model.ProgressValue = 0;
             _logger.LogInfo(">>> STARTING BATCH VIDEO RENDERING (STAGE 2)...");
             try {
                 var eventsToRender = _model.FilteredProcessedEvents.ToList();
-                var reportProgress = new Action<double>(value => Application.Current.Dispatcher.Invoke(() => _model.ProgressValue = value));
 
                 await Task.Run(async () => {
-                    int total = eventsToRender.Count;
-                    int processedCount = 0;
-                    reportProgress(0.0);
+                    double silenceDuration = AppSettings.Instance.SilenceDuration;
+                    int mergeWork = eventsToRender
+                        .Where(ev => AppSettings.Instance.MergeAudioFamilies && !ev.AreAudioFamiliesMerged)
+                        .SelectMany(ev => ev.AudioFamilies)
+                        .Sum(family => family.AudioFiles.Count);
+                    int imageWork = 0;
+                    int videoWork = 0;
+
+                    foreach (var ev in eventsToRender)
+                    {
+                        bool canRender = ev.Status != "No Audio" && ev.Status != "Missing Icon" && ev.ParsedData != null;
+                        int plannedAudioCount = AppSettings.Instance.MergeAudioFamilies && ev.AudioFamilies.Count > 0
+                            ? ev.DirectAudioFiles.Count + ev.AudioFamilies.Count
+                            : ev.AudioFiles.Count;
+                        int dialogueParts = string.IsNullOrEmpty(ev.Dialogue)
+                            ? 0
+                            : ev.Dialogue.Split(new[] { "||" }, StringSplitOptions.None).Length;
+                        int imageBudget = canRender && plannedAudioCount > 0
+                            ? (dialogueParts > 1 && plannedAudioCount > 1 ? plannedAudioCount : 1)
+                            : 0;
+
+                        imageWork += imageBudget;
+                        if (imageBudget > 0)
+                            videoWork += VideoService.CalculateVideoWorkUnits(imageBudget, plannedAudioCount, silenceDuration);
+                    }
+
+                    int totalWork = mergeWork + imageWork + videoWork;
+                    _progressService.StartWork("Rendering videos", totalWork);
+
+                    await EnsureAudioFamiliesMergedAsync(eventsToRender, token, family =>
+                        _progressService.Advance(
+                            family.AudioFiles.Count,
+                            $"Merged family: {family.Name}"));
 
                     foreach (var ev in eventsToRender) {
                         token.ThrowIfCancellationRequested();
-                        double baseProgress = (double)processedCount / total * 100.0;
-                        double stepWeight = 100.0 / total;
+                        _progressService.SetStatus($"Rendering video: {ev.FolderName}");
 
-                        Application.Current.Dispatcher.Invoke(() => {
-                            _model.StatusText = $"Rendering video: {ev.FolderName}";
-                            reportProgress(baseProgress + stepWeight * 0.1);
-                        });
-
-                        if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null)
-                        {
-                            processedCount++;
-                            reportProgress((double)processedCount / total * 100.0);
+                        if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null || ev.AudioFiles.Count == 0)
                             continue;
-                        }
 
                         string dialogue = ev.Dialogue;
                         var dialogueParts = string.IsNullOrEmpty(dialogue) 
@@ -834,7 +1057,6 @@ namespace VideoGenerator.Views
                                       .ToArray();
 
                         var imagePaths = new List<string>();
-                        reportProgress(baseProgress + stepWeight * 0.45);
 
                         // Locate pre-rendered images, or generate them if missing
                         string targetDir = Path.Combine(AppConfig.OutputImagesDir, ev.CharacterName);
@@ -843,9 +1065,7 @@ namespace VideoGenerator.Views
                             for (int i = 0; i < ev.AudioFiles.Count; i++)
                             {
                                 token.ThrowIfCancellationRequested();
-                                Application.Current.Dispatcher.Invoke(() => {
-                                    _model.StatusText = $"Rendering image: {ev.FolderName}";
-                                });
+                                _progressService.SetStatus($"Rendering image: {ev.FolderName}");
                                 string expectedPath = Path.Combine(targetDir, $"{ev.FolderName}_part_{i}.png");
                                 if (!File.Exists(expectedPath))
                                 {
@@ -856,39 +1076,42 @@ namespace VideoGenerator.Views
                                     ev.ParsedData.Dialogue = oldDialogue;
                                 }
                                 imagePaths.Add(expectedPath);
+                                _progressService.Advance(1, $"Prepared image: {ev.FolderName} ({i + 1}/{ev.AudioFiles.Count})");
                             }
                         }
                         else
                         {
                             token.ThrowIfCancellationRequested();
-                            Application.Current.Dispatcher.Invoke(() => {
-                                _model.StatusText = $"Rendering image for {ev.FolderName}";
-                            });
+                            _progressService.SetStatus($"Rendering image for {ev.FolderName}");
                             string expectedPath = Path.Combine(targetDir, $"{ev.FolderName}.png");
                             if (!File.Exists(expectedPath))
                             {
                                 expectedPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
                             }
                             imagePaths.Add(expectedPath);
+                            _progressService.Advance(1, $"Prepared image: {ev.FolderName}");
                         }
 
                         token.ThrowIfCancellationRequested();
-                        Application.Current.Dispatcher.Invoke(() => {
-                            _model.StatusText = $"Compiling video for {ev.FolderName}";
-                            reportProgress(baseProgress + stepWeight * 0.8);
-                        });
+                        _progressService.SetStatus($"Compiling video for {ev.FolderName}");
 
                         // Compile video Frame + Audio using FFmpeg
                         string outputVideoDir = Path.Combine(AppConfig.OutputVideosDir, ev.CharacterName);
                         Directory.CreateDirectory(outputVideoDir);
                         string outputPath = Path.Combine(outputVideoDir, ev.FolderName + ".mp4");
                         
-                        await _videoService.CreateVideoAsync(imagePaths, ev.AudioFiles, outputPath, 0.5, dialogue);
-
-                        processedCount++;
-                        reportProgress((double)processedCount / total * 100.0);
+                        bool rendered = await _videoService.CreateVideoAsync(
+                            imagePaths,
+                            ev.AudioFiles,
+                            outputPath,
+                            silenceDuration,
+                            dialogue,
+                            step => _progressService.Advance(1, $"{step}: {ev.FolderName}"),
+                            token);
+                        if (!rendered)
+                            throw new InvalidOperationException($"Video rendering did not complete for {ev.FolderName}.");
                     }
-                    reportProgress(100.0);
+                    _progressService.FinishWork("Video rendering complete");
                 }, token);
                 
                 token.ThrowIfCancellationRequested();
@@ -898,7 +1121,11 @@ namespace VideoGenerator.Views
             } catch (Exception ex) { 
                 _logger.LogError("Rendering failed", ex); 
             }
-            finally { _model.IsProcessing = false; }
+            finally
+            {
+                _model.IsProcessing = false;
+                _progressService.Complete();
+            }
         }
 
         private async void Transcribe_Click(object sender, RoutedEventArgs e)
@@ -911,8 +1138,10 @@ namespace VideoGenerator.Views
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
+            _progressService.Start($"Transcribing: {ev.FolderName}");
             try
             {
+                await EnsureAudioFamiliesMergedAsync(ev, token);
                 if (ev.AudioFiles != null && ev.AudioFiles.Count > 0)
                 {
                     token.ThrowIfCancellationRequested();
@@ -948,6 +1177,7 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
+                _progressService.Complete();
             }
         }
 

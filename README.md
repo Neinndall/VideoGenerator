@@ -1,49 +1,69 @@
-# VideoGenerator - HUD Event Video Composer
+## VideoGenerator
 
-**VideoGenerator** is a high-performance desktop application built in WPF (C# / .NET 10) that parses League of Legends voiceover/HUD interaction folder structures, applies a dynamic Event Mapping Engine, resolves translations, and batches-compiles them into professional 1080p MP4 showcase videos using an integrated FFmpeg engine.
+[![Latest Release](https://img.shields.io/github/v/release/Neinndall/VideoGenerator?color=yellow&logo=github&logoColor=white&label=Release&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
+[![Downloads](https://img.shields.io/github/downloads/Neinndall/VideoGenerator/total?color=blue&logo=github&logoColor=white&label=Downloads&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
+[![License](https://img.shields.io/github/license/Neinndall/VideoGenerator)](https://github.com/Neinndall/VideoGenerator/blob/main/LICENSE)
 
----
+VideoGenerator is a Windows desktop application for converting League of Legends voice-over event folders into localized 1080p HUD showcase videos. It combines event parsing, CommunityDragon/DDragon assets, offline Whisper transcription, ImageSharp composition, and FFmpeg encoding in a WPF interface.
 
-## 🚀 Key Features
+## Production workflow
 
-### 1. Dual-Phase Interactive Workflow
-* **Phase 1 (Directory Analysis):** Processes the selected media folders. The engine scans folder names, resolves rules, parses champion aliases, and populates a pipeline with real-time status indicators:
-  * `READY`: Event is fully matched and has valid icons and audio (generic events do not require icons and correctly show `READY`).
-  * `MISSING ICON`: The event is missing its visual asset (attempts dynamic downloader).
-  * `NO AUDIO`: No audio files were detected in the source folder.
-* **Phase 2 (Cinema Live Preview):** Click any event in the queue to render an instant, live 1920x1080 preview frame in the HUD UI.
-* **Batch Encoder:** Processes all verified pipeline events and builds high-quality MP4 videos.
+1. **Process Folders** scans the selected media directory, parses event names, associates audio files and families, and builds the event pipeline. Technical `_cast3D` events are excluded.
+2. **Prepare Dialogues** resolves icons, transcribes pending audio with Whisper, stores dialogue segments, and prepares HUD images.
+3. **Review Dialogues** opens the segment editor for playback, correction, validation, retranscription, and vertically resizable transcript fields.
+4. **Render Videos** assembles the prepared images and audio into final MP4 files without repeating transcription.
 
-### 2. Resizable & Customizable Pipeline
-* **GridSplitter Sidebar:** Seamlessly adjust the width of the `DETECTED PIPELINE` panel by dragging its border.
-* **Event Deletion:** Instantly remove events from the queue (via a trash icon) to prevent them from being compiled, automatically updating the pipeline and preview.
-* **Layout Stretching & Smooth Scrolling:** Re-engineered list items span the full width of the container (`Stretch`) with right-aligned status badges and delete buttons, operating on pixel-based (`Pixel`) scrolling for smooth, high-fidelity navigation.
+The global status bar uses deterministic work budgets for preparation, family merging, review, and rendering. Progress only reaches 100% after all planned work has completed or been explicitly skipped.
 
-### 3. Mapping & Event Rule Inspector (`rules.json`)
-Manage parsing keywords and associate them with translation keys and icon types (`generic`, `champion`, `item`, `monster`).
-* **Rule Priority Engine:** The parsing engine sorts dynamic rules by keyword length descending, ensuring longer/more specific rules (like `RecallFast`) always run before shorter ones (`Recall`).
-* **Universal Suffix Resolution:** Automatically appends localized "in General" / "en General" suffixes to all simple rules (e.g., `Joke`, `Taunt`, `Laugh`) that end with `General` or `inGeneral`.
-* **Dimension Suffix Robustness:** The matching engine automatically strips dimensional indicators (`2D` or `3D`) from folder names and rule keywords (e.g., `Attack2D` or `Joke3D`), making the parsing system immune to League of Legends dimension variations.
+## Key features
 
-### 4. Dynamic Dictionary & Autocomplete (`translations.json`)
-The application supports multi-language translations (English `EN`, Spanish `ES`, Turkish `TR`) for event logs.
-* **Edit-in-Place Table:** A borderless inline editing table in the Dictionary tab highlights cells on hover and focus for a premium editing experience.
-* **Smart Language Locks:** The Target Lang selector locks once folders are analyzed to prevent state conflicts, and the Icon Lookup text box is disabled when the Icon Type is set to generic.
+- Dynamic event rules with simple, target, and interaction behavior.
+- English, Spanish, and Turkish translations with non-destructive local merging.
+- Offline transcription through Whisper.net with selectable model, language, thread count, forced batch retranscription, and optional ambient-tag cleanup.
+- Segmented multi-audio dialogue using `||`, with one HUD image and video segment per dialogue part.
+- Optional audio-family merging. Bracketed family folders remain attached to their parent event:
+  - **OFF:** source audios remain consecutive tracks.
+  - **ON:** each family becomes one cached WAV track.
+- Dynamic champion, skin, skinline, item, monster, structure, region, and system icon resolution.
+- Canonical skinline matching across punctuation variants such as `KDA`, `K D A`, and `K/DA`.
+- Live 1920x1080 preview with quick editing, keyboard navigation, cached rendering, and cancellable background work.
+- Background Design Studio with custom art, typography, icon alignment, dialogue bubble controls, brightness, contrast, and saturation.
+- Deterministic FFmpeg render progress covering images, silence tracks, temporary clips, audio joins, encoding, and final concatenation.
+- Quiet batch console with detailed diagnostics retained in local log files.
 
-### 5. Background Design Studio
-Fine-tune HUD layouts in real-time. Includes safe-area indicators, grid overlays, and visual adjustment knobs (Text Vertical Offsets, custom backgrounds) that synchronize instantly with the preview composer.
+## Requirements
 
----
+- Windows x64.
+- .NET 10 SDK for source builds.
+- Internet access for the initial CommunityDragon/DDragon synchronization, icon downloads, and first Whisper model download.
 
-## 📁 System Requirements & Setup
+FFmpeg binaries are embedded and extracted automatically when required. Whisper transcription runs locally after its model has been downloaded.
 
-1. **Runtime:** .NET 10.0 Windows SDK (WPF).
-2. **Media Engine:** FFmpeg (extracted automatically to temp directories on startup).
-3. **Build command for developers:**
-   ```bash
-   dotnet build
-   ```
-4. **Run command for developers:**
-   ```bash
-   dotnet run
-   ```
+## Build and run
+
+From the application project directory:
+
+```powershell
+cd VideoGenerator_v1.2.6.0
+dotnet restore
+dotnet build -c Release
+dotnet run -c Release
+```
+
+## Configuration files
+
+The application creates and maintains its editable configuration under `%LOCALAPPDATA%/VideoGenerator/Config/`, including:
+
+- `settings.json`
+- `event_rules.json`
+- `translations.json`
+- `dialogues.json`
+- `groups.json`
+- `champion_aliases.json`
+- `skinlines.json`
+
+Bundled defaults and newly introduced keys are merged without overwriting existing user customizations.
+
+## Analyzer
+
+The `Analyzer` console project reuses the application services to inspect large audio directories without opening the WPF interface. It reports parsed, pending, missing-icon, and failed events.

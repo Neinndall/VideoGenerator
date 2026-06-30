@@ -259,7 +259,10 @@ namespace VideoGenerator.Services
         private static string NormalizeName(string name)
         {
             if (string.IsNullOrEmpty(name)) return string.Empty;
-            return name.ToLowerInvariant().Replace(" ", "_");
+            return new string(name
+                .Where(char.IsLetterOrDigit)
+                .Select(char.ToLowerInvariant)
+                .ToArray());
         }
 
         private class SkinlineCatalog

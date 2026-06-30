@@ -1,3 +1,32 @@
+VideoGenerator - Patch Notes | v1.2.6.0
+
+MEDIUM UPDATE
+This version adds optional audio-family merging, centralized deterministic production progress, cleaner batch transcription feedback, robust skinline acronym matching, and resizable transcript editing.
+
+New Features
+  - Architecture / Central Progress Service: Added a singleton `ProgressService` as the only source of truth for the global status bar. `MainWindow` now binds directly to this service, while Dashboard operations report state, percentage, indeterminate activity, completion, and cancellation without a model-to-window event bridge.
+  - Pipeline / Deterministic Dialogue Preparation Progress: Replaced phase-local estimates and fixed percentage weights with a single work budget covering source files merged, icons resolved, audio tracks completed by Whisper, and HUD images generated. Progress is monotonic, displays completed/total work, reaches 100% only after all planned or explicitly skipped work is accounted for, and then opens the Dialogue Editor.
+  - UI / Simplified Preparation Progress: The status bar keeps one coherent global completed/total counter and a short current-task label. The initial message identifies audio and HUD work without repeating phase counters during processing.
+  - UI / Quiet Batch Transcription Console: Per-audio conversion, Whisper start, transcription text, and per-event messages were removed from the UI console. Disk tracing is reduced to one compact completion record per audio without storing dialogue text; the console retains batch milestones, model lifecycle events, warnings, cancellations, and errors.
+  - UI / Resizable Dialogue Segments: Dialogue Editor transcript boxes now include a bottom-right resize grip for vertical expansion from 60px up to 360px, with an internal scrollbar and automatic integration with the editor's existing segment scroll area.
+  - Pipeline / Deterministic Video Rendering Progress: Replaced per-event 10/45/80% estimates with a global render budget covering family source merges, image validation/generation, silence tracks, per-audio silence appends, temporary clips, combined audio, final encoding, and final concatenation. FFmpeg now reports completed work directly and honors the active cancellation token.
+  - Core / Audio Family Discovery: The Dashboard always recognizes bracketed immediate audio subfolders as families, keeps their parent as the pipeline event, and prevents family folders from appearing as independent pending events.
+  - Media / Non-Destructive Family Merging: Each detected family is concatenated into a deterministic cached WAV track during preparation, direct rendering, or manual transcription. Source media is never modified.
+  - UI / Persistent Merge Setting: Added `Merge Audio Families` under General & Media settings. The preference is stored in the global settings file and defaults to disabled for backward compatibility.
+  - UI / Family Merge Progress: Audio-family merging reports global batch progress from 0 to 100% through the Dashboard status bar instead of emitting a completion message to the console.
+  - UI / Review Progress Visibility: Direct `REVIEW DIALOGUES` actions now activate the global processing state while pending families are merged, making the bottom status bar and cancellation control visible for the operation.
+  - UI / Deterministic Review Merge Progress: Direct review now budgets and reports the total number of source audios contained in pending families, reaches 100% after every family merge is complete, and then opens the Dialogue Editor.
+  - Pipeline / Segmented Compatibility: Merged family tracks continue through the existing transcription, dialogue segmentation, image preparation, playback, and video rendering pipeline as normal event tracks.
+
+Bug Fixes & Refinements
+  - Core / Disabled Family Merger Discovery: Family folders are always associated with their parent event. Disabling `Merge Audio Families` keeps every family audio as a consecutive event track instead of excluding the parent event from character-filtered pipelines.
+  - Core / Complete Event Discovery: Family-only root events are included in the pipeline; bracketed technical family subfolders are folded into their parent event.
+  - Core / 3D Cast Event Exclusion: Event folders containing the explicit `_cast3D` marker are intentionally excluded from Dashboard discovery, while `cast2D` and unrelated names remain eligible.
+  - Core / Skinline Acronym Resolution: Skinline lookup normalization ignores punctuation and separators, allowing `KDA`, `K D A`, and the official CommunityDragon name `K/DA` to resolve to the same thematic skinline without affecting names such as `True Damage`.
+  - Media / Configured Silence Duration: Final video rendering now uses the persisted `SilenceDuration` setting instead of a hardcoded 0.5-second value.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.5.1
 
 MINOR UPDATE
@@ -15,6 +44,8 @@ Bug Fixes & Refinements
   - Architecture / Event Filter Decoupling: Created and registered `EventFilterService` to encapsulate all pipeline filtering and search matching logic, decoupling it from the dashboard view code-behind and improving testability and code organization.
   - Core / AppData Upgrade Migration: Added logic inside `App.xaml.cs` to clear/delete the local `AppData/Local/VideoGenerator` directory exactly once when upgrading to version v1.2.5.1 (managed via a `.migrated_v1.2.5.1` flag file), ensuring a clean configuration sweep without losing settings on subsequent launches.
   - Core / Redundant Migration Cleanup: Removed obsolete `RemoveAll` migration calls from `RuleManager.cs` since config is reset cleanly from defaults on upgrade launch.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 VideoGenerator - Patch Notes | v1.2.5.0
 
