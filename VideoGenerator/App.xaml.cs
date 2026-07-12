@@ -78,6 +78,13 @@ namespace VideoGenerator
             services.AddSingleton<TaskCancellationService>();
             services.AddSingleton<ProgressService>();
             services.AddSingleton<EventFilterService>();
+            services.AddSingleton<AudioFolderDiscoveryService>();
+            services.AddSingleton<EventAnalysisService>();
+            services.AddSingleton<EventIconResolutionService>();
+            services.AddSingleton<PreviewImageService>();
+            services.AddSingleton<AudioFamilyMergeService>();
+            services.AddSingleton<HudImagePreparationService>();
+            services.AddSingleton<ProductionWorkPlanningService>();
 
             // --- Views (Singletons for state preservation) ---
             services.AddSingleton<MainWindow>();

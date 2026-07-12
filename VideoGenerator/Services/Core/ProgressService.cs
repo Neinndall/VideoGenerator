@@ -114,8 +114,18 @@ namespace VideoGenerator.Services
             });
         }
 
-        public void Complete()
+        public async void Complete()
         {
+            // Keep 100% progress visible for 600ms so the user can see it finish!
+            try
+            {
+                await System.Threading.Tasks.Task.Delay(500);
+            }
+            catch
+            {
+                // Safety fallback
+            }
+
             Update(() =>
             {
                 IsBusy = false;

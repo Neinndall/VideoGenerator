@@ -10,14 +10,8 @@
         <Setter Property="BorderThickness" Value="1"/>
     </Style>
 
-    <!-- Accent Tag Border -->
-    <Style x:Key="AccentTagBorder" TargetType="Border" BasedOn="{StaticResource HUDBorder}">
-        <Setter Property="Background" Value="#1A8B5CF6"/> <!-- Low opacity accent -->
-        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-    </Style>
-
-    <!-- Modern Card Container -->
-    <Style x:Key="ModernContainer" TargetType="Border">
+    <!-- Canonical card surface for application content. -->
+    <Style x:Key="SurfaceContainer" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SecondaryBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -25,16 +19,8 @@
         <Setter Property="Padding" Value="20"/>
     </Style>
 
-    <!-- Large workspace surface used by previews and editor canvases. -->
-    <Style x:Key="HeroContainer" TargetType="Border" BasedOn="{StaticResource ModernContainer}">
-        <Setter Property="CornerRadius" Value="24"/>
-        <Setter Property="Background" Value="{StaticResource GlassCardBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource GlassBorderBrush}"/>
-        <Setter Property="Padding" Value="24"/>
-    </Style>
-
     <!-- Inner surface for toolbars, forms, and grouped controls. -->
-    <Style x:Key="InsetContainer" TargetType="Border" BasedOn="{StaticResource ModernContainer}">
+    <Style x:Key="InsetContainer" TargetType="Border" BasedOn="{StaticResource SurfaceContainer}">
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
         <Setter Property="Padding" Value="16"/>

@@ -1,0 +1,69 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Application shell primitives shared by navigation and global system feedback. -->
+    <!-- Application shell primitives shared by navigation and global system feedback. -->
+    <Style x:Key="AppShellSidebar" TargetType="Border">
+        <Setter Property="Background" Value="#111114"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Padding" Value="20,16"/>
+    </Style>
+
+    <Style x:Key="AppShellBrandMark" TargetType="Border">
+        <Setter Property="Width" Value="44"/>
+        <Setter Property="Height" Value="44"/>
+        <Setter Property="Background" Value="{StaticResource AccentSoftBrush}"/>
+        <Setter Property="BorderBrush" Value="#558B5CF6"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="14"/>
+    </Style>
+
+    <Style x:Key="AppShellNavSectionText" TargetType="TextBlock" BasedOn="{StaticResource SectionLabelText}">
+        <Setter Property="Margin" Value="12,0,0,8"/>
+        <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+    </Style>
+
+    <Style x:Key="AppShellContent" TargetType="Border">
+        <Setter Property="Background" Value="#0D0D0F"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
+    <Style x:Key="AppShellTopBar" TargetType="Border">
+        <Setter Property="Background" Value="#0D0D0F"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Padding" Value="24,14"/>
+    </Style>
+
+    <Style x:Key="AppShellTopBarTag" TargetType="Border" BasedOn="{StaticResource StatusPill}">
+        <Setter Property="Background" Value="#141E40AF"/>
+        <Setter Property="BorderBrush" Value="#404C6FFF"/>
+        <Setter Property="Padding" Value="9,5"/>
+        <Setter Property="CornerRadius" Value="7"/>
+    </Style>
+
+    <Style x:Key="AppShellStatusBar" TargetType="Border">
+        <Setter Property="Background" Value="#111114"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Padding" Value="24,8"/>
+        <Setter Property="MinHeight" Value="46"/>
+    </Style>
+
+    <Style x:Key="AppShellStatusBadge" TargetType="Border" BasedOn="{StaticResource StatusPill}">
+        <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SuccessSoftBorderBrush}"/>
+        <Setter Property="Padding" Value="8,5"/>
+        <Setter Property="CornerRadius" Value="7"/>
+    </Style>
+
+    <Style x:Key="AppShellProgressLabel" TargetType="TextBlock" BasedOn="{StaticResource SectionLabelText}">
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+    </Style>
+</ResourceDictionary>

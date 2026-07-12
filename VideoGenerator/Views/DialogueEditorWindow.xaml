@@ -11,7 +11,8 @@
         Title="Dialogue Editor" 
         Height="700" Width="1050"
         WindowStartupLocation="CenterOwner"
-        Background="#0D0D0F"
+        Background="{StaticResource PrimaryBackgroundBrush}"
+        TextElement.FontFamily="{StaticResource AppFontFamily}"
         Foreground="{StaticResource TextPrimaryBrush}">
 
     <Window.Resources>
@@ -19,7 +20,7 @@
         <converters:NonLockingImageConverter x:Key="NonLockingImageConverter"/>
     </Window.Resources>
 
-    <Grid>
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -36,7 +37,7 @@
             <GridSplitter Grid.Column="1" Width="4" Background="Transparent" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
 
             <!-- Left Panel: Pipeline List -->
-            <Border Grid.Column="0" Background="#121214" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+            <Border Grid.Column="0" Style="{StaticResource WorkspacePanelContainer}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -44,7 +45,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Header -->
-                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Padding="16,14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <Border Grid.Row="0" Style="{StaticResource WorkspacePanelHeader}">
                         <StackPanel>
                             <TextBlock Text="EVENTS QUEUE" FontWeight="Black" Foreground="{StaticResource TextHighlightBrush}" FontSize="12"/>
                             <TextBlock Text="Select an event to edit segments" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
@@ -86,7 +87,7 @@
             </Border>
 
             <!-- Right Panel: Audio Segment Editor -->
-            <Grid Grid.Column="2" Margin="24,20,24,10">
+            <Grid Grid.Column="2" Margin="16,0,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -94,7 +95,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Event Details Header -->
-                <Border Grid.Row="0" Style="{StaticResource ModernContainer}" Padding="20,16" Margin="0,0,0,16">
+                <Border Grid.Row="0" Style="{StaticResource WorkspaceHeaderContainer}" Margin="0,0,0,16">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -102,7 +103,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Resolved Icon -->
-                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24" Background="#1A1A1D" 
+                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24" Background="{StaticResource ElevatedSurfaceBrush}" 
                                 BorderBrush="{StaticResource HextechGoldBrush}" 
                                 BorderThickness="1.5" 
                                 ClipToBounds="True" Margin="0,0,16,0">
@@ -125,7 +126,7 @@
                     <ItemsControl x:Name="PartsItemsControl">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource ModernContainer}" Background="#141416" Margin="0,0,0,12" Padding="16">
+                                <Border Style="{StaticResource WorkspacePanelContainer}" Background="{StaticResource SecondaryBackgroundBrush}" Margin="0,0,0,12" Padding="16">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/> <!-- Play Button -->
@@ -136,7 +137,7 @@
                                         <!-- Play/Pause Control -->
                                         <Button Grid.Column="0" Click="PlayPartAudio_Click" 
                                                 Style="{StaticResource MaterialDesignIconButton}" 
-                                                Background="#1C1C20" Foreground="{StaticResource AccentBrush}" 
+                                                Background="{StaticResource InputBackgroundBrush}" Foreground="{StaticResource AccentBrush}" 
                                                 Width="44" Height="44" Margin="0,0,16,0"
                                                 ToolTip="Play/Stop this audio segment">
                                             <materialDesign:PackIcon Kind="Play" Width="22" Height="22" x:Name="PlayIcon"/>
@@ -218,7 +219,7 @@
         </Grid>
 
         <!-- Bottom Window Bar -->
-        <Border Grid.Row="1" Background="#0A0A0C" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="24,16">
+        <Border Grid.Row="1" Background="{StaticResource PrimaryBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="24,16">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

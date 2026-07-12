@@ -7,7 +7,7 @@
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="FontFamily" Value="Consolas"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppMonoFontFamily}"/>
         <Setter Property="FontSize" Value="11"/>
         <Setter Property="Padding" Value="8"/>
         <Setter Property="IsReadOnly" Value="True"/>

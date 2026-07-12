@@ -13,7 +13,7 @@
         <converters:NonLockingImageConverter x:Key="NonLockingImageConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="0,16,0,8">
+    <Grid Margin="{StaticResource WorkspacePagePadding}">
         <Grid.RowDefinitions>
             <RowDefinition x:Name="HeaderRow" Height="Auto"/>
             <RowDefinition x:Name="ConfigRow" Height="Auto"/>
@@ -22,14 +22,31 @@
         </Grid.RowDefinitions>
  
         <!-- 1. CINEMATIC HEADER -->
-        <Grid Grid.Row="0" Margin="0,0,0,28">
-            <StackPanel>
-                <TextBlock Text="PRODUCTION DASHBOARD" Style="{StaticResource PageTitleText}"/>
-                <TextBlock Text="Analyze media assets, validate event mapping, and execute batch video rendering." 
-                           Style="{StaticResource PageSubtitleText}" 
-                           Margin="0,5,0,0"/>
-            </StackPanel>
-        </Grid>
+        <Border Grid.Row="0" Style="{StaticResource WorkspaceHeaderContainer}" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="PRODUCTION WORKSPACE" Style="{StaticResource WorkspaceEyebrowText}"/>
+                    <TextBlock Text="Video production" Style="{StaticResource WorkspaceTitleText}" Margin="0,4,0,0"/>
+                    <TextBlock Text="Analyze sources, validate event mapping, and render your video batch from one workspace."
+                               Style="{StaticResource PageSubtitleText}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Style="{StaticResource WorkspaceMetricPill}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="EVENTS" Style="{StaticResource SectionLabelText}" Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding DashboardModel.FilteredProcessedEvents.Count}" Style="{StaticResource MonoValueText}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{StaticResource SuccessSoftBrush}" BorderBrush="{StaticResource SuccessSoftBorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,5">
+                        <TextBlock Text="PIPELINE STATUS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <!-- 2. CONFIGURATION & ANALYSIS BAR -->
         <Grid Grid.Row="1" Margin="0,0,0,12">
@@ -38,7 +55,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Border Style="{StaticResource ModernContainer}" Margin="0,0,16,0" Padding="10">
+            <Border Style="{StaticResource WorkspaceToolbarContainer}" Margin="0,0,16,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>    <!-- Path Selector -->
@@ -79,7 +96,7 @@
                                     HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,2,0"
                                     Width="24" Height="24" Click="ClearSearch_Click"
                                     Visibility="{Binding DashboardModel.SearchQuery, Converter={StaticResource NullToVisibilityConverter}}">
-                                <materialDesign:PackIcon Kind="Close" Width="14" Height="14" Foreground="#888888"/>
+                                <materialDesign:PackIcon Kind="Close" Width="14" Height="14" Foreground="{StaticResource TextMutedBrush}"/>
                             </Button>
                         </Grid>
                     </StackPanel>
@@ -99,7 +116,7 @@
                     Click="ProcessFolders_Click"
                     IsEnabled="{Binding DashboardModel.IsProcessing, Converter={StaticResource InverseBooleanConverter}}"
                     Style="{StaticResource ModernPrimaryButton}"
-                    Width="180" Height="72">
+                    Width="172" Height="64">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileSearchOutline" Margin="0,0,10,0" VerticalAlignment="Center" Width="18" Height="18"/>
                     <TextBlock Text="PROCESS FOLDERS" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
@@ -116,7 +133,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- LEFT: DETECTED EVENTS LIST -->
-            <Border Grid.Column="0" Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,0,0">
+            <Border Grid.Column="0" Style="{StaticResource WorkspacePanelContainer}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -124,16 +141,19 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <Border Style="{StaticResource WorkspacePanelHeader}">
                         <Grid>
-                            <TextBlock Text="DETECTED PIPELINE" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="PlaylistPlay" Foreground="{StaticResource TextMutedBrush}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="DETECTED PIPELINE" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                            </StackPanel>
                             <TextBlock Text="{Binding DashboardModel.FilteredProcessedEvents.Count, StringFormat='{}COUNT: {0}'}" 
-                                       HorizontalAlignment="Right" FontSize="9" FontWeight="Black" Foreground="{StaticResource AccentBrush}"/>
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="9" FontWeight="Black" Foreground="{StaticResource AccentBrush}"/>
                         </Grid>
                     </Border>
 
                     <!-- Filter pills -->
-                    <Border Grid.Row="1" Background="#0C0C0E" Padding="12,8" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <Border Grid.Row="1" Background="{StaticResource PrimaryBackgroundBrush}" Padding="12,8" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -156,7 +176,7 @@
                               utils:ScrollHelper.BubbleMouseWheel="False">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="20,14">
+                                <Border Padding="8,4">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -191,22 +211,22 @@
                                 </Border>
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding Status}" Value="Ready">
-                                        <Setter TargetName="StatusBadge" Property="Background" Value="#1A10B981"/>
-                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="#8010B981"/>
+                                        <Setter TargetName="StatusBadge" Property="Background" Value="{StaticResource SuccessPillBgBrush}"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="{StaticResource SuccessPillBorderBrush}"/>
                                         <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
                                         <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource SuccessBrush}"/>
                                         <Setter TargetName="StatusText" Property="Text" Value="READY"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Status}" Value="Missing Icon">
-                                        <Setter TargetName="StatusBadge" Property="Background" Value="#1AF59E0B"/>
-                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="#80F59E0B"/>
+                                        <Setter TargetName="StatusBadge" Property="Background" Value="{StaticResource WarningPillBgBrush}"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="{StaticResource WarningPillBorderBrush}"/>
                                         <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
                                         <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource WarningBrush}"/>
                                         <Setter TargetName="StatusText" Property="Text" Value="MISSING ICON"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Status}" Value="No Audio">
-                                        <Setter TargetName="StatusBadge" Property="Background" Value="#1AEF4444"/>
-                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="#80EF4444"/>
+                                        <Setter TargetName="StatusBadge" Property="Background" Value="{StaticResource ErrorPillBgBrush}"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="{StaticResource ErrorPillBorderBrush}"/>
                                         <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
                                         <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource ErrorBrush}"/>
                                         <Setter TargetName="StatusText" Property="Text" Value="NO AUDIO"/>
@@ -235,7 +255,7 @@
                     <RowDefinition x:Name="ProgressRow" Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Style="{StaticResource ModernContainer}" Padding="0" Background="#050505" ClipToBounds="True">
+                <Border Grid.Row="0" Style="{StaticResource WorkspaceCanvasContainer}">
                     <Grid>
                         <Viewbox Stretch="Uniform" VerticalAlignment="Center" Margin="24">
                             <Grid Width="1920" Height="1080" Background="#0D0D0F">
@@ -267,7 +287,7 @@
                 </Border>
 
                 <!-- QUICK EDIT PANEL (Collapsible, shown when an event is selected) -->
-                <Border Grid.Row="1" Style="{StaticResource ModernContainer}" Margin="0,12,0,0"
+                <Border Grid.Row="1" Style="{StaticResource WorkspaceInspectorContainer}"
                         Visibility="{Binding DashboardModel.SelectedEvent, Converter={StaticResource NullToVisibilityConverter}}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -369,69 +389,57 @@
                     <Button Grid.Column="0" 
                             Click="PrepareTranscription_Click"
                             IsEnabled="{Binding DashboardModel.IsAnalyzed}"
-                            Style="{StaticResource ModernSecondaryButton}"
+                            Style="{StaticResource WorkflowStepButton}"
                             Background="{StaticResource SurfaceBrush}"
                             Padding="10,0"
                             Height="44" Margin="0,0,6,0"
                             ToolTip="Run Whisper speech-to-text transcription to generate subtitles for audio files">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <materialDesign:PackIcon Grid.Column="0" Kind="MicrophoneOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
-                            <TextBlock Grid.Column="1" Text="1. PREPARE DIALOGUES" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap" TextAlignment="Center"/>
-                        </Grid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="MicrophoneOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
+                            <TextBlock Text="1. PREPARE DIALOGUES" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                        </StackPanel>
                     </Button>
 
                     <!-- Review Dialogues (Dialogue Editor) -->
                     <Button Grid.Column="1" 
                             Click="ReviewDialogues_Click"
                             IsEnabled="{Binding DashboardModel.IsAnalyzed}"
-                            Style="{StaticResource ModernSecondaryButton}"
+                            Style="{StaticResource WorkflowStepButton}"
                             Background="{StaticResource SurfaceBrush}"
                             Padding="10,0"
                             Height="44" Margin="6,0,6,0"
                             ToolTip="Open Dialogue Segment Editor to review and correct transcripts">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <materialDesign:PackIcon Grid.Column="0" Kind="PlaylistEdit" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
-                            <TextBlock Grid.Column="1" Text="REVIEW" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap" TextAlignment="Center"/>
-                        </Grid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="PlaylistEdit" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
+                            <TextBlock Text="REVIEW" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                        </StackPanel>
                     </Button>
 
                     <!-- Render Videos -->
                     <Button Grid.Column="2" 
                             Click="Generate_Click"
                             IsEnabled="{Binding DashboardModel.IsAnalyzed}"
-                            Style="{StaticResource ModernPrimaryButton}"
+                            Style="{StaticResource WorkflowPrimaryStepButton}"
                             Padding="10,0"
                             Height="44" Margin="6,0,0,0"
                             ToolTip="Generate and lossless compile final .mp4 videos using FFmpeg">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <materialDesign:PackIcon Grid.Column="0" Kind="PlayCircleOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
-                            <TextBlock Grid.Column="1" Text="2. RENDER VIDEOS" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" FontWeight="Black" TextWrapping="Wrap" TextAlignment="Center"/>
-                        </Grid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="PlayCircleOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
+                            <TextBlock Text="2. RENDER VIDEOS" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                        </StackPanel>
                     </Button>
                 </Grid>
             </Grid>
         </Grid>
 
         <!-- 4. TERMINAL LOGS (COMPACT) -->
-        <Border Grid.Row="3" Style="{StaticResource ModernContainer}" MinHeight="110" Margin="0,12,0,0" Padding="0">
+        <Border Grid.Row="3" Style="{StaticResource ConsolePanelContainer}" Margin="0,12,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Border Background="{StaticResource SurfaceBrush}" Padding="16,8" CornerRadius="12,12,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                <Border Background="{StaticResource SurfaceBrush}" Padding="16,8" CornerRadius="8,8,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Terminal" Foreground="{StaticResource TextMutedBrush}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="ENGINE CONSOLE" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
@@ -449,7 +457,7 @@
                                         <Border x:Name="border"
                                                 Background="{TemplateBinding Background}"
                                                 BorderThickness="0"
-                                                CornerRadius="0,0,11,11"
+                                                CornerRadius="0,0,7,7"
                                                 Padding="{TemplateBinding Padding}"
                                                 SnapsToDevicePixels="True">
                                             <ScrollViewer x:Name="PART_ContentHost" 

@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:utils="clr-namespace:VideoGenerator.Utils">
 
-    <!-- Global Professional HUD ListBox Style -->
+    <!-- Virtualized list surface used for queues, dictionaries, and navigation collections. -->
     <Style x:Key="VirtualizedListBoxStyle" TargetType="ListBox">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -46,6 +46,7 @@
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="BorderThickness" Value="0"/>
                     <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Margin" Value="2,1"/>
                     <Setter Property="Cursor" Value="Hand"/>
                     <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -54,26 +55,27 @@
                             <ControlTemplate TargetType="ListBoxItem">
                                 <Border x:Name="ItemBorder" 
                                         Background="{TemplateBinding Background}" 
-                                        BorderBrush="{StaticResource BorderBrush}" 
-                                        BorderThickness="0,0,0,1" 
+                                        BorderBrush="Transparent" 
+                                        BorderThickness="0" 
+                                        CornerRadius="6"
                                         SnapsToDevicePixels="True">
                                     <Grid>
                                         <!-- Vertical accent bar on the left -->
                                         <Border x:Name="SelectionBar" 
-                                                Width="4" 
+                                                Width="3" 
                                                 HorizontalAlignment="Left" 
                                                 Background="Transparent" 
-                                                Margin="0,2,0,2"/>
-                                        <ContentPresenter Margin="4,0,0,0" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                Margin="0,4,0,4"/>
+                                        <ContentPresenter Margin="12,5" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                                     </Grid>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#0DFFFFFF"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource HoverSurfaceBrush}"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#1C8B5CF6"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#268B5CF6"/>
                                         <Setter TargetName="SelectionBar" Property="Background" Value="{StaticResource AccentBrush}"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </Trigger>
@@ -82,7 +84,7 @@
                                             <Condition Property="IsSelected" Value="True"/>
                                             <Condition Property="IsMouseOver" Value="True"/>
                                         </MultiTrigger.Conditions>
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#2A8B5CF6"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="#338B5CF6"/>
                                         <Setter TargetName="SelectionBar" Property="Background" Value="{StaticResource AccentBrushLight}"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </MultiTrigger>
@@ -104,6 +106,7 @@
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="BorderThickness" Value="0"/>
                     <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Margin" Value="2,1"/>
                     <Setter Property="Focusable" Value="False"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     <Setter Property="Template">
@@ -111,14 +114,15 @@
                             <ControlTemplate TargetType="ListBoxItem">
                                 <Border x:Name="ItemBorder" 
                                         Background="{TemplateBinding Background}" 
-                                        BorderBrush="{StaticResource BorderBrush}" 
-                                        BorderThickness="0,0,0,1" 
+                                        BorderBrush="Transparent" 
+                                        BorderThickness="0" 
+                                        CornerRadius="6"
                                         SnapsToDevicePixels="True">
-                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                    <ContentPresenter Margin="12,5" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#12FFFFFF"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource HoverSurfaceBrush}"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>

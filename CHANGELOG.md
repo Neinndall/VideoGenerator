@@ -1,3 +1,41 @@
+VideoGenerator - Patch Notes | v1.2.7.0
+
+MEDIUM UPDATE
+This version completes the application shell refresh and physically organizes services by domain without changing the public service namespaces.
+
+New Features
+  - Architecture / Service Domains: Reorganized `Services/` into `Core`, `Data`, `Pipeline`, `Media`, `Audio`, `Configuration`, and `Parsers` folders while keeping DI-facing namespaces stable.
+  - UI / Application Frame: Rebuilt `MainWindow` around a persistent application rail, orientation top bar, framed content area, and compact activity rail.
+  - UI / Production Workspace Theme: Added shared workspace containers, canvas, inspector, workflow-step, metric, toolbar, and console styles. The Dashboard consumes these semantic resources rather than defining its visual hierarchy inline.
+  - UI / Application Shell Theme: Added shared shell styles for the sidebar, brand mark, content host, status bar, activity badge, and progress labeling.
+  - UI / Production Workspace Header: Reworked the Dashboard entry point around a clear workspace header with event volume and pipeline-readiness feedback.
+  - Architecture / Audio Folder Discovery Service: Moved recursive event discovery, supported-audio detection, and bracketed-family recognition from `DashboardView` into the DI-registered `AudioFolderDiscoveryService`.
+  - Architecture / Event Analysis Service: Moved pipeline-event construction, cached family-track detection, initial validation state, and persisted dialogue cleanup from `DashboardView` into the DI-registered `EventAnalysisService`.
+  - Architecture / Preview and Icon Services: Moved preview bitmap creation and semantic icon resolution from `DashboardView` into DI-registered `PreviewImageService` and `EventIconResolutionService`.
+  - Architecture / Audio Family Merge Service: Moved audio-family merge execution and cached-track assignment from `DashboardView` into the DI-registered `AudioFamilyMergeService`; workflows retain ownership of their progress presentation.
+  - Architecture / HUD Image Preparation Service: Centralized segmented HUD image generation, reuse, output-path resolution, and dialogue restoration for preparation and video-render workflows.
+  - Architecture / Production Work Planning Service: Moved deterministic preparation and rendering work-budget calculation out of `DashboardView`, keeping the global progress system consistent across workflows.
+  - Architecture / Dashboard Interaction Split: Moved fullscreen preview layout state and search interaction into `DashboardView.Interactions.cs`, keeping view-only mechanics separate from pipeline operations.
+  - Architecture / Dashboard Preview Split: Moved cancellation-aware preview rendering and concurrent icon hydration into `DashboardView.Preview.cs`, separating selected-event presentation from workflow code.
+
+Improvements
+  - UI / Visual Framing: Removed the double-border card framing in MainWindow and simplified view containers (flat headers, borderless toolbars, clean panel borders) for a unified, modern interface.
+  - UI / Sidebar Branding: Centered the branding logo and workspace titles in the sidebar.
+  - UI / Minimalist ScrollBars: Reworked the default scrollbars into a modern, buttonless floating pill design that reacts dynamically on hover, matching modern applications.
+  - UI / Settings Usability: Kept the Settings page context fixed while only its categories scroll, improving orientation during long configuration sessions.
+  - UI / Full Theme System Refresh: Reworked colors, typography, primary/secondary/icon actions, inputs, virtualized lists, scroll behavior, sliders, navigation states, and sidebar density under a single visual language.
+  - UI / Theme Cleanup: Removed unused button, brush, and scroll resources after consumer auditing; replaced the legacy oversized scrollbar template with a compact accessible default scroll treatment.
+  - Architecture / Dashboard Helpers: Moved `DashboardInteractions` and `DashboardPreview` partials to `Views/Helpers/` to keep Dashboard-related helper code out of the view root.
+  - UI / Dashboard Layout: Reorganized the production view into source controls, event queue, preview canvas, inspector, workflow actions, and console surfaces with consistent spacing and visual depth.
+  - UI / Application Shell: Redesigned persistent navigation and global activity feedback, making current operation, progress, idle state, and cancellation explicit without moving controls between views.
+  - UI / Shared View Headers: Visual Design, Event Mapping, Settings, and Dictionary now share the same workspace-header hierarchy as the Dashboard.
+  - UI / Dialogue Editor: Aligned the modal editor with the workspace panel, header, spacing, and card surface system.
+  - UI / Theme Audit: Removed unused glass, overlay, tag, hero, and unused workspace-token resources after verifying they had no consumers. Core surface styles remain while views still depend on them.
+  - UI / Surface Consolidation: Migrated all view card surfaces to the workspace panel system and replaced the remaining `ModernContainer` resource with the semantic `SurfaceContainer` base style.
+  - Architecture / Dashboard Boundaries: The Dashboard now delegates filesystem conventions to a focused service, reducing view code and making event discovery independently testable.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.6.1
 
 MINOR UPDATE
@@ -26,6 +64,7 @@ Improvements
   - Media / Persistent Audio Family Cache: Reuses valid merged WAV families from `Cache/AudioFamilies` across application restarts and rebuilds them only when source audio metadata changes.
 
 Bug Fixes
+  - UI / Dashboard Runtime Resource: Loaded `ButtonStyles.xaml` before `ProductionWorkspaceStyles.xaml`, resolving the `ModernSecondaryButton` dependency and preventing Dashboard startup from failing with a `StaticResourceHolder` exception.
   - Analyzer / Project Reference: Fixed the Analyzer to build against the current application project and use the same folder-first event scan as the Dashboard.
   - Audio / Recursive Folder Scan: Fixed nested champion/skin event folders returning zero events; `[Random]` families now remain attached to their parent event.
   - Database / Processing Race: Prevented parsing from starting against an incomplete official-data cache.

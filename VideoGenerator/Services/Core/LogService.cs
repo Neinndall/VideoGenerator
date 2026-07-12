@@ -54,7 +54,7 @@ namespace VideoGenerator.Services
             string fullMessage = message;
             if (ex != null)
             {
-                fullMessage += $"{Environment.NewLine}Exception: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}";
+                fullMessage += $"{Environment.NewLine}Exception: {ex}";
             }
             WriteToFile(_errorLogPath, "ERROR", fullMessage);
             AddToCollection($"!!! ERROR: {message}");

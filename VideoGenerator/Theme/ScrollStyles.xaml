@@ -16,12 +16,14 @@
                         <!-- Used standard Binding instead of TemplateBinding to allow the WPF type converter to parse the Path geometry string successfully (makes arrows exist!) -->
                         <!-- Using Stroke and transparent fill to draw modern thin chevron lines instead of solid triangles -->
                         <Path x:Name="Arrow" 
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"
-                              Stroke="{StaticResource ScrollBarThumbBackground}"
-                              StrokeThickness="1"
-                              Fill="Transparent"
-                              Data="{Binding Path=Content, RelativeSource={RelativeSource TemplatedParent}}"/>
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Stroke="{StaticResource ScrollBarThumbBackground}"
+                               StrokeThickness="1"
+                               Fill="Transparent"
+                               Stretch="Uniform"
+                               Width="6" Height="6"
+                               Data="{Binding Path=Content, RelativeSource={RelativeSource TemplatedParent}}"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
