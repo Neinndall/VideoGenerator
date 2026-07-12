@@ -14,6 +14,7 @@
                 <!-- Custom Theme -->
                 <ResourceDictionary Source="Theme/Colors.xaml" />
                 <ResourceDictionary Source="Theme/ModernBorders.xaml" />
+                <ResourceDictionary Source="Theme/DesignTokens.xaml" />
                 <ResourceDictionary Source="Theme/RichTextBoxStyles.xaml" />
                 <ResourceDictionary Source="Theme/Animations.xaml" />
                 <ResourceDictionary Source="Theme/LoreTabStyles.xaml" />

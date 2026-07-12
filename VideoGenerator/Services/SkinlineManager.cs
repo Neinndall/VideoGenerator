@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Services
@@ -19,15 +20,17 @@ namespace VideoGenerator.Services
     {
         private readonly DataFetcher _dataFetcher;
         private readonly AliasManager _aliasManager;
+        private readonly LogService _logger;
 
         private SkinlineCatalog _catalog;
         private bool _loaded;
         private readonly object _loadLock = new();
 
-        public SkinlineManager(DataFetcher dataFetcher, AliasManager aliasManager)
+        public SkinlineManager(DataFetcher dataFetcher, AliasManager aliasManager, LogService logger)
         {
             _dataFetcher = dataFetcher;
             _aliasManager = aliasManager;
+            _logger = logger;
         }
 
         public IReadOnlyCollection<string> SkinlineNames => EnsureLoaded().DisplayNames.Values;
@@ -147,7 +150,8 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading skinlines from network: {ex.Message}");
+                _logger.LogWarn("Failed to load skinlines from CommunityDragon. Falling back to local data or defaults.");
+                _logger.LogDebug($"Skinline network load details: {ex.Message}");
             }
 
             return catalog;
@@ -177,7 +181,7 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading skinlines from disk: {ex.Message}");
+                _logger.LogError("Failed to load the local skinline cache.", ex);
             }
             return null;
         }
@@ -186,7 +190,7 @@ namespace VideoGenerator.Services
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(AppConfig.SkinlineCachePath)!);
+                DirectoriesCreator.CreateParentDirectory(AppConfig.SkinlineCachePath);
 
                 var map = new Dictionary<string, SkinlineCacheEntry>();
                 foreach (var kvp in catalog.DisplayNames)
@@ -208,7 +212,7 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving skinlines to disk: {ex.Message}");
+                _logger.LogError("Failed to save the local skinline cache.", ex);
             }
         }
 
@@ -250,7 +254,8 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error getting localized skinline name: {ex.Message}");
+                _logger.LogWarn("Failed to resolve the localized skinline name. The default name will be used.");
+                _logger.LogDebug($"Localized skinline lookup details: {ex.Message}");
             }
 
             return GetDisplayName(englishName);

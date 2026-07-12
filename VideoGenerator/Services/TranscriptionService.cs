@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Whisper.net;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 
 namespace VideoGenerator.Services
 {
@@ -13,13 +14,16 @@ namespace VideoGenerator.Services
     {
         private readonly LogService _logger;
         private readonly VideoService _videoService;
+        private readonly HttpClient _httpClient;
+        private readonly AppSettings _settings;
+        private readonly SemaphoreSlim _modelDownloadGate = new(1, 1);
         private WhisperFactory _whisperFactory;
         private string _loadedModelPath;
         private readonly object _modelLock = new object();
 
         private string GetModelFileName()
         {
-            string model = AppSettings.Instance.WhisperModel?.ToLower() ?? "base";
+            string model = _settings.WhisperModel?.ToLower() ?? "base";
             return $"ggml-{model}.bin";
         }
 
@@ -33,42 +37,89 @@ namespace VideoGenerator.Services
             return $"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{GetModelFileName()}";
         }
 
-        public TranscriptionService(LogService logger, VideoService videoService)
+        public TranscriptionService(LogService logger, VideoService videoService, HttpClient httpClient, AppSettings settings)
         {
             _logger = logger;
             _videoService = videoService;
+            _httpClient = httpClient;
+            _settings = settings;
         }
 
         public async Task EnsureModelReadyAsync()
         {
             string modelPath = GetModelPath();
-            if (File.Exists(modelPath)) return;
-
             string modelName = GetModelFileName();
-            string modelUrl = GetModelUrl();
-            _logger.LogInfo($"Whisper model ({modelName}) not found. Downloading from Hugging Face...");
-            
+            await _modelDownloadGate.WaitAsync();
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(modelPath)!);
-                
-                using var httpClient = new HttpClient();
-                httpClient.Timeout = TimeSpan.FromMinutes(15);
-                
-                using var response = await httpClient.GetAsync(modelUrl, HttpCompletionOption.ResponseHeadersRead);
+                if (IsUsableModel(modelPath)) return;
+
+                string modelUrl = GetModelUrl();
+                _logger.LogInfo($"Whisper model ({modelName}) not found. Downloading from Hugging Face...");
+                DirectoriesCreator.CreateParentDirectory(modelPath);
+
+                using var response = await _httpClient.GetAsync(modelUrl, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
-                
+
+                string temporaryPath = $"{modelPath}.{Guid.NewGuid():N}.download";
                 using var contentStream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = new FileStream(modelPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                
-                await contentStream.CopyToAsync(fileStream);
+                try
+                {
+                    // Dispose the destination stream before moving the file. Windows
+                    // refuses to move an open source file even when the destination
+                    // overwrite flag is enabled.
+                    using (var fileStream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        await contentStream.CopyToAsync(fileStream);
+                        await fileStream.FlushAsync();
+                    }
+
+                    for (int attempt = 0; attempt < 5; attempt++)
+                    {
+                        if (IsUsableModel(modelPath))
+                            break;
+
+                        try
+                        {
+                            File.Move(temporaryPath, modelPath, true);
+                            break;
+                        }
+                        catch (IOException) when (attempt < 4)
+                        {
+                            await Task.Delay(250 * (attempt + 1));
+                        }
+                    }
+
+                    if (!IsUsableModel(modelPath))
+                        throw new IOException($"Whisper model could not be moved into place: {modelPath}");
+                }
+                finally
+                {
+                    try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+                }
+
                 _logger.LogInfo($"Whisper model ({modelName}) downloaded successfully.");
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to download Whisper model file: {modelName}", ex);
-                if (File.Exists(modelPath)) File.Delete(modelPath);
                 throw;
+            }
+            finally
+            {
+                _modelDownloadGate.Release();
+            }
+        }
+
+        private static bool IsUsableModel(string modelPath)
+        {
+            try
+            {
+                return File.Exists(modelPath) && new FileInfo(modelPath).Length > 0;
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -118,8 +169,8 @@ namespace VideoGenerator.Services
                     factory = _whisperFactory;
                 }
 
-                string lang = AppSettings.Instance.WhisperLanguage ?? "auto";
-                int threads = AppSettings.Instance.WhisperThreadCount;
+                string lang = _settings.WhisperLanguage ?? "auto";
+                int threads = _settings.WhisperThreadCount;
                 using var processor = factory.CreateBuilder()
                     .WithLanguage(lang)
                     .WithThreads(threads)
@@ -136,7 +187,7 @@ namespace VideoGenerator.Services
 
                 string cleanedResult = transcriptionText.Trim();
                 
-                if (AppSettings.Instance.CleanWhisperHallucinations)
+                if (_settings.CleanWhisperHallucinations)
                 {
                     cleanedResult = DialogueService.CleanDialogue(cleanedResult);
                 }

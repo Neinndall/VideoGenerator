@@ -9,6 +9,7 @@ using System.Threading;
 using System.Security.Cryptography;
 using System.Text;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 
 namespace VideoGenerator.Services
 {
@@ -16,6 +17,8 @@ namespace VideoGenerator.Services
     {
         private readonly LogService _logger;
         private readonly string _ffmpegDir;
+        private readonly SemaphoreSlim _binaryInitializationGate = new(1, 1);
+        private bool _binariesReady;
 
         public VideoService(LogService logger)
         {
@@ -25,13 +28,21 @@ namespace VideoGenerator.Services
 
         public async Task EnsureBinariesReadyAsync()
         {
-            if (ValidateFFmpeg()) return;
+            if (_binariesReady && ValidateFFmpeg()) return;
 
-            _logger.LogInfo("FFmpeg binaries not found. Extracting to temp folder...");
-            
+            await _binaryInitializationGate.WaitAsync();
             try
             {
-                Directory.CreateDirectory(_ffmpegDir);
+                if (_binariesReady && ValidateFFmpeg()) return;
+
+                if (ValidateFFmpeg())
+                {
+                    _binariesReady = true;
+                    return;
+                }
+
+                _logger.LogInfo("FFmpeg binaries not found. Extracting to temp folder...");
+                DirectoriesCreator.CreateDirectory(_ffmpegDir);
                 
                 var assembly = Assembly.GetExecutingAssembly();
                 string resourcePrefix = "VideoGenerator.Resources.ffmpeg.";
@@ -44,7 +55,7 @@ namespace VideoGenerator.Services
                     string fileName = resourceName.Substring(resourcePrefix.Length);
                     string targetPath = Path.Combine(_ffmpegDir, fileName);
                     
-                    if (!File.Exists(targetPath))
+                    if (!File.Exists(targetPath) || new FileInfo(targetPath).Length == 0)
                     {
                         using Stream stream = assembly.GetManifestResourceStream(resourceName);
                         if (stream != null)
@@ -62,6 +73,7 @@ namespace VideoGenerator.Services
 
                 if (ValidateFFmpeg())
                 {
+                    _binariesReady = true;
                     _logger.LogInfo("FFmpeg binaries extracted successfully.");
                 }
                 else
@@ -73,6 +85,10 @@ namespace VideoGenerator.Services
             {
                 _logger.LogError("Failed to extract FFmpeg binaries", ex);
                 throw;
+            }
+            finally
+            {
+                _binaryInitializationGate.Release();
             }
         }
 
@@ -100,7 +116,78 @@ namespace VideoGenerator.Services
             Action<string> onWorkCompleted = null,
             CancellationToken cancellationToken = default)
         {
+            if (audioPaths == null || audioPaths.Count == 0)
+                throw new ArgumentException("At least one audio track is required.", nameof(audioPaths));
+
             return await CreateVideoAsync(new List<string> { imagePath }, audioPaths, outputPath, silenceDuration, dialogue, onWorkCompleted, cancellationToken);
+        }
+
+        public string GetMergedAudioFamilyPath(
+            IReadOnlyList<string> audioPaths,
+            string eventName,
+            string familyName,
+            string eventPath)
+        {
+            if (audioPaths == null || audioPaths.Count == 0)
+                return null;
+
+            string Sanitize(string value) => string.Concat(value.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+            var fingerprint = new StringBuilder()
+                .Append(eventPath)
+                .Append('|')
+                .Append(eventName)
+                .Append('|')
+                .Append(familyName);
+
+            foreach (string audioPath in audioPaths)
+            {
+                try
+                {
+                    var fileInfo = new FileInfo(audioPath);
+                    fingerprint
+                        .Append('|')
+                        .Append(Path.GetFullPath(audioPath))
+                        .Append('|')
+                        .Append(fileInfo.Exists ? fileInfo.Length : -1)
+                        .Append('|')
+                        .Append(fileInfo.Exists ? fileInfo.LastWriteTimeUtc.Ticks : 0);
+                }
+                catch
+                {
+                    fingerprint.Append('|').Append(audioPath);
+                }
+            }
+
+            string sourceId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprint.ToString())))[..16];
+            string familyCacheDir = Path.Combine(AppConfig.CacheDir, "AudioFamilies");
+            string currentPath = Path.Combine(familyCacheDir, $"{Sanitize(eventName)}_{Sanitize(familyName)}_{sourceId}.wav");
+            if (File.Exists(currentPath) && new FileInfo(currentPath).Length > 0)
+                return currentPath;
+
+            // Keep compatibility with merged families created before the source
+            // fingerprint was added to the cache filename.
+            string legacySourceId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(eventPath)))[..12];
+            string legacyPath = Path.Combine(familyCacheDir, $"{Sanitize(eventName)}_{Sanitize(familyName)}_{legacySourceId}.wav");
+            return IsCacheCurrent(legacyPath, audioPaths)
+                ? legacyPath
+                : currentPath;
+        }
+
+        private static bool IsCacheCurrent(string cachePath, IReadOnlyList<string> sourceAudioPaths)
+        {
+            try
+            {
+                if (!File.Exists(cachePath) || new FileInfo(cachePath).Length == 0)
+                    return false;
+
+                DateTime cacheWriteTime = File.GetLastWriteTimeUtc(cachePath);
+                return sourceAudioPaths.All(audioPath =>
+                    File.Exists(audioPath) && File.GetLastWriteTimeUtc(audioPath) <= cacheWriteTime);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public async Task<string> MergeAudioFamilyAsync(
@@ -113,14 +200,18 @@ namespace VideoGenerator.Services
             if (audioPaths == null || audioPaths.Count == 0)
                 throw new ArgumentException("An audio family must contain at least one file.", nameof(audioPaths));
 
+            string outputPath = GetMergedAudioFamilyPath(audioPaths, eventName, familyName, eventPath);
+            if (!string.IsNullOrEmpty(outputPath) && File.Exists(outputPath) && new FileInfo(outputPath).Length > 0)
+            {
+                _logger.LogDebug($"Reusing cached audio family: {Path.GetFileName(outputPath)}");
+                return outputPath;
+            }
+
             await EnsureBinariesReadyAsync();
             cancellationToken.ThrowIfCancellationRequested();
 
-            string Sanitize(string value) => string.Concat(value.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
-            string familyCacheDir = Path.Combine(AppConfig.CacheDir, "AudioFamilies");
-            Directory.CreateDirectory(familyCacheDir);
-            string sourceId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(eventPath)))[..12];
-            string outputPath = Path.Combine(familyCacheDir, $"{Sanitize(eventName)}_{Sanitize(familyName)}_{sourceId}.wav");
+            string familyCacheDir = Path.GetDirectoryName(outputPath) ?? Path.Combine(AppConfig.CacheDir, "AudioFamilies");
+            DirectoriesCreator.CreateDirectory(familyCacheDir);
             string concatPath = Path.Combine(familyCacheDir, $"concat_{Guid.NewGuid():N}.txt");
 
             try
@@ -160,6 +251,11 @@ namespace VideoGenerator.Services
             Action<string> onWorkCompleted = null,
             CancellationToken cancellationToken = default)
         {
+            if (imagePaths == null || imagePaths.Count == 0)
+                throw new ArgumentException("At least one image is required.", nameof(imagePaths));
+            if (audioPaths == null || audioPaths.Count == 0)
+                throw new ArgumentException("At least one audio track is required.", nameof(audioPaths));
+
             string tempAudioPath = null;
             string silentAudioPath = null;
             string concatListPath = null;
@@ -171,9 +267,9 @@ namespace VideoGenerator.Services
                 // Defer to lazy initialization
                 await EnsureBinariesReadyAsync();
 
-                Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
-                string cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Cache");
-                Directory.CreateDirectory(cacheDir);
+                DirectoriesCreator.CreateParentDirectory(outputPath);
+                string cacheDir = AppConfig.CacheDir;
+                DirectoriesCreator.CreateDirectory(cacheDir);
 
                 if (imagePaths != null && imagePaths.Count > 1)
                 {
@@ -182,7 +278,7 @@ namespace VideoGenerator.Services
                     // 1. Create silent audio if needed
                     if (silenceDuration > 0)
                     {
-                        silentAudioPath = Path.Combine(cacheDir, "silent_audio.wav");
+                        silentAudioPath = Path.Combine(cacheDir, $"silent_audio_{Guid.NewGuid():N}.wav");
                         await FFMpegArguments
                             .FromFileInput("anullsrc=r=48000:cl=stereo", false, options => options
                                 .ForceFormat("lavfi"))
@@ -299,7 +395,7 @@ namespace VideoGenerator.Services
                         // 1. Create silent audio if needed
                         if (silenceDuration > 0)
                         {
-                            silentAudioPath = Path.Combine(cacheDir, "silent_audio.wav");
+                            silentAudioPath = Path.Combine(cacheDir, $"silent_audio_{Guid.NewGuid():N}.wav");
                             await FFMpegArguments
                                 .FromFileInput("anullsrc=r=48000:cl=stereo", false, options => options
                                     .ForceFormat("lavfi"))
@@ -312,7 +408,7 @@ namespace VideoGenerator.Services
                         }
 
                         // 2. Create Concat List
-                        concatListPath = Path.Combine(cacheDir, "concat_list.txt");
+                        concatListPath = Path.Combine(cacheDir, $"concat_list_{Guid.NewGuid():N}.txt");
                         using (var writer = new StreamWriter(concatListPath))
                         {
                             for (int i = 0; i < audioPaths.Count; i++)
@@ -329,7 +425,7 @@ namespace VideoGenerator.Services
                         }
 
                         // 3. Join audios
-                        tempAudioPath = Path.Combine(cacheDir, "temp_combined_audio.wav");
+                        tempAudioPath = Path.Combine(cacheDir, $"temp_combined_audio_{Guid.NewGuid():N}.wav");
                         await FFMpegArguments
                             .FromFileInput(concatListPath, true, options => options
                                 .WithCustomArgument("-f concat -safe 0"))

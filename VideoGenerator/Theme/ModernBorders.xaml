@@ -25,4 +25,34 @@
         <Setter Property="Padding" Value="20"/>
     </Style>
 
+    <!-- Large workspace surface used by previews and editor canvases. -->
+    <Style x:Key="HeroContainer" TargetType="Border" BasedOn="{StaticResource ModernContainer}">
+        <Setter Property="CornerRadius" Value="24"/>
+        <Setter Property="Background" Value="{StaticResource GlassCardBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource GlassBorderBrush}"/>
+        <Setter Property="Padding" Value="24"/>
+    </Style>
+
+    <!-- Inner surface for toolbars, forms, and grouped controls. -->
+    <Style x:Key="InsetContainer" TargetType="Border" BasedOn="{StaticResource ModernContainer}">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
+        <Setter Property="Padding" Value="16"/>
+    </Style>
+
+    <Style x:Key="StatusPill" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource AccentSoftBrush}"/>
+        <Setter Property="BorderBrush" Value="#558B5CF6"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="10,6"/>
+    </Style>
+
+    <Style x:Key="SectionHeaderBorder" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource ElevatedSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding" Value="16,10"/>
+    </Style>
+
 </ResourceDictionary>

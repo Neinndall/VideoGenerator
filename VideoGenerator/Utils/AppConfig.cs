@@ -17,6 +17,7 @@ namespace VideoGenerator.Models
         public static readonly string OutputDir = Path.Combine(BaseDir, "Generated");
         public static readonly string OutputImagesDir = Path.Combine(OutputDir, "Images");
         public static readonly string OutputVideosDir = Path.Combine(OutputDir, "Media");
+        public static readonly string LogsDir = Path.Combine(BaseDir, "logs");
 
         public static readonly string BackgroundPath = Path.Combine(ResourcesDir, "DefaultBackground.png");
         public static readonly string ConfigDir = Path.Combine(AppDataDir, "Config");

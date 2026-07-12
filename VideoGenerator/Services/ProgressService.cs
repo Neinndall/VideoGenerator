@@ -94,7 +94,9 @@ namespace VideoGenerator.Services
             Update(() =>
             {
                 IsBusy = true;
-                Value = Math.Clamp(value, 0, 100);
+                // Progress is monotonic during discovery and other non-budgeted
+                // phases; noisy callbacks must not make the bar jump backwards.
+                Value = Math.Max(Value, Math.Clamp(value, 0, 100));
                 IsIndeterminate = false;
                 if (!string.IsNullOrWhiteSpace(status))
                     StatusText = _totalWork > 0 ? FormatWorkStatus(status) : NormalizeStatus(status);

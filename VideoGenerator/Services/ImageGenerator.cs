@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using VideoGenerator.Models;
 using VideoGenerator.Utils;
@@ -35,27 +36,47 @@ namespace VideoGenerator.Services
         private FontFamily _cachedFontFamily;
 
         private readonly Dictionary<string, Image<Rgba32>> _iconCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly object _fontCacheGate = new();
+        private readonly SemaphoreSlim _backgroundCacheGate = new(1, 1);
+        private readonly LogService _logger;
 
-        public ImageGenerator()
+        public ImageGenerator(LogService logger)
         {
+            _logger = logger;
         }
 
         private FontFamily GetFontFamily(string fontName)
         {
-            if (_cachedFontName == fontName && _cachedFontFamily != default)
+            lock (_fontCacheGate)
             {
-                return _cachedFontFamily;
+                if (_cachedFontName == fontName && _cachedFontFamily != default)
+                {
+                    return _cachedFontFamily;
+                }
+
+                if (!SixLabors.Fonts.SystemFonts.TryGet(fontName, out var fontFamily))
+                    fontFamily = SixLabors.Fonts.SystemFonts.Families.First();
+
+                _cachedFontName = fontName;
+                _cachedFontFamily = fontFamily;
+                return fontFamily;
             }
-
-            if (!SixLabors.Fonts.SystemFonts.TryGet(fontName, out var fontFamily))
-                fontFamily = SixLabors.Fonts.SystemFonts.Families.First();
-
-            _cachedFontName = fontName;
-            _cachedFontFamily = fontFamily;
-            return fontFamily;
         }
 
         private async Task<Image<Rgba32>> LoadBackgroundAsync(string customPath = null)
+        {
+            await _backgroundCacheGate.WaitAsync();
+            try
+            {
+                return await LoadBackgroundCoreAsync(customPath);
+            }
+            finally
+            {
+                _backgroundCacheGate.Release();
+            }
+        }
+
+        private async Task<Image<Rgba32>> LoadBackgroundCoreAsync(string customPath = null)
         {
             if (customPath != null && File.Exists(customPath))
             {
@@ -72,8 +93,10 @@ namespace VideoGenerator.Services
                     _cachedCustomBackgroundPath = customPath;
                     return _cachedCustomBackground.Clone();
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger?.LogWarn("Failed to load the custom background. The default background will be used.");
+                    _logger?.LogDebug($"Custom background load details: {ex.Message}");
                     // Fallback to default if load fails
                 }
             }
@@ -104,26 +127,30 @@ namespace VideoGenerator.Services
             return _cachedBackground.Clone();
         }
 
-        public async Task<string> CreateImageAsync(ParsedEvent eventData, string fontName = "Arial", string customBackgroundPath = null, float textVerticalOffset = 0f, string customSuffix = "", string subFolder = "")
+        public async Task<string> CreateImageAsync(ParsedEvent eventData, string fontName = "Arial", string customBackgroundPath = null, float textVerticalOffset = 0f, string customSuffix = "", string subFolder = "", CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             string targetDir = string.IsNullOrEmpty(subFolder) ? AppConfig.OutputImagesDir : Path.Combine(AppConfig.OutputImagesDir, subFolder);
-            Directory.CreateDirectory(targetDir);
+            DirectoriesCreator.CreateDirectory(targetDir);
             string filename = string.IsNullOrEmpty(customSuffix) ? $"{eventData.OriginalFolder}.png" : $"{eventData.OriginalFolder}_{customSuffix}.png";
             string outputPath = Path.Combine(targetDir, filename);
-            var bytes = await CreateImageBytesAsync(eventData, fontName, customBackgroundPath, textVerticalOffset);
+            var bytes = await CreateImageBytesAsync(eventData, fontName, customBackgroundPath, textVerticalOffset, cancellationToken);
             if (bytes == null) return null;
 
             await File.WriteAllBytesAsync(outputPath, bytes);
+            cancellationToken.ThrowIfCancellationRequested();
             return outputPath;
         }
 
-        public async Task<byte[]> CreateImageBytesAsync(ParsedEvent eventData, string fontName = "Arial", string customBackgroundPath = null, float textVerticalOffset = 0f)
+        public async Task<byte[]> CreateImageBytesAsync(ParsedEvent eventData, string fontName = "Arial", string customBackgroundPath = null, float textVerticalOffset = 0f, CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 // 1. Load and prepare background
                 using var loadedImage = await LoadBackgroundAsync(customBackgroundPath);
-                var image = new Image<Rgba32>(HudTextures.CanvasWidth, HudTextures.CanvasHeight, Color.Black);
+                cancellationToken.ThrowIfCancellationRequested();
+                using var image = new Image<Rgba32>(HudTextures.CanvasWidth, HudTextures.CanvasHeight, Color.Black);
                 
                 loadedImage.Mutate(x => x.Resize(new ResizeOptions { 
                     Size = new Size(HudTextures.CanvasWidth, HudTextures.CanvasHeight), 
@@ -258,6 +285,7 @@ namespace VideoGenerator.Services
                 // 4. Draw Icon (Above the Ribbon)
                 if (!string.IsNullOrEmpty(eventData.IconPath) && File.Exists(eventData.IconPath))
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     // Calculate horizontal position based on alignment
                     int iconX = HudTextures.IconX; // Default Left = 50
                     if (AppSettings.Instance.IconAlignment.Equals("Right", StringComparison.OrdinalIgnoreCase))
@@ -294,6 +322,12 @@ namespace VideoGenerator.Services
                         
                         lock (_iconCache)
                         {
+                            if (_iconCache.Count >= 256)
+                            {
+                                string firstKey = _iconCache.Keys.First();
+                                _iconCache[firstKey].Dispose();
+                                _iconCache.Remove(firstKey);
+                            }
                             _iconCache[eventData.IconPath] = icon.Clone();
                         }
                         iconToDraw = icon.Clone();
@@ -328,9 +362,18 @@ namespace VideoGenerator.Services
 
                 using var ms = new MemoryStream();
                 await image.SaveAsPngAsync(ms);
+                cancellationToken.ThrowIfCancellationRequested();
                 return ms.ToArray();
             }
-            catch { return null; }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError($"Image generation failed for '{eventData?.OriginalFolder}'.", ex);
+                return null;
+            }
         }
     }
 }

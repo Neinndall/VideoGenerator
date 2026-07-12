@@ -20,16 +20,10 @@
         <!-- Header -->
         <Grid Grid.Row="0" Margin="0,0,0,32">
             <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="DICTIONARY &amp; LOCALIZATION" 
-                           FontSize="28" 
-                           FontWeight="Black" 
-                           Foreground="{StaticResource TextHighlightBrush}" />
+                <TextBlock Text="DICTIONARY &amp; LOCALIZATION" Style="{StaticResource PageTitleText}"/>
                 <TextBlock Text="Manage supported languages and HUD event translations." 
-                           FontSize="13" 
-                           FontWeight="SemiBold" 
-                           Foreground="{StaticResource TextSecondaryBrush}" 
-                           Opacity="0.7" 
-                           Margin="0,4,0,0"/>
+                           Style="{StaticResource PageSubtitleText}" 
+                           Margin="0,5,0,0"/>
             </StackPanel>
             
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

@@ -5,9 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseWPF>false</UseWPF>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VideoGenerator\VideoGenerator.csproj" />
+    <ProjectReference Include="..\VideoGenerator_v1.2.6.1\VideoGenerator.csproj" />
   </ItemGroup>
 </Project>

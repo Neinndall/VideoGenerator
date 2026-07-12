@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Services
@@ -14,9 +15,11 @@ namespace VideoGenerator.Services
     {
         public ObservableCollection<ThematicGroup> Groups { get; } = new();
         private readonly string _configPath;
+        private readonly LogService _logger;
 
-        public GroupManager()
+        public GroupManager(LogService logger)
         {
+            _logger = logger;
             _configPath = AppConfig.GroupsPath;
             LoadGroups();
         }
@@ -71,7 +74,10 @@ namespace VideoGenerator.Services
                         return;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Failed to load thematic groups. Default groups will be used.", ex);
+                }
             }
 
             foreach (var g in defaults.OrderBy(x => x.Category).ThenBy(x => x.Name))
@@ -85,7 +91,7 @@ namespace VideoGenerator.Services
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_configPath)!);
+                DirectoriesCreator.CreateParentDirectory(_configPath);
                 string json = JsonSerializer.Serialize(Groups.ToList(), new JsonSerializerOptions 
                 { 
                     WriteIndented = true, 
@@ -95,7 +101,7 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving groups: {ex.Message}");
+                _logger.LogError("Failed to save thematic groups.", ex);
             }
         }
     }

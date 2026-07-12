@@ -16,16 +16,10 @@
 
         <!-- HEADER -->
         <StackPanel Grid.Row="0" Margin="0,0,0,32">
-            <TextBlock Text="MAPPING &amp; LORE ENGINE" 
-                       FontSize="28" 
-                       FontWeight="Black" 
-                       Foreground="{StaticResource TextHighlightBrush}" />
+            <TextBlock Text="MAPPING &amp; LORE ENGINE" Style="{StaticResource PageTitleText}"/>
             <TextBlock Text="Orchestrate logic behaviors, thematic groupings, and champion identity mapping." 
-                       FontSize="13" 
-                       FontWeight="SemiBold" 
-                       Foreground="{StaticResource TextSecondaryBrush}" 
-                       Opacity="0.7" 
-                       Margin="0,4,0,0"/>
+                       Style="{StaticResource PageSubtitleText}" 
+                       Margin="0,5,0,0"/>
         </StackPanel>
 
         <!-- MAIN CONTENT AREA -->

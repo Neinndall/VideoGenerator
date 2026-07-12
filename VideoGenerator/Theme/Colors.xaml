@@ -6,11 +6,14 @@
     <Color x:Key="SecondaryBackgroundColor">#161618</Color> <!-- Card/Sidebar -->
     <Color x:Key="SurfaceColor">#1C1C1E</Color> <!-- Input Backgrounds -->
     <Color x:Key="InputBackgroundColor">#1C1C1E</Color> <!-- Input Backgrounds -->
+    <Color x:Key="ElevatedSurfaceColor">#232329</Color>
+    <Color x:Key="OverlaySurfaceColor">#2B2B33</Color>
     
     <!-- Brand & Accents -->
     <Color x:Key="AccentColor">#8B5CF6</Color> <!-- Modern Violet -->
     <Color x:Key="AccentColorLight">#A78BFA</Color>
     <Color x:Key="AccentColorDark">#6D28D9</Color>
+    <Color x:Key="AccentSoftColor">#281B4D</Color>
     <Color x:Key="HextechGoldColor">#C89B3C</Color>
     <Color x:Key="WhiteColor">#FFFFFF</Color>
     
@@ -24,25 +27,31 @@
     <!-- Border & Dividers -->
     <Color x:Key="BorderColor">#27272A</Color>
     <Color x:Key="BorderColorBright">#3F3F46</Color>
+    <Color x:Key="DividerColor">#303039</Color>
     
     <!-- Text -->
     <Color x:Key="TextPrimaryColor">#D4D4D8</Color> <!-- Soft Off-White/Gray -->
     <Color x:Key="TextSecondaryColor">#A1A1AA</Color>
     <Color x:Key="TextMutedColor">#52525B</Color>
+    <Color x:Key="TextTertiaryColor">#71717A</Color>
 
     <!-- Brushes -->
     <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="{StaticResource PrimaryBackgroundColor}"/>
     <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="{StaticResource SecondaryBackgroundColor}"/>
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
     <SolidColorBrush x:Key="InputBackgroundBrush" Color="{StaticResource InputBackgroundColor}"/>
+    <SolidColorBrush x:Key="ElevatedSurfaceBrush" Color="{StaticResource ElevatedSurfaceColor}"/>
+    <SolidColorBrush x:Key="OverlaySurfaceBrush" Color="{StaticResource OverlaySurfaceColor}"/>
     
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
     <SolidColorBrush x:Key="AccentBrushLight" Color="{StaticResource AccentColorLight}"/>
     <SolidColorBrush x:Key="AccentBrushDark" Color="{StaticResource AccentColorDark}"/>
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentSoftColor}"/>
     <SolidColorBrush x:Key="HextechGoldBrush" Color="{StaticResource HextechGoldColor}"/>
     <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource WhiteColor}"/>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
     <SolidColorBrush x:Key="BorderBrightBrush" Color="{StaticResource BorderColorBright}"/>
+    <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}"/>
     
     <!-- Glassmorphism Brushes -->
     <SolidColorBrush x:Key="GlassBorderBrush" Color="#1AFFFFFF"/>
@@ -52,6 +61,7 @@
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiaryColor}"/>
     <SolidColorBrush x:Key="TextHighlightBrush" Color="#FAFAFA"/>
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>

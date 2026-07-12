@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Encodings.Web;
 using System.Text;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 
 namespace VideoGenerator.Services
 {
@@ -13,9 +14,11 @@ namespace VideoGenerator.Services
         private Dictionary<string, Dictionary<string, string>> _dialogues = new(StringComparer.OrdinalIgnoreCase);
         private readonly string _filePath;
         private readonly object _lock = new();
+        private readonly LogService _logger;
 
-        public DialogueService()
+        public DialogueService(LogService logger)
         {
+            _logger = logger;
             _filePath = AppConfig.DialoguesPath;
             LoadDialogues();
         }
@@ -126,7 +129,7 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading/migrating dialogues: {ex.Message}");
+                _logger.LogError("Failed to load or migrate dialogues. An empty dialogue database will be used.", ex);
             }
 
             if (_dialogues == null)
@@ -139,7 +142,7 @@ namespace VideoGenerator.Services
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
+                DirectoriesCreator.CreateParentDirectory(_filePath);
                 string json = JsonSerializer.Serialize(_dialogues, new JsonSerializerOptions
                 {
                     WriteIndented = true,
@@ -149,7 +152,7 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving dialogues: {ex.Message}");
+                _logger.LogError("Failed to save dialogues.", ex);
             }
         }
     }

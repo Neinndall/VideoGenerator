@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Services
@@ -13,10 +14,12 @@ namespace VideoGenerator.Services
     public class AliasManager
     {
         private readonly string _configPath;
+        private readonly LogService _logger;
         public ObservableCollection<ChampionAlias> Aliases { get; } = new();
 
-        public AliasManager()
+        public AliasManager(LogService logger)
         {
+            _logger = logger;
             _configPath = Path.Combine(AppConfig.ConfigDir, "champion_aliases.json");
             LoadAliases();
         }
@@ -34,7 +37,10 @@ namespace VideoGenerator.Services
                     loaded = JsonSerializer.Deserialize<List<ChampionAlias>>(json) ?? new();
                     loaded = loaded.GroupBy(a => a.DisplayName, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).ToList();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Failed to load champion aliases. Default aliases will be used.", ex);
+                }
             }
 
             var defaults = DefaultAliases.Get();
@@ -64,7 +70,7 @@ namespace VideoGenerator.Services
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_configPath));
+                DirectoriesCreator.CreateParentDirectory(_configPath);
                 string json = JsonSerializer.Serialize(Aliases.ToList(), new JsonSerializerOptions 
                 { 
                     WriteIndented = true, 
@@ -72,7 +78,10 @@ namespace VideoGenerator.Services
                 });
                 File.WriteAllText(_configPath, json, Encoding.UTF8);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to save champion aliases.", ex);
+            }
         }
 
         public string GetInternalName(string displayName)
@@ -135,7 +144,10 @@ namespace VideoGenerator.Services
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to load the local champion database.", ex);
+            }
             return list;
         }
     }

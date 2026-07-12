@@ -1,3 +1,44 @@
+VideoGenerator - Patch Notes | v1.2.6.1
+
+MINOR UPDATE
+This version consolidates the production pipeline refactor, recursive event discovery, official data readiness, and the refreshed visual shell.
+
+New Features
+  - Core / Explicit Dependency Registration: Kept the singleton service registrations directly in the WPF composition root so the application's dependencies remain visible and easy to audit.
+  - Audio / Folder Event Detection: Folder scanning identifies event directories recursively, keeps parent folders for bracketed audio families, and excludes technical `_cast3D` folders.
+  - Database / Official Data Readiness: Added startup synchronization coordination so folder processing waits for the official-data check before parsing.
+  - UI / Semantic Design Tokens: Added reusable tokens for page hierarchy, status pills, hero surfaces, inset panels, ghost actions, and compact icon buttons.
+
+Improvements
+  - Core / Visible Failure Logging: Restored user-visible `LogError` and `LogWarn` reporting for database synchronization, cache access, configuration persistence, icon resolution, and image generation failures. Technical exception details remain available in diagnostic logs.
+  - Core / On-Demand AppData: Replaced startup-wide directory preparation with safe, operation-owned creation through `DirectoriesCreator`, preserving existing settings and caches.
+  - Core / Centralized Database Sync: `DataFetcher` now only reads local caches while `DatabaseBuilder` owns DDragon and CommunityDragon synchronization with conditional requests.
+  - Performance / Media Pipeline: Serialized FFmpeg extraction, isolated render temporaries in AppData cache, added cancellation checkpoints, and made ImageSharp caches concurrency-safe.
+  - Media / FFmpegCore: Updated the FFmpeg library integration used by `VideoService` for extraction, conversion, audio-family merging, and final rendering.
+  - Performance / Image and Logging Resources: Bounded icon caching, disposed generated images deterministically, and fixed RichTextBox log subscription lifecycles.
+  - UI / Refreshed Shell: Applied the shared title/subtitle hierarchy across views, restored the translucent violet logo, and removed decorative status metadata from the Dashboard and sidebar.
+  - UI / Visual Design Workspace: Kept the Preview Canvas constrained and delegated scrolling to the view-owned properties inspector.
+  - UI / Settings Layout: Restored the view-owned vertical `ScrollViewer` for Settings without wrapping the global navigation content.
+  - UX / Offline Resilience: Existing valid local caches remain usable when a network refresh fails, without deadlocking folder processing.
+  - Core / On-Demand Directory Ownership: Added `DirectoriesCreator` as the single safe creation gateway for configuration, cache, logs, generated output, temporary media, and downloaded assets.
+  - Audio / Folder-First Parsing: Dashboard and Analyzer now parse only the event folder name; audio files are collected afterward for preparation, transcription, rendering, and progress accounting.
+  - Analyzer / Interactive Event Debugger: Refactored the Analyzer console application into a lightweight, interactive debug tool to test parsing, rule matching, and icon resolution for typed event folder names, removing redundant bulk directory scan logic.
+  - Media / Persistent Audio Family Cache: Reuses valid merged WAV families from `Cache/AudioFamilies` across application restarts and rebuilds them only when source audio metadata changes.
+
+Bug Fixes
+  - Analyzer / Project Reference: Fixed the Analyzer to build against the current application project and use the same folder-first event scan as the Dashboard.
+  - Audio / Recursive Folder Scan: Fixed nested champion/skin event folders returning zero events; `[Random]` families now remain attached to their parent event.
+  - Database / Processing Race: Prevented parsing from starting against an incomplete official-data cache.
+  - Startup / Diagnostics: Routed early startup failures to `logs/application_errors.log` instead of the executable directory.
+  - UI / Dashboard Header: Removed the newly introduced `DUAL-PHASE PIPELINE` and `1920 × 1080` decorative pills while preserving the underlying workflow and canvas resolution.
+  - UI / Scroll Jumping: Fixed the Visual Design inspector jumping between logical content blocks when using the mouse wheel.
+  - UI / Navigation Scroll Host: Removed the global navigation `ScrollViewer` so each view controls its own scrolling behavior, matching the stable v1.2.6.0 layout.
+  - Transcription / Whisper Model Lock: Fixed the temporary model stream remaining open during the atomic move on Windows, added replacement retries, and preserved valid existing model caches on download failures.
+  - Database / Structures Sync Warning: Fixed warnings and potential data corruption when loading the structures database from Fandom by deserializing structures.json as a list of StructureMapping elements instead of string elements.
+  - UI / Icon Download Warnings: Changed intermediate network download failures inside fallback chains to debug logs, and added a single clean warning log that triggers only when an icon truly cannot be resolved by any source at the end of the resolution process.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.6.0
 
 MEDIUM UPDATE
@@ -42,8 +83,6 @@ Bug Fixes & Refinements
   - Core / Buff Receive Suffix Formatting: Added base translation key `event_buff_receive` ("Receive buff" / "Recibir mejora") and updated the default `SpellBuffReceive` rule to use it, preventing duplicate "general" suffixes like "Recibir mejora en General en General" by letting the parser append "en General" dynamically.
   - UI / Dashboard Searcher Selection Preservation: Updated `ApplyFilter` in `DashboardView.xaml.cs` to preserve the active selection if it remains in the filtered list after updating search queries or clearing filters. Added a `SelectionChanged` handler to automatically scroll the selected item back into view.
   - Architecture / Event Filter Decoupling: Created and registered `EventFilterService` to encapsulate all pipeline filtering and search matching logic, decoupling it from the dashboard view code-behind and improving testability and code organization.
-  - Core / AppData Upgrade Migration: Added logic inside `App.xaml.cs` to clear/delete the local `AppData/Local/VideoGenerator` directory exactly once when upgrading to version v1.2.5.1 (managed via a `.migrated_v1.2.5.1` flag file), ensuring a clean configuration sweep without losing settings on subsequent launches.
-  - Core / Redundant Migration Cleanup: Removed obsolete `RemoveAll` migration calls from `RuleManager.cs` since config is reset cleanly from defaults on upgrade launch.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

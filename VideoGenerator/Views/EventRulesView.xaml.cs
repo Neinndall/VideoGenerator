@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using VideoGenerator.Models;
 using VideoGenerator.Views.Models;
 using VideoGenerator.Services;
+using VideoGenerator.Utils;
 using UserControl = System.Windows.Controls.UserControl;
 using Button = System.Windows.Controls.Button;
 using MessageBox = System.Windows.MessageBox;
@@ -415,7 +416,7 @@ namespace VideoGenerator.Views
             try
             {
                 string path = AppConfig.MonstersPath;
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+                DirectoriesCreator.CreateParentDirectory(path);
 
                 var db = new MonsterDatabase();
                 foreach (var m in MonsterList)
@@ -522,7 +523,7 @@ namespace VideoGenerator.Views
             try
             {
                 string path = AppConfig.StructuresPath;
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+                DirectoriesCreator.CreateParentDirectory(path);
                 string json = System.Text.Json.JsonSerializer.Serialize(StructureList.ToList(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                 System.IO.File.WriteAllText(path, json);
             }

@@ -42,7 +42,7 @@ namespace VideoGenerator.Views
             }
         }
 
-        private void NavigateTo(string viewName)
+        public void NavigateTo(string viewName)
         {
             if (!_viewCache.ContainsKey(viewName))
             {

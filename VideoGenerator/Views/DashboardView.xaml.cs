@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using Microsoft.Extensions.DependencyInjection;
 using VideoGenerator.Models;
 using VideoGenerator.Services;
+using VideoGenerator.Utils;
 using VideoGenerator.Views.Models;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Reflection;
 
 namespace VideoGenerator.Views
 {
@@ -20,6 +19,7 @@ namespace VideoGenerator.Views
     {
         private readonly DashboardModel _model = new();
         private readonly DataFetcher _dataFetcher;
+        private readonly DatabaseBuilder _databaseBuilder;
         private CancellationTokenSource _previewCancellationSource;
         private readonly TaskCancellationService _cancellationService;
         private readonly TranslationService _translationService;
@@ -32,9 +32,11 @@ namespace VideoGenerator.Views
         private readonly DialogueService _dialogueService;
         private readonly EventFilterService _eventFilterService;
         private readonly ProgressService _progressService;
+        private readonly EventRulesView _eventRulesView;
 
         public DashboardView(
             DataFetcher dataFetcher,
+            DatabaseBuilder databaseBuilder,
             TranslationService translationService,
             IconManager iconManager,
             NameParser nameParser,
@@ -45,10 +47,12 @@ namespace VideoGenerator.Views
             DialogueService dialogueService,
             TaskCancellationService cancellationService,
             EventFilterService eventFilterService,
-            ProgressService progressService)
+            ProgressService progressService,
+            EventRulesView eventRulesView)
         {
             InitializeComponent();
             _dataFetcher = dataFetcher;
+            _databaseBuilder = databaseBuilder;
             _translationService = translationService;
             _iconManager = iconManager;
             _nameParser = nameParser;
@@ -60,6 +64,7 @@ namespace VideoGenerator.Views
             _cancellationService = cancellationService;
             _eventFilterService = eventFilterService;
             _progressService = progressService;
+            _eventRulesView = eventRulesView;
             
             DataContext = this;
             DashboardModel = _model;
@@ -70,27 +75,6 @@ namespace VideoGenerator.Views
 
         public DashboardModel DashboardModel { get; }
         public LogService LogService { get; }
-
-        private static bool IsSupportedAudioFile(string path)
-        {
-            string extension = Path.GetExtension(path);
-            return extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase) ||
-                   extension.Equals(".wav", StringComparison.OrdinalIgnoreCase) ||
-                   extension.Equals(".ogg", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static List<string> GetDirectAudioFiles(string directory)
-        {
-            return Directory.GetFiles(directory)
-                .Where(IsSupportedAudioFile)
-                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
-        private static bool IsAudioFamilyDirectory(string directory)
-        {
-            return Regex.IsMatch(Path.GetFileName(directory), @"^\[[^\]]+\](?:\s+.+)?$", RegexOptions.CultureInvariant);
-        }
 
         private async Task EnsureAudioFamiliesMergedAsync(
             PreviewEventModel ev,
@@ -348,7 +332,7 @@ namespace VideoGenerator.Views
                 if (token.IsCancellationRequested) return;
 
                 var bytes = await Task.Run(async () => 
-                    await _imageGenerator.CreateImageBytesAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset),
+                    await _imageGenerator.CreateImageBytesAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, token),
                     token);
                 if (token.IsCancellationRequested) return;
 
@@ -417,7 +401,7 @@ namespace VideoGenerator.Views
             }
         }
 
-        private async Task ResolvePendingIconsAsync()
+        private async Task ResolvePendingIconsAsync(CancellationToken cancellationToken)
         {
             var pending = _model.ProcessedEvents
                 .Where(ev => ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
@@ -425,18 +409,27 @@ namespace VideoGenerator.Views
 
             if (pending.Count == 0) return;
 
-            var semaphore = new SemaphoreSlim(3, 3);
+            using var semaphore = new SemaphoreSlim(3, 3);
             var tasks = pending.Select(async ev =>
             {
-                await semaphore.WaitAsync();
+                await semaphore.WaitAsync(cancellationToken);
                 try
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     string iconPath = await ResolveIconPathAsync(ev.ParsedData);
+                    if (string.IsNullOrEmpty(iconPath))
+                    {
+                        _logger.LogWarn($"Failed to resolve icon for event '{ev.FolderName}' ({ev.ParsedData.IconType}:{ev.ParsedData.IconLookupName}). The event will remain without an icon.");
+                    }
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         ev.ParsedData.IconPath = iconPath;
                         ev.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
                     });
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    // A new analysis or user cancellation supersedes background icon work.
                 }
                 catch (Exception ex)
                 {
@@ -448,7 +441,15 @@ namespace VideoGenerator.Views
                 }
             }).ToArray();
 
-            await Task.WhenAll(tasks);
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Background icon hydration is best-effort and may be superseded
+                // by a new analysis before all requests have completed.
+            }
         }
 
         private void Filter_Checked(object sender, RoutedEventArgs e)
@@ -485,7 +486,9 @@ namespace VideoGenerator.Views
             ev.ParsedData.IconLookupName = iconName;
             ev.ParsedData.IconType = iconType;
 
-            var lolVersion = await _dataFetcher.GetLatestLolVersionAsync();
+            string lolVersion = null;
+            if (iconType is "champion" or "region")
+                lolVersion = await _dataFetcher.GetLatestLolVersionAsync();
             string iconPath = iconType switch {
                 "item" => await _iconManager.GetItemIconAsync(iconName),
                 "monster" => await _iconManager.GetMonsterIconAsync(iconName),
@@ -513,14 +516,12 @@ namespace VideoGenerator.Views
         private void QuickMap_Click(object sender, RoutedEventArgs e)
         {
             if (_model.SelectedEvent == null) return;
-            var rulesView = App.ServiceProvider.GetRequiredService<EventRulesView>();
-            rulesView.PreFillFromDashboard(_model.SelectedEvent.FolderName);
+            _eventRulesView.PreFillFromDashboard(_model.SelectedEvent.FolderName);
 
             var mainWindow = Application.Current.MainWindow as MainWindow;
             if (mainWindow != null)
             {
-                var navMethod = mainWindow.GetType().GetMethod("NavigateTo", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-                navMethod?.Invoke(mainWindow, new object[] { "EventRules" });
+                mainWindow.NavigateTo("EventRules");
             }
         }
 
@@ -543,6 +544,93 @@ namespace VideoGenerator.Views
             }
         }
 
+        private static List<string> GetEventFolders(string rootDirectory)
+        {
+            var folders = new List<string>();
+            IEnumerable<string> candidates;
+
+            try
+            {
+                candidates = new[] { rootDirectory }
+                    .Concat(Directory.EnumerateDirectories(rootDirectory, "*", SearchOption.AllDirectories));
+            }
+            catch
+            {
+                return folders;
+            }
+
+            foreach (string directory in candidates)
+            {
+                string directoryName = Path.GetFileName(directory);
+                if (directoryName.Contains("_cast3D", StringComparison.OrdinalIgnoreCase) ||
+                    IsAudioFamilyDirectory(directory))
+                    continue;
+
+                var directAudioFiles = GetSupportedAudioFiles(directory);
+                bool hasAudioFamily = GetAudioFamilies(directory).Count > 0;
+
+                if (directAudioFiles.Count > 0 || hasAudioFamily)
+                    folders.Add(directory);
+            }
+
+            return folders
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static List<string> GetSupportedAudioFiles(string directory)
+        {
+            try
+            {
+                return Directory.GetFiles(directory)
+                    .Where(IsSupportedAudioFile)
+                    .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+            catch
+            {
+                return new List<string>();
+            }
+        }
+
+        private static List<AudioFamilyModel> GetAudioFamilies(string directory)
+        {
+            try
+            {
+                return Directory.GetDirectories(directory)
+                    .Where(IsAudioFamilyDirectory)
+                    .Select(familyDirectory => new AudioFamilyModel
+                    {
+                        Name = Path.GetFileName(familyDirectory),
+                        AudioFiles = GetSupportedAudioFiles(familyDirectory)
+                    })
+                    .Where(family => family.AudioFiles.Count > 0)
+                    .OrderBy(family => family.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+            catch
+            {
+                return new List<AudioFamilyModel>();
+            }
+        }
+
+        private static bool IsSupportedAudioFile(string path)
+        {
+            string extension = Path.GetExtension(path);
+            return extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".wav", StringComparison.OrdinalIgnoreCase) ||
+                   extension.Equals(".ogg", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsAudioFamilyDirectory(string directory)
+        {
+            return Regex.IsMatch(
+                Path.GetFileName(directory),
+                @"^\[[^\]]+\](?:\s+.+)?$",
+                RegexOptions.CultureInvariant);
+        }
+
         private async void ProcessFolders_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(_model.AudioPath) || !Directory.Exists(_model.AudioPath))
@@ -554,7 +642,7 @@ namespace VideoGenerator.Views
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
-            _progressService.Start("Analyzing audio folders", false);
+            _progressService.Start("Waiting for official data synchronization", true);
             _model.ProcessedEvents.Clear();
             _model.FilteredProcessedEvents.Clear();
             _model.CharactersList.Clear();
@@ -566,61 +654,55 @@ namespace VideoGenerator.Views
             string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
 
             try {
+                await _databaseBuilder.ReadyTask.WaitAsync(token);
+                token.ThrowIfCancellationRequested();
+                _progressService.Start("Analyzing audio folders", false);
+
                 var reportProgress = new Action<double>(value => _progressService.Report(value));
                 await Task.Run(async () => {
-                    var discoveredDirs = Directory.GetDirectories(_model.AudioPath, "*", SearchOption.AllDirectories)
-                        .Concat(new[] { _model.AudioPath })
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList();
-
-                    var familyDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    foreach (string candidate in discoveredDirs)
-                    {
-                        try
-                        {
-                            foreach (string child in Directory.GetDirectories(candidate))
-                            {
-                                if (IsAudioFamilyDirectory(child) && GetDirectAudioFiles(child).Count > 0)
-                                    familyDirectories.Add(child);
-                            }
-                        }
-                        catch { }
-                    }
-
-                    var allDirs = discoveredDirs
-                        .Where(dir => {
-                            if (familyDirectories.Contains(dir)) return false;
-                            if (Path.GetFileName(dir).Contains("_cast3D", StringComparison.OrdinalIgnoreCase)) return false;
-                            try {
-                                return GetDirectAudioFiles(dir).Count > 0 ||
-                                       Directory.GetDirectories(dir).Any(familyDirectories.Contains);
-                            } catch { return false; }
-                        })
-                        .ToList();
-
-                    int total = allDirs.Count;
+                    var eventFolders = GetEventFolders(_model.AudioPath);
+                    int total = eventFolders.Count;
                     int processedCount = 0;
 
-                    foreach (var dir in allDirs) {
+                    foreach (string eventFolderPath in eventFolders) {
                         token.ThrowIfCancellationRequested();
-                        _progressService.SetStatus($"Analyzing: {Path.GetFileName(dir)}");
+                        string folderName = Path.GetFileName(eventFolderPath);
+                        _progressService.SetStatus($"Analyzing: {folderName}");
                         try {
-                            var directAudioFiles = GetDirectAudioFiles(dir);
-                            var audioFamilies = Directory.GetDirectories(dir)
-                                    .Where(familyDirectories.Contains)
-                                    .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
-                                    .Select(familyDir => new AudioFamilyModel
-                                    {
-                                        Name = Path.GetFileName(familyDir),
-                                        AudioFiles = GetDirectAudioFiles(familyDir)
-                                    })
-                                    .ToList();
-                            var audioFiles = directAudioFiles
-                                .Concat(audioFamilies.SelectMany(f => f.AudioFiles))
-                                .ToList();
-                            string folderName = Path.GetFileName(dir);
                             var parsedEvent = await _nameParser.ParseFolderNameAsync(folderName, selectedLang);
                             token.ThrowIfCancellationRequested();
+                            var directAudioFiles = GetSupportedAudioFiles(eventFolderPath);
+                            var audioFamilies = GetAudioFamilies(eventFolderPath);
+                            var audioFiles = directAudioFiles
+                                .Concat(audioFamilies.SelectMany(family => family.AudioFiles))
+                                .ToList();
+                            bool areAudioFamiliesMerged = false;
+                            if (AppSettings.Instance.MergeAudioFamilies && audioFamilies.Count > 0)
+                            {
+                                var cachedTracks = new List<string>(directAudioFiles);
+                                bool allFamiliesCached = true;
+                                foreach (var family in audioFamilies)
+                                {
+                                    string cachedPath = _videoService.GetMergedAudioFamilyPath(
+                                        family.AudioFiles,
+                                        folderName,
+                                        family.Name,
+                                        eventFolderPath);
+                                    if (string.IsNullOrEmpty(cachedPath) || !File.Exists(cachedPath) || new FileInfo(cachedPath).Length == 0)
+                                    {
+                                        allFamiliesCached = false;
+                                        break;
+                                    }
+
+                                    cachedTracks.Add(cachedPath);
+                                }
+
+                                if (allFamiliesCached)
+                                {
+                                    audioFiles = cachedTracks;
+                                    areAudioFamiliesMerged = true;
+                                }
+                            }
                             
                             string charName = "General";
                             var charMatch = Regex.Match(folderName, @"Play_vo_([A-Za-z0-9]+)(Skin\d+)?_");
@@ -652,11 +734,12 @@ namespace VideoGenerator.Views
                             var ev = new PreviewEventModel { 
                                 CharacterName = charName, 
                                 FolderName = folderName, 
-                                FolderPath = dir, 
+                                FolderPath = eventFolderPath, 
                                 ParsedData = parsedEvent ?? new ParsedEvent { OriginalFolder = folderName, DisplayText = folderName }, 
                                 AudioFiles = audioFiles, 
                                 DirectAudioFiles = directAudioFiles,
                                 AudioFamilies = audioFamilies,
+                                AreAudioFamiliesMerged = areAudioFamiliesMerged,
                                 Status = status,
                                 Dialogue = dialogueVal
                             };
@@ -670,7 +753,7 @@ namespace VideoGenerator.Views
                         } catch (OperationCanceledException) {
                             throw;
                         } catch (Exception innerEx) {
-                            _logger.LogError($"Failed to process folder: {Path.GetFileName(dir)} | Error: {innerEx.Message}");
+                            _logger.LogError($"Failed to process folder: {folderName} | Error: {innerEx.Message}");
                         }
                         
                         processedCount++;
@@ -685,7 +768,7 @@ namespace VideoGenerator.Views
                 await Task.Delay(400, token);
 
                 // Resolve icons concurrently in the background so the UI stays responsive
-                _ = Task.Run(async () => await ResolvePendingIconsAsync());
+                _ = Task.Run(() => ResolvePendingIconsAsync(token), token);
             } catch (OperationCanceledException) {
                 HandleCancellation();
             } catch (Exception ex) { 
@@ -774,6 +857,10 @@ namespace VideoGenerator.Views
                         {
                             _progressService.SetStatus($"Resolving icon for: {ev.FolderName}");
                             string iconPath = await ResolveIconPathAsync(ev.ParsedData);
+                            if (string.IsNullOrEmpty(iconPath))
+                            {
+                                _logger.LogWarn($"Failed to resolve icon for event '{ev.FolderName}' ({ev.ParsedData.IconType}:{ev.ParsedData.IconLookupName}). The event will remain without an icon.");
+                            }
                             token.ThrowIfCancellationRequested();
                             Application.Current.Dispatcher.Invoke(() => {
                                 ev.ParsedData.IconPath = string.IsNullOrEmpty(iconPath) ? "MISSING" : iconPath;
@@ -869,7 +956,7 @@ namespace VideoGenerator.Views
                                 string partDialogue = i < dialogueParts.Length ? dialogueParts[i] : "";
                                 string oldDialogue = ev.ParsedData.Dialogue;
                                 ev.ParsedData.Dialogue = partDialogue;
-                                await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName);
+                                await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName, token);
                                 ev.ParsedData.Dialogue = oldDialogue;
                                 generatedImages++;
                                 _progressService.Advance(1, $"Generated HUD: {ev.FolderName}");
@@ -879,7 +966,7 @@ namespace VideoGenerator.Views
                         {
                             token.ThrowIfCancellationRequested();
                             _progressService.SetStatus($"Generating HUD image for {ev.FolderName}");
-                            await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
+                            await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName, token);
                             generatedImages = 1;
                             _progressService.Advance(1, $"Generated HUD: {ev.FolderName}");
                         }
@@ -1072,7 +1159,7 @@ namespace VideoGenerator.Views
                                     string partDialogue = i < dialogueParts.Length ? dialogueParts[i] : "";
                                     string oldDialogue = ev.ParsedData.Dialogue;
                                     ev.ParsedData.Dialogue = partDialogue;
-                                    expectedPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName);
+                                    expectedPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName, token);
                                     ev.ParsedData.Dialogue = oldDialogue;
                                 }
                                 imagePaths.Add(expectedPath);
@@ -1086,7 +1173,7 @@ namespace VideoGenerator.Views
                             string expectedPath = Path.Combine(targetDir, $"{ev.FolderName}.png");
                             if (!File.Exists(expectedPath))
                             {
-                                expectedPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
+                                expectedPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName, token);
                             }
                             imagePaths.Add(expectedPath);
                             _progressService.Advance(1, $"Prepared image: {ev.FolderName}");
@@ -1097,7 +1184,7 @@ namespace VideoGenerator.Views
 
                         // Compile video Frame + Audio using FFmpeg
                         string outputVideoDir = Path.Combine(AppConfig.OutputVideosDir, ev.CharacterName);
-                        Directory.CreateDirectory(outputVideoDir);
+                        DirectoriesCreator.CreateDirectory(outputVideoDir);
                         string outputPath = Path.Combine(outputVideoDir, ev.FolderName + ".mp4");
                         
                         bool rendered = await _videoService.CreateVideoAsync(

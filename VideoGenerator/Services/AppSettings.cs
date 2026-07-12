@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Encodings.Web;
 using System.Threading;
+using VideoGenerator.Utils;
 
 namespace VideoGenerator.Services
 {
@@ -47,7 +48,7 @@ namespace VideoGenerator.Services
             get => _backgroundBrightness;
             set
             {
-                if (SetProperty(ref _backgroundBrightness, value))
+                if (SetProperty(ref _backgroundBrightness, Math.Clamp(value, 0f, 2f)))
                     QueueSave();
             }
         }
@@ -58,7 +59,7 @@ namespace VideoGenerator.Services
             get => _backgroundContrast;
             set
             {
-                if (SetProperty(ref _backgroundContrast, value))
+                if (SetProperty(ref _backgroundContrast, Math.Clamp(value, 0f, 2f)))
                     QueueSave();
             }
         }
@@ -69,7 +70,7 @@ namespace VideoGenerator.Services
             get => _backgroundSaturate;
             set
             {
-                if (SetProperty(ref _backgroundSaturate, value))
+                if (SetProperty(ref _backgroundSaturate, Math.Clamp(value, 0f, 2f)))
                     QueueSave();
             }
         }
@@ -135,7 +136,7 @@ namespace VideoGenerator.Services
             get => _silenceDuration;
             set
             {
-                if (SetProperty(ref _silenceDuration, value))
+                if (SetProperty(ref _silenceDuration, Math.Clamp(value, 0d, 10d)))
                     QueueSave();
             }
         }
@@ -201,7 +202,7 @@ namespace VideoGenerator.Services
             get => _bubbleTextSize;
             set
             {
-                if (SetProperty(ref _bubbleTextSize, value))
+                if (SetProperty(ref _bubbleTextSize, Math.Clamp(value, 8f, 72f)))
                     QueueSave();
             }
         }
@@ -212,7 +213,7 @@ namespace VideoGenerator.Services
             get => _bubbleHeight;
             set
             {
-                if (SetProperty(ref _bubbleHeight, value))
+                if (SetProperty(ref _bubbleHeight, Math.Clamp(value, 60f, 360f)))
                     QueueSave();
             }
         }
@@ -223,7 +224,7 @@ namespace VideoGenerator.Services
             get => _bubbleOpacity;
             set
             {
-                if (SetProperty(ref _bubbleOpacity, value))
+                if (SetProperty(ref _bubbleOpacity, Math.Clamp(value, 0f, 1f)))
                     QueueSave();
             }
         }
@@ -245,7 +246,7 @@ namespace VideoGenerator.Services
             get => _bubbleWidth;
             set
             {
-                if (SetProperty(ref _bubbleWidth, value))
+                if (SetProperty(ref _bubbleWidth, Math.Clamp(value, 320f, 1400f)))
                     QueueSave();
             }
         }
@@ -309,7 +310,7 @@ namespace VideoGenerator.Services
             get => _iconBorderThickness;
             set
             {
-                if (SetProperty(ref _iconBorderThickness, value))
+                if (SetProperty(ref _iconBorderThickness, Math.Clamp(value, 0f, 5f)))
                     QueueSave();
             }
         }
@@ -320,7 +321,7 @@ namespace VideoGenerator.Services
             get => _bubbleBorderThickness;
             set
             {
-                if (SetProperty(ref _bubbleBorderThickness, value))
+                if (SetProperty(ref _bubbleBorderThickness, Math.Clamp(value, 0f, 5f)))
                     QueueSave();
             }
         }
@@ -406,14 +407,23 @@ namespace VideoGenerator.Services
                 try
                 {
                     string dir = Path.GetDirectoryName(_settingsPath);
-                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                    DirectoriesCreator.CreateDirectory(dir);
 
                     string json = JsonSerializer.Serialize(this, new JsonSerializerOptions 
                     { 
                         WriteIndented = true,
                         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     });
-                    File.WriteAllText(_settingsPath, json, Encoding.UTF8);
+                    string temporaryPath = $"{_settingsPath}.{Guid.NewGuid():N}.tmp";
+                    try
+                    {
+                        File.WriteAllText(temporaryPath, json, Encoding.UTF8);
+                        File.Move(temporaryPath, _settingsPath, true);
+                    }
+                    finally
+                    {
+                        try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+                    }
                 }
                 catch { }
             }

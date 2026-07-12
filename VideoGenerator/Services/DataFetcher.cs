@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Services
@@ -16,6 +17,7 @@ namespace VideoGenerator.Services
     public class DataFetcher
     {
         private readonly HttpClient _httpClient;
+        private readonly LogService _logger;
         private Dictionary<string, JsonElement> _skinsCache;
         private List<JsonElement> _skinLinesCache;
         private Dictionary<int, ItemData> _itemsCache;
@@ -30,9 +32,10 @@ namespace VideoGenerator.Services
             public string NameSlug { get; set; }
         }
 
-        public DataFetcher(HttpClient httpClient)
+        public DataFetcher(HttpClient httpClient, LogService logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             _httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8");
             _httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
@@ -52,23 +55,9 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error getting LoL version: {ex.Message}");
+                _logger.LogWarn("Failed to retrieve the latest League of Legends version. The cached or fallback version will be used.");
+                _logger.LogDebug($"LoL version request details: {ex.Message}");
                 return _cachedVersion ?? "14.1.1";
-            }
-        }
-
-        private async Task EnsureFileSyncedAsync(string url, string path)
-        {
-            if (File.Exists(path)) return;
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-                var bytes = await _httpClient.GetByteArrayAsync(url);
-                await File.WriteAllBytesAsync(path, bytes);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error downloading database on the fly from {url}: {ex.Message}");
             }
         }
 
@@ -78,8 +67,6 @@ namespace VideoGenerator.Services
             if (_skinsCache != null && _loadedSkinsLocale == locale) return _skinsCache;
 
             string cachePath = AppConfig.GetSkinsCachePath(locale);
-            await EnsureFileSyncedAsync(AppConfig.GetSkinsDataUrl(locale), cachePath);
-
             if (File.Exists(cachePath))
             {
                 try
@@ -124,7 +111,8 @@ namespace VideoGenerator.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error reading skins cache: {ex.Message}");
+                    _logger.LogWarn("Failed to read the local skins cache. Skin data may be unavailable until the next synchronization.");
+                    _logger.LogDebug($"Skins cache read details: {ex.Message}");
                 }
             }
 
@@ -137,8 +125,6 @@ namespace VideoGenerator.Services
             if (_skinLinesCache != null && _loadedSkinlinesLocale == locale) return _skinLinesCache;
 
             string cachePath = AppConfig.GetSkinLinesCachePath(locale);
-            await EnsureFileSyncedAsync(AppConfig.GetSkinLinesUrl(locale), cachePath);
-
             if (File.Exists(cachePath))
             {
                 try
@@ -150,7 +136,8 @@ namespace VideoGenerator.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error reading skinlines cache: {ex.Message}");
+                    _logger.LogWarn("Failed to read the local skinlines cache. Skinline data may be unavailable until the next synchronization.");
+                    _logger.LogDebug($"Skinlines cache read details: {ex.Message}");
                 }
             }
 
@@ -163,8 +150,6 @@ namespace VideoGenerator.Services
             if (_itemsCache != null && _loadedItemsLocale == locale) return _itemsCache;
 
             string cachePath = AppConfig.GetItemsCachePath(locale);
-            await EnsureFileSyncedAsync(AppConfig.GetItemsDataUrl(locale), cachePath);
-
             if (File.Exists(cachePath))
             {
                 try
@@ -176,7 +161,8 @@ namespace VideoGenerator.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error reading items cache: {ex.Message}");
+                    _logger.LogWarn("Failed to read the local CommunityDragon items cache. Item resolution may be limited.");
+                    _logger.LogDebug($"Items cache read details: {ex.Message}");
                 }
             }
 
@@ -207,7 +193,7 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error parsing items data: {ex.Message}");
+                _logger.LogError("Failed to parse CommunityDragon item data.", ex);
             }
             return result;
         }
@@ -217,7 +203,7 @@ namespace VideoGenerator.Services
             try
             {
                 string categoryDir = Path.Combine(AppConfig.IconCacheDir, category);
-                Directory.CreateDirectory(categoryDir);
+                DirectoriesCreator.CreateDirectory(categoryDir);
                 
                 string fileName = customFileName ?? Path.GetFileName(new Uri(url).LocalPath);
                 // Strip query parameters if customFileName wasn't provided
@@ -232,13 +218,22 @@ namespace VideoGenerator.Services
                 if (File.Exists(filePath)) return filePath;
 
                 var bytes = await _httpClient.GetByteArrayAsync(url);
-                await File.WriteAllBytesAsync(filePath, bytes);
+                string temporaryPath = $"{filePath}.{Guid.NewGuid():N}.download";
+                try
+                {
+                    await File.WriteAllBytesAsync(temporaryPath, bytes);
+                    File.Move(temporaryPath, filePath, true);
+                }
+                finally
+                {
+                    try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+                }
                 
                 return filePath;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error downloading icon from {url}: {ex.Message}");
+                _logger.LogDebug($"Failed to download icon from {url}. Details: {ex.Message}");
                 return null;
             }
         }
@@ -252,8 +247,10 @@ namespace VideoGenerator.Services
                 var matches = Regex.Matches(html, @"<a href=""([^""]+\.png)""");
                 return matches.Cast<Match>().Select(m => m.Groups[1].Value).ToList();
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogWarn("Failed to retrieve the item icon catalog.");
+                _logger.LogDebug($"Item icon catalog details: {ex.Message}");
                 return new List<string>();
             }
         }
@@ -298,7 +295,8 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error resolving Fandom image URL for {filename}: {ex.Message}");
+                _logger.LogWarn($"Failed to resolve the Fandom image URL for '{filename}'.");
+                _logger.LogDebug($"Fandom image resolution details: {ex.Message}");
             }
             return null;
         }
@@ -347,8 +345,9 @@ namespace VideoGenerator.Services
                     if (db != null) return db;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError("Failed to load the monsters database. Trying the legacy format.", ex);
                 // Legacy flat list fallback
                 try
                 {
@@ -359,7 +358,10 @@ namespace VideoGenerator.Services
                         return new MonsterDatabase { Large = list };
                     }
                 }
-                catch { }
+                catch (Exception legacyEx)
+                {
+                    _logger.LogError("Failed to load the legacy monsters database format.", legacyEx);
+                }
             }
             return new MonsterDatabase();
         }
@@ -428,7 +430,8 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error resolving item via CommunityDragon: {ex.Message}");
+                _logger.LogWarn("Failed to resolve the item through CommunityDragon. The local item database will be used as fallback.");
+                _logger.LogDebug($"CommunityDragon item resolution details: {ex.Message}");
             }
 
             // 2. Fallback to local DDragon items db
@@ -460,7 +463,7 @@ namespace VideoGenerator.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error loading local items db: {ex.Message}");
+                    _logger.LogError("Failed to load the local Data Dragon item database.", ex);
                     return null;
                 }
             }

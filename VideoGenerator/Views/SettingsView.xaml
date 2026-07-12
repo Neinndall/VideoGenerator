@@ -8,7 +8,10 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="0,16,0,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  Focusable="False">
+        <Grid Margin="0,16,0,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -16,16 +19,10 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,32">
-            <TextBlock Text="ENGINE CONFIGURATION" 
-                       FontSize="28" 
-                       FontWeight="Black" 
-                       Foreground="{StaticResource TextHighlightBrush}" />
+            <TextBlock Text="ENGINE CONFIGURATION" Style="{StaticResource PageTitleText}"/>
             <TextBlock Text="Adjust global parameters, rendering behaviors, and audio timing." 
-                       FontSize="13" 
-                       FontWeight="SemiBold" 
-                       Foreground="{StaticResource TextSecondaryBrush}" 
-                       Opacity="0.7" 
-                       Margin="0,4,0,0"/>
+                       Style="{StaticResource PageSubtitleText}" 
+                       Margin="0,5,0,0"/>
         </StackPanel>
 
         <!-- Settings Container with Tabs -->
@@ -40,7 +37,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                <Grid>
                     <Border Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,8,16">
                         <StackPanel>
                             <!-- SECTION: MEDIA DIRECTORY CONFIGURATION -->
@@ -191,7 +188,7 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                </ScrollViewer>
+                </Grid>
             </TabItem>
             
             <!-- TAB 2: TRANSCRIPTION -->
@@ -203,7 +200,7 @@
                     </StackPanel>
                 </TabItem.Header>
                 
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                <Grid>
                     <Border Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,8,16">
                         <StackPanel>
                             <!-- SECTION: TRANSCRIPTION ENGINE -->
@@ -375,8 +372,9 @@
                               </Border>
                          </StackPanel>
                      </Border>
-                </ScrollViewer>
+                </Grid>
             </TabItem>
         </TabControl>
-    </Grid>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

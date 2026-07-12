@@ -16,14 +16,16 @@ namespace VideoGenerator.Services
         private readonly GroupManager _groupManager;
         private readonly AliasManager _aliasManager;
         private readonly SkinlineManager _skinlineManager;
+        private readonly LogService _logger;
         private static readonly Random _random = new();
 
-        public IconManager(DataFetcher dataFetcher, GroupManager groupManager, AliasManager aliasManager, SkinlineManager skinlineManager)
+        public IconManager(DataFetcher dataFetcher, GroupManager groupManager, AliasManager aliasManager, SkinlineManager skinlineManager, LogService logger)
         {
             _dataFetcher = dataFetcher;
             _groupManager = groupManager;
             _aliasManager = aliasManager;
             _skinlineManager = skinlineManager;
+            _logger = logger;
         }
 
         public async Task<string> GetChampionIconAsync(string championName, string lolVersion)
@@ -123,7 +125,11 @@ namespace VideoGenerator.Services
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogWarn($"Failed to resolve thematic icon '{target}'.");
+                _logger.LogDebug($"Thematic icon resolution details: {ex.Message}");
+            }
 
             return null;
         }
@@ -173,7 +179,11 @@ namespace VideoGenerator.Services
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogWarn($"Failed to resolve skin tile '{championName}_{skinIndex}'.");
+                _logger.LogDebug($"Skin tile resolution details: {ex.Message}");
+            }
 
             return null;
         }

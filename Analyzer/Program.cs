@@ -2,9 +2,16 @@ using Microsoft.Extensions.DependencyInjection;
 using VideoGenerator.Services;
 using System.IO;
 using System.Net.Http;
+using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 var services = new ServiceCollection();
-services.AddSingleton<HttpClient>();
+
+// --- Core Services (Singletons) ---
+services.AddSingleton(_ => AppSettings.Instance);
+services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromMinutes(15) });
 services.AddSingleton<LogService>();
 services.AddSingleton<DatabaseBuilder>();
 services.AddSingleton<DataFetcher>();
@@ -15,66 +22,68 @@ services.AddSingleton<GroupManager>();
 services.AddSingleton<AliasManager>();
 services.AddSingleton<IconManager>();
 services.AddSingleton<NameParser>();
+services.AddSingleton<ImageGenerator>();
+services.AddSingleton<VideoService>();
+services.AddSingleton<TranscriptionService>();
+services.AddSingleton<DialogueService>();
+services.AddSingleton<TaskCancellationService>();
+services.AddSingleton<ProgressService>();
+services.AddSingleton<EventFilterService>();
 
 var provider = services.BuildServiceProvider();
 var parser = provider.GetRequiredService<NameParser>();
 var iconManager = provider.GetRequiredService<IconManager>();
 var dataFetcher = provider.GetRequiredService<DataFetcher>();
 
-Console.WriteLine("Syncing local databases (champions, items, monsters, structures)...");
+Console.WriteLine("=== VIDEO GENERATOR EVENT DEBUGGER ===");
+Console.WriteLine("Syncing local databases...");
 try
 {
     string version = await dataFetcher.GetLatestLolVersionAsync();
     var dbBuilder = provider.GetRequiredService<DatabaseBuilder>();
     await dbBuilder.InitializeDatabasesAsync(version);
-    Console.WriteLine($"Databases synced to version {version}.");
+    Console.WriteLine($"Databases synced to version {version}.\n");
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Database sync warning: {ex.Message}");
+    Console.WriteLine($"Database sync warning: {ex.Message}\n");
 }
-
-string root = args.Length > 0 ? args[0] : @"C:\Users\danielpriego\Downloads\Workspace\VideoGenerator\audios";
-if (!Directory.Exists(root))
-{
-    Console.WriteLine($"Directory not found: {root}");
-    return;
-}
-
-var dirs = Directory.GetDirectories(root, "*", SearchOption.AllDirectories)
-    .Concat(new[] { root })
-    .Distinct(StringComparer.OrdinalIgnoreCase)
-    .OrderBy(d => d)
-    .ToList();
-
-int ok = 0, pending = 0, missingIcon = 0, errors = 0;
-var pendingList = new List<string>();
-var missingIconList = new List<string>();
-var errorList = new List<string>();
 
 string? lolVersion = null;
 
-foreach (var dir in dirs)
+while (true)
 {
-    var audioFiles = Directory.GetFiles(dir).Where(f => f.EndsWith(".mp3") || f.EndsWith(".wav") || f.EndsWith(".ogg")).ToList();
-    if (audioFiles.Count == 0) continue;
+    Console.ForegroundColor = ConsoleColor.Cyan;
+    Console.Write("Enter folder name to debug (or 'exit' to quit): ");
+    Console.ResetColor();
+    string? input = Console.ReadLine()?.Trim();
 
-    string folderName = Path.GetFileName(dir);
+    if (string.IsNullOrEmpty(input)) continue;
+    if (input.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
+
     try
     {
-        var parsed = await parser.ParseFolderNameAsync(folderName, "EN");
-        if (parsed == null || string.IsNullOrEmpty(parsed.DisplayText) || parsed.DisplayText.Contains("event_") || parsed.DisplayText.Contains("interaction_") || parsed.DisplayText.Equals(folderName))
+        var parsed = await parser.ParseFolderNameAsync(input, "EN");
+        if (parsed == null)
         {
-            pending++;
-            pendingList.Add(folderName);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Parsed result is NULL.");
+            Console.ResetColor();
             continue;
         }
+
+        Console.WriteLine("\n--- PARSED EVENT DETAILS ---");
+        Console.WriteLine($"Original Folder : {input}");
+        Console.WriteLine($"DisplayText     : {parsed.DisplayText}");
+        Console.WriteLine($"IconType        : {parsed.IconType}");
+        Console.WriteLine($"IconLookupName  : {parsed.IconLookupName}");
 
         if (parsed.IconType != "generic")
         {
             if (parsed.IconType is "champion" or "region" && lolVersion == null)
                 lolVersion = await dataFetcher.GetLatestLolVersionAsync();
 
+            Console.WriteLine("Resolving icon path...");
             parsed.IconPath = parsed.IconType switch
             {
                 "champion" => await iconManager.GetChampionIconAsync(parsed.IconLookupName, lolVersion),
@@ -85,39 +94,29 @@ foreach (var dir in dirs)
                 "system" => await iconManager.GetSystemIconAsync(parsed.IconLookupName),
                 _ => null
             };
-        }
 
-        if (parsed.IconType != "generic" && string.IsNullOrEmpty(parsed.IconPath))
-        {
-            missingIcon++;
-            missingIconList.Add($"{folderName} -> {parsed.DisplayText} ({parsed.IconType}:{parsed.IconLookupName})");
+            if (string.IsNullOrEmpty(parsed.IconPath))
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Resolved Icon   : MISSING / NOT FOUND");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Resolved Icon   : {parsed.IconPath}");
+            }
+            Console.ResetColor();
         }
         else
         {
-            ok++;
+            Console.WriteLine("Resolved Icon   : Generic (No icon lookup needed)");
         }
+        Console.WriteLine("----------------------------\n");
     }
     catch (Exception ex)
     {
-        errors++;
-        errorList.Add($"{folderName}: {ex.Message}");
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"Error parsing event: {ex.Message}");
+        Console.ResetColor();
     }
 }
-
-Console.WriteLine($"Total folders with audio: {dirs.Count}");
-Console.WriteLine($"OK: {ok}");
-Console.WriteLine($"Pending (untranslated/unparsed): {pending}");
-Console.WriteLine($"Missing Icon: {missingIcon}");
-Console.WriteLine($"Errors: {errors}");
-
-Console.WriteLine("\n--- PENDING ---");
-foreach (var item in pendingList.Take(30)) Console.WriteLine(item);
-if (pendingList.Count > 30) Console.WriteLine($"... and {pendingList.Count - 30} more");
-
-Console.WriteLine("\n--- MISSING ICON ---");
-foreach (var item in missingIconList.Take(50)) Console.WriteLine(item);
-if (missingIconList.Count > 50) Console.WriteLine($"... and {missingIconList.Count - 50} more");
-
-Console.WriteLine("\n--- ERRORS ---");
-foreach (var item in errorList.Take(30)) Console.WriteLine(item);
-if (errorList.Count > 30) Console.WriteLine($"... and {errorList.Count - 30} more");

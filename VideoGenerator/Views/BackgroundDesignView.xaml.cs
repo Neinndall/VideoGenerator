@@ -10,6 +10,7 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 using SixLabors.ImageSharp;
 
 namespace VideoGenerator.Views
@@ -192,7 +193,7 @@ namespace VideoGenerator.Views
                 {
                     try
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(dummyIconPath));
+                        DirectoriesCreator.CreateParentDirectory(dummyIconPath);
                         using (var img = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(180, 180, SixLabors.ImageSharp.Color.ParseHex("#8B5CF6")))
                         {
                             img.SaveAsPng(dummyIconPath);

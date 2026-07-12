@@ -1,8 +1,12 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
+using VideoGenerator.Utils;
 
 namespace VideoGenerator.Services
 {
@@ -20,10 +24,7 @@ namespace VideoGenerator.Services
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             string logsDir = Path.Combine(baseDir, "logs");
             
-            if (!Directory.Exists(logsDir))
-            {
-                Directory.CreateDirectory(logsDir);
-            }
+            DirectoriesCreator.CreateDirectory(logsDir);
 
             _infoLogPath = Path.Combine(logsDir, "application_logs.log");
             _errorLogPath = Path.Combine(logsDir, "application_errors.log");
@@ -85,6 +86,38 @@ namespace VideoGenerator.Services
 
     public static class LogExtensions
     {
+        private sealed class RichLogSubscription
+        {
+            private readonly WeakReference<RichTextBox> _owner;
+            private readonly NotifyCollectionChangedEventHandler _handler;
+
+            public RichLogSubscription(RichTextBox owner, ObservableCollection<string> source)
+            {
+                _owner = new WeakReference<RichTextBox>(owner);
+                Source = source;
+                _handler = OnCollectionChanged;
+                Source.CollectionChanged += _handler;
+            }
+
+            public ObservableCollection<string> Source { get; }
+
+            public void Detach() => Source.CollectionChanged -= _handler;
+
+            private void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
+            {
+                if (_owner.TryGetTarget(out var owner))
+                {
+                    CollectionChanged(owner, args);
+                }
+                else
+                {
+                    Detach();
+                }
+            }
+        }
+
+        private static readonly ConditionalWeakTable<RichTextBox, RichLogSubscription> RichLogSubscriptions = new();
+
         public static readonly DependencyProperty RichLogSourceProperty =
             DependencyProperty.RegisterAttached("RichLogSource", typeof(ObservableCollection<string>), typeof(LogExtensions), new PropertyMetadata(null, OnRichLogSourceChanged));
 
@@ -97,7 +130,11 @@ namespace VideoGenerator.Services
             {
                 if (e.OldValue is ObservableCollection<string> oldCollection)
                 {
-                    oldCollection.CollectionChanged -= (s, args) => CollectionChanged(richTextBox, args);
+                    if (RichLogSubscriptions.TryGetValue(richTextBox, out var subscription))
+                    {
+                        subscription.Detach();
+                        RichLogSubscriptions.Remove(richTextBox);
+                    }
                 }
 
                 if (e.NewValue is ObservableCollection<string> newCollection)
@@ -111,7 +148,7 @@ namespace VideoGenerator.Services
                         AppendLogToRichText(richTextBox, item);
                     }
 
-                    newCollection.CollectionChanged += (s, args) => CollectionChanged(richTextBox, args);
+                    RichLogSubscriptions.Add(richTextBox, new RichLogSubscription(richTextBox, newCollection));
                 }
             }
         }

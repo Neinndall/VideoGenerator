@@ -28,16 +28,10 @@
         <!-- 1. CINEMATIC HEADER -->
         <Grid Grid.Row="0" Margin="0,0,0,32">
             <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="HUD &amp; VISUAL DESIGNER" 
-                           FontSize="28" 
-                           FontWeight="Black" 
-                           Foreground="{StaticResource TextHighlightBrush}" />
+                <TextBlock Text="HUD &amp; VISUAL DESIGNER" Style="{StaticResource PageTitleText}"/>
                 <TextBlock Text="Customize backgrounds, adjust text vertical offsets, and configure icon alignments in real-time." 
-                           FontSize="13" 
-                           FontWeight="SemiBold" 
-                           Foreground="{StaticResource TextSecondaryBrush}" 
-                           Opacity="0.7"
-                           Margin="0,4,0,0"/>
+                           Style="{StaticResource PageSubtitleText}"
+                           Margin="0,5,0,0"/>
             </StackPanel>
         </Grid>
 
@@ -49,8 +43,12 @@
             </Grid.ColumnDefinitions>
 
             <!-- LEFT: PROPERTIES INSPECTOR (Scrollable to fit new customization sections) -->
-            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,24,0">
-                <StackPanel Margin="0,0,12,0">
+            <Grid Grid.Column="0" Margin="0,0,24,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              CanContentScroll="False"
+                              Style="{StaticResource ModernScrollViewer}">
+                    <StackPanel Margin="0,0,12,0">
                     <!-- SECTION 1: BACKGROUND SOURCE -->
                     <Border Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,0,16">
                         <StackPanel VerticalAlignment="Stretch">
@@ -493,8 +491,9 @@
                             </Border>
                         </StackPanel>
                     </Border>
-                </StackPanel>
-            </ScrollViewer>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
 
             <!-- RIGHT: LIVE CINEMA CANVAS -->
             <Grid Grid.Column="1" Margin="16,0,0,0">

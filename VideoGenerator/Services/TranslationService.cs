@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 
 namespace VideoGenerator.Services
 {
@@ -15,11 +16,13 @@ namespace VideoGenerator.Services
     {
         private Dictionary<string, Dictionary<string, string>> _translations = new();
         private readonly string _localTranslationsPath;
+        private readonly LogService _logger;
 
         public IEnumerable<string> AvailableLanguages => _translations.Keys;
 
-        public TranslationService()
+        public TranslationService(LogService logger)
         {
+            _logger = logger;
             _localTranslationsPath = AppConfig.TranslationsPath; // Points to an external path like Config/translations.json
             LoadTranslations();
         }
@@ -162,7 +165,7 @@ namespace VideoGenerator.Services
                 _translations = embeddedData;
                 if (_translations.Count > 0)
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(_localTranslationsPath)!);
+                    DirectoriesCreator.CreateParentDirectory(_localTranslationsPath);
                     string json = JsonSerializer.Serialize(_translations, new JsonSerializerOptions 
                     { 
                         WriteIndented = true,
@@ -173,7 +176,7 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading translations: {ex.Message}");
+                _logger.LogError("Failed to load translations. Embedded or previously loaded defaults may be unavailable.", ex);
             }
         }
 
@@ -248,7 +251,7 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving batch translations: {ex.Message}");
+                _logger.LogError("Failed to save the translation batch.", ex);
             }
         }
 
@@ -274,7 +277,7 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving updated translations: {ex.Message}");
+                _logger.LogError("Failed to save the updated translation.", ex);
             }
         }
     }

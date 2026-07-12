@@ -22,18 +22,14 @@
         </Grid.RowDefinitions>
  
         <!-- 1. CINEMATIC HEADER -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,32">
-            <TextBlock Text="PRODUCTION DASHBOARD" 
-                       FontSize="28" 
-                       FontWeight="Black" 
-                       Foreground="{StaticResource TextHighlightBrush}" />
-            <TextBlock Text="Analyze media assets, validate event mapping, and execute batch video rendering." 
-                       FontSize="13" 
-                       FontWeight="SemiBold" 
-                       Foreground="{StaticResource TextSecondaryBrush}" 
-                       Opacity="0.7" 
-                       Margin="0,4,0,0"/>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,28">
+            <StackPanel>
+                <TextBlock Text="PRODUCTION DASHBOARD" Style="{StaticResource PageTitleText}"/>
+                <TextBlock Text="Analyze media assets, validate event mapping, and execute batch video rendering." 
+                           Style="{StaticResource PageSubtitleText}" 
+                           Margin="0,5,0,0"/>
+            </StackPanel>
+        </Grid>
 
         <!-- 2. CONFIGURATION & ANALYSIS BAR -->
         <Grid Grid.Row="1" Margin="0,0,0,12">

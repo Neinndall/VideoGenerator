@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Services
@@ -14,9 +15,11 @@ namespace VideoGenerator.Services
     {
         public ObservableCollection<EventRule> Rules { get; private set; } = new();
         private readonly string _rulesFilePath;
+        private readonly LogService _logger;
 
-        public RuleManager()
+        public RuleManager(LogService logger)
         {
+            _logger = logger;
             _rulesFilePath = Path.Combine(AppConfig.ConfigDir, "event_rules.json");
             LoadRules();
         }
@@ -25,7 +28,7 @@ namespace VideoGenerator.Services
         {
             try
             {
-                Directory.CreateDirectory(AppConfig.ConfigDir);
+                DirectoriesCreator.CreateDirectory(AppConfig.ConfigDir);
                 string json = JsonSerializer.Serialize(Rules, new JsonSerializerOptions 
                 { 
                     WriteIndented = true, 
@@ -33,7 +36,10 @@ namespace VideoGenerator.Services
                 });
                 File.WriteAllText(_rulesFilePath, json, Encoding.UTF8);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to save event rules.", ex);
+            }
         }
 
         private void LoadRules()
@@ -80,7 +86,10 @@ namespace VideoGenerator.Services
                         return;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Failed to load event rules. Default rules will be used.", ex);
+                }
             }
 
             // Fallback: Official rules only
