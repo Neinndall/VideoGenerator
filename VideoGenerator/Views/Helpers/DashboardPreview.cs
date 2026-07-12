@@ -90,7 +90,7 @@ namespace VideoGenerator.Views
 
             int total = pendingEvents.Count;
             int resolved = 0;
-            _progressService.Report(0, $"Resolving icons: 0/{total} (0%)");
+            _progressService.SetStatus($"Resolving icons: 0/{total} (0%)");
 
             using var semaphore = new SemaphoreSlim(3, 3);
             Task[] resolutionTasks = pendingEvents.Select(async pipelineEvent =>
@@ -110,10 +110,6 @@ namespace VideoGenerator.Views
                         pipelineEvent.ParsedData.IconPath = iconPath;
                         pipelineEvent.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
                     });
-
-                    int currentResolved = Interlocked.Increment(ref resolved);
-                    double progressValue = (double)currentResolved / total * 100.0;
-                    _progressService.Report(progressValue, $"Resolving icons: {currentResolved}/{total} ({progressValue:0}%)");
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -125,6 +121,9 @@ namespace VideoGenerator.Views
                 }
                 finally
                 {
+                    int currentResolved = Interlocked.Increment(ref resolved);
+                    double progressValue = (double)currentResolved / total * 100.0;
+                    _progressService.SetStatus($"Resolving icons: {currentResolved}/{total} ({progressValue:0}%)");
                     semaphore.Release();
                 }
             }).ToArray();

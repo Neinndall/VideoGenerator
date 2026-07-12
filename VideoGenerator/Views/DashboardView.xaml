@@ -439,7 +439,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Border Background="{StaticResource SurfaceBrush}" Padding="16,8" CornerRadius="8,8,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                <Border Background="{StaticResource SurfaceBrush}" Padding="16,8" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Terminal" Foreground="{StaticResource TextMutedBrush}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="ENGINE CONSOLE" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>

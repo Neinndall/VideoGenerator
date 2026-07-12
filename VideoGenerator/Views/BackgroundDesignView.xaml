@@ -54,7 +54,7 @@
                     <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,0,16">
                         <StackPanel VerticalAlignment="Stretch">
                             <!-- Header Bar -->
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="8,8,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="ImageOutline" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="CANVAS BACKGROUND" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
@@ -184,7 +184,7 @@
                     <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,0,16">
                         <StackPanel VerticalAlignment="Stretch">
                             <!-- Header Bar -->
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="8,8,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="FormatText" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="HUD TYPOGRAPHY" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
@@ -247,7 +247,7 @@
                     <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,0,16">
                         <StackPanel VerticalAlignment="Stretch">
                             <!-- Header Bar -->
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="8,8,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="ImageFilterCenterFocusWeak" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="HUD ICON POSITION" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
@@ -337,7 +337,7 @@
                     <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,0,8">
                         <StackPanel VerticalAlignment="Stretch">
                             <!-- Header Bar -->
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="8,8,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="CommentTextOutline" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="DIALOGUE SPEECH BUBBLE" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>

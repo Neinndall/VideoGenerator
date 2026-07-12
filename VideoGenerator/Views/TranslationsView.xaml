@@ -63,7 +63,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
-                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="8,8,0,0" Padding="12,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="12,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                         <TextBlock Text="LANGS" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="9" HorizontalAlignment="Center"/>
                     </Border>
 
@@ -93,7 +93,7 @@
                     </Grid.RowDefinitions>
                     
                     <!-- Title Header -->
-                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="8,8,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="BookOpenOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
                             <TextBlock Text="TRANSLATIONS DICTIONARY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />

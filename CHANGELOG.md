@@ -1,80 +1,72 @@
 VideoGenerator - Patch Notes | v1.2.7.0
 
 MEDIUM UPDATE
-This version completes the application shell refresh and physically organizes services by domain without changing the public service namespaces.
+This version consolidates the application shell refresh, physical organization of services by domain, production pipeline refactoring, recursive event discovery, official data readiness, and a fully polished, pixel-perfect user interface.
 
 New Features
   - Architecture / Service Domains: Reorganized `Services/` into `Core`, `Data`, `Pipeline`, `Media`, `Audio`, `Configuration`, and `Parsers` folders while keeping DI-facing namespaces stable.
   - UI / Application Frame: Rebuilt `MainWindow` around a persistent application rail, orientation top bar, framed content area, and compact activity rail.
-  - UI / Production Workspace Theme: Added shared workspace containers, canvas, inspector, workflow-step, metric, toolbar, and console styles. The Dashboard consumes these semantic resources rather than defining its visual hierarchy inline.
+  - UI / Production Workspace Theme: Added shared workspace containers, canvas, inspector, workflow-step, metric, toolbar, and console styles. The Dashboard consumes these visual resources.
   - UI / Application Shell Theme: Added shared shell styles for the sidebar, brand mark, content host, status bar, activity badge, and progress labeling.
   - UI / Production Workspace Header: Reworked the Dashboard entry point around a clear workspace header with event volume and pipeline-readiness feedback.
   - Architecture / Audio Folder Discovery Service: Moved recursive event discovery, supported-audio detection, and bracketed-family recognition from `DashboardView` into the DI-registered `AudioFolderDiscoveryService`.
   - Architecture / Event Analysis Service: Moved pipeline-event construction, cached family-track detection, initial validation state, and persisted dialogue cleanup from `DashboardView` into the DI-registered `EventAnalysisService`.
   - Architecture / Preview and Icon Services: Moved preview bitmap creation and semantic icon resolution from `DashboardView` into DI-registered `PreviewImageService` and `EventIconResolutionService`.
-  - Architecture / Audio Family Merge Service: Moved audio-family merge execution and cached-track assignment from `DashboardView` into the DI-registered `AudioFamilyMergeService`; workflows retain ownership of their progress presentation.
+  - Architecture / Audio Family Merge Service: Moved audio-family merge execution and cached-track assignment from `DashboardView` into the DI-registered `AudioFamilyMergeService`; workflows retain progress presentation.
   - Architecture / HUD Image Preparation Service: Centralized segmented HUD image generation, reuse, output-path resolution, and dialogue restoration for preparation and video-render workflows.
   - Architecture / Production Work Planning Service: Moved deterministic preparation and rendering work-budget calculation out of `DashboardView`, keeping the global progress system consistent across workflows.
-  - Architecture / Dashboard Interaction Split: Moved fullscreen preview layout state and search interaction into `DashboardView.Interactions.cs`, keeping view-only mechanics separate from pipeline operations.
-  - Architecture / Dashboard Preview Split: Moved cancellation-aware preview rendering and concurrent icon hydration into `DashboardView.Preview.cs`, separating selected-event presentation from workflow code.
-
-Improvements
-  - UI / Visual Framing: Removed the double-border card framing in MainWindow and simplified view containers (flat headers, borderless toolbars, clean panel borders) for a unified, modern interface.
-  - UI / Sidebar Branding: Centered the branding logo and workspace titles in the sidebar.
-  - UI / Minimalist ScrollBars: Reworked the default scrollbars into a modern, buttonless floating pill design that reacts dynamically on hover, matching modern applications.
-  - UI / Settings Usability: Kept the Settings page context fixed while only its categories scroll, improving orientation during long configuration sessions.
-  - UI / Full Theme System Refresh: Reworked colors, typography, primary/secondary/icon actions, inputs, virtualized lists, scroll behavior, sliders, navigation states, and sidebar density under a single visual language.
-  - UI / Theme Cleanup: Removed unused button, brush, and scroll resources after consumer auditing; replaced the legacy oversized scrollbar template with a compact accessible default scroll treatment.
-  - Architecture / Dashboard Helpers: Moved `DashboardInteractions` and `DashboardPreview` partials to `Views/Helpers/` to keep Dashboard-related helper code out of the view root.
-  - UI / Dashboard Layout: Reorganized the production view into source controls, event queue, preview canvas, inspector, workflow actions, and console surfaces with consistent spacing and visual depth.
-  - UI / Application Shell: Redesigned persistent navigation and global activity feedback, making current operation, progress, idle state, and cancellation explicit without moving controls between views.
-  - UI / Shared View Headers: Visual Design, Event Mapping, Settings, and Dictionary now share the same workspace-header hierarchy as the Dashboard.
-  - UI / Dialogue Editor: Aligned the modal editor with the workspace panel, header, spacing, and card surface system.
-  - UI / Theme Audit: Removed unused glass, overlay, tag, hero, and unused workspace-token resources after verifying they had no consumers. Core surface styles remain while views still depend on them.
-  - UI / Surface Consolidation: Migrated all view card surfaces to the workspace panel system and replaced the remaining `ModernContainer` resource with the semantic `SurfaceContainer` base style.
-  - Architecture / Dashboard Boundaries: The Dashboard now delegates filesystem conventions to a focused service, reducing view code and making event discovery independently testable.
-
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-VideoGenerator - Patch Notes | v1.2.6.1
-
-MINOR UPDATE
-This version consolidates the production pipeline refactor, recursive event discovery, official data readiness, and the refreshed visual shell.
-
-New Features
+  - Architecture / Dashboard Interaction Split: Moved fullscreen preview layout state and search interaction into `DashboardView.Interactions.cs`, keeping view-only mechanics separate.
+  - Architecture / Dashboard Preview Split: Moved cancellation-aware preview rendering and concurrent icon hydration into `DashboardView.Preview.cs`, separating presentation from workflow code.
   - Core / Explicit Dependency Registration: Kept the singleton service registrations directly in the WPF composition root so the application's dependencies remain visible and easy to audit.
   - Audio / Folder Event Detection: Folder scanning identifies event directories recursively, keeps parent folders for bracketed audio families, and excludes technical `_cast3D` folders.
   - Database / Official Data Readiness: Added startup synchronization coordination so folder processing waits for the official-data check before parsing.
   - UI / Semantic Design Tokens: Added reusable tokens for page hierarchy, status pills, hero surfaces, inset panels, ghost actions, and compact icon buttons.
 
 Improvements
-  - Core / Visible Failure Logging: Restored user-visible `LogError` and `LogWarn` reporting for database synchronization, cache access, configuration persistence, icon resolution, and image generation failures. Technical exception details remain available in diagnostic logs.
-  - Core / On-Demand AppData: Replaced startup-wide directory preparation with safe, operation-owned creation through `DirectoriesCreator`, preserving existing settings and caches.
-  - Core / Centralized Database Sync: `DataFetcher` now only reads local caches while `DatabaseBuilder` owns DDragon and CommunityDragon synchronization with conditional requests.
-  - Performance / Media Pipeline: Serialized FFmpeg extraction, isolated render temporaries in AppData cache, added cancellation checkpoints, and made ImageSharp caches concurrency-safe.
+  - UI / Visual Framing: Removed the double-border card framing in MainWindow and simplified view containers (flat headers, borderless toolbars, clean panel borders).
+  - UI / Sidebar Branding: Centered the branding logo and workspace titles in the sidebar.
+  - UI / Minimalist ScrollBars: Reworked the default scrollbars into a modern, buttonless floating pill design that reacts dynamically on hover.
+  - UI / Settings Usability: Kept the Settings page context fixed while only its categories scroll, improving orientation.
+  - UI / Full Theme System Refresh: Reworked colors, typography, primary/secondary/icon actions, inputs, virtualized lists, scroll behavior, sliders, navigation states, and sidebar density under a single visual language.
+  - UI / Theme Cleanup: Removed unused button, brush, and scroll resources; replaced legacy scrollbar templates with compact accessible defaults.
+  - Architecture / Dashboard Helpers: Moved `DashboardInteractions` and `DashboardPreview` partials to `Views/Helpers/`.
+  - UI / Dashboard Layout: Reorganized the production view into source controls, event queue, preview canvas, inspector, workflow actions, and console surfaces.
+  - UI / Application Shell: Redesigned persistent navigation and global activity feedback (Idle, Busy, Canceled, Progress).
+  - UI / Shared View Headers: Visual Design, Event Mapping, Settings, and Dictionary now share the same workspace-header hierarchy.
+  - UI / Dialogue Editor: Aligned the modal editor with the workspace panel, header, spacing, and card surface system.
+  - UI / Surface Consolidation: Migrated all view card surfaces to the workspace panel system and replaced legacy containers.
+  - Architecture / Dashboard Boundaries: The Dashboard now delegates filesystem conventions to a focused service.
+  - Core / Visible Failure Logging: Restored user-visible `LogError` and `LogWarn` reporting for database synchronization, cache access, configuration persistence, icon resolution, and image generation failures.
+  - Core / On-Demand AppData: Replaced startup-wide directory preparation with safe, operation-owned creation through `DirectoriesCreator`.
+  - Core / Centralized Database Sync: `DataFetcher` now only reads local caches while `DatabaseBuilder` owns DDragon and CommunityDragon synchronization.
+  - Performance / Media Pipeline: Serialized FFmpeg extraction, isolated render temporaries, added cancellation checkpoints, and made ImageSharp caches concurrency-safe.
   - Media / FFmpegCore: Updated the FFmpeg library integration used by `VideoService` for extraction, conversion, audio-family merging, and final rendering.
-  - Performance / Image and Logging Resources: Bounded icon caching, disposed generated images deterministically, and fixed RichTextBox log subscription lifecycles.
-  - UI / Refreshed Shell: Applied the shared title/subtitle hierarchy across views, restored the translucent violet logo, and removed decorative status metadata from the Dashboard and sidebar.
-  - UI / Visual Design Workspace: Kept the Preview Canvas constrained and delegated scrolling to the view-owned properties inspector.
-  - UI / Settings Layout: Restored the view-owned vertical `ScrollViewer` for Settings without wrapping the global navigation content.
-  - UX / Offline Resilience: Existing valid local caches remain usable when a network refresh fails, without deadlocking folder processing.
-  - Core / On-Demand Directory Ownership: Added `DirectoriesCreator` as the single safe creation gateway for configuration, cache, logs, generated output, temporary media, and downloaded assets.
-  - Audio / Folder-First Parsing: Dashboard and Analyzer now parse only the event folder name; audio files are collected afterward for preparation, transcription, rendering, and progress accounting.
-  - Analyzer / Interactive Event Debugger: Refactored the Analyzer console application into a lightweight, interactive debug tool to test parsing, rule matching, and icon resolution for typed event folder names, removing redundant bulk directory scan logic.
-  - Media / Persistent Audio Family Cache: Reuses valid merged WAV families from `Cache/AudioFamilies` across application restarts and rebuilds them only when source audio metadata changes.
+  - Performance / Image and Logging Resources: Bounded icon caching, disposed generated images, and fixed RichTextBox log lifecycles.
+  - UX / Offline Resilience: Existing valid local caches remain usable when a network refresh fails.
+  - Core / On-Demand Directory Ownership: Added `DirectoriesCreator` as the single safe creation gateway.
+  - Audio / Folder-First Parsing: Dashboard and Analyzer parse only the event folder name; audio files are collected afterward.
+  - Analyzer / Interactive Event Debugger: Refactored the Analyzer into a lightweight, interactive debug tool.
+  - Media / Persistent Audio Family Cache: Reuses valid merged WAV families from `Cache/AudioFamilies` across restarts.
+  - UI / Panel Rounded Corners: Fixed subpixel rendering gaps and corner overflows globally in the application by applying `ClipToBounds="True"` and `SnapsToDevicePixels="True"` to `WorkspacePanelContainer` and setting `CornerRadius="7,7,0,0"` on all inner panel headers.
+  - UI / Status Bar Layout: Redesigned status bar layout in `MainWindow.xaml` to use an isolated grid for the icon and text to prevent layout measure-passes from stuttering the spinning icon animation.
+  - UI / Dynamic Active Icon: Added infinite rotation animation for the active `Sync` icon in the status bar.
+  - UI / Status Bar Styling: Standardized status bar active/stable text to `FontSize="10"` and `FontWeight="Black"` with matching colors.
+  - UI / Cancel Button Design: Redesigned `ModernCancelButton` to use its own template with orange-themed hover transitions and shadows, and reduced height to `28px` to prevent bottom-clipping within the status bar.
+  - Pipeline / Non-Resetting Progress: Refactored `DashboardPreview.cs` to update only the status text during icon resolution instead of resetting progress back to `0%`.
+  - Pipeline / Completion Delay: Introduced a `500ms` completion delay in `ProgressService.cs` so that the `100.0%` completed state is visible before returning to idle.
 
 Bug Fixes
-  - UI / Dashboard Runtime Resource: Loaded `ButtonStyles.xaml` before `ProductionWorkspaceStyles.xaml`, resolving the `ModernSecondaryButton` dependency and preventing Dashboard startup from failing with a `StaticResourceHolder` exception.
-  - Analyzer / Project Reference: Fixed the Analyzer to build against the current application project and use the same folder-first event scan as the Dashboard.
-  - Audio / Recursive Folder Scan: Fixed nested champion/skin event folders returning zero events; `[Random]` families now remain attached to their parent event.
+  - UI / Dashboard Runtime Resource: Loaded `ButtonStyles.xaml` before `ProductionWorkspaceStyles.xaml`, resolving the `ModernSecondaryButton` dependency.
+  - Analyzer / Project Reference: Fixed the Analyzer to build against the current application project.
+  - Audio / Recursive Folder Scan: Fixed nested champion/skin event folders returning zero events.
   - Database / Processing Race: Prevented parsing from starting against an incomplete official-data cache.
-  - Startup / Diagnostics: Routed early startup failures to `logs/application_errors.log` instead of the executable directory.
-  - UI / Dashboard Header: Removed the newly introduced `DUAL-PHASE PIPELINE` and `1920 × 1080` decorative pills while preserving the underlying workflow and canvas resolution.
+  - Startup / Diagnostics: Routed early startup failures to `logs/application_errors.log`.
+  - UI / Dashboard Header: Removed the newly introduced `DUAL-PHASE PIPELINE` and `1920 × 1080` decorative pills.
   - UI / Scroll Jumping: Fixed the Visual Design inspector jumping between logical content blocks when using the mouse wheel.
-  - UI / Navigation Scroll Host: Removed the global navigation `ScrollViewer` so each view controls its own scrolling behavior, matching the stable v1.2.6.0 layout.
-  - Transcription / Whisper Model Lock: Fixed the temporary model stream remaining open during the atomic move on Windows, added replacement retries, and preserved valid existing model caches on download failures.
-  - Database / Structures Sync Warning: Fixed warnings and potential data corruption when loading the structures database from Fandom by deserializing structures.json as a list of StructureMapping elements instead of string elements.
-  - UI / Icon Download Warnings: Changed intermediate network download failures inside fallback chains to debug logs, and added a single clean warning log that triggers only when an icon truly cannot be resolved by any source at the end of the resolution process.
+  - UI / Navigation Scroll Host: Removed the global navigation `ScrollViewer` so each view controls its own scrolling.
+  - Transcription / Whisper Model Lock: Fixed the temporary model stream remaining open during the atomic move on Windows.
+  - Database / Structures Sync Warning: Fixed structure database loading from Fandom by deserializing structures.json correctly.
+  - UI / Icon Download Warnings: Changed intermediate network download failures to debug logs, showing a single clean warning only if resolution fails completely..
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
