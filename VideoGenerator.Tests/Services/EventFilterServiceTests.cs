@@ -59,4 +59,22 @@ public sealed class EventFilterServiceTests
 
         Assert.Equal(2, result.Count);
     }
+
+    [Fact]
+    public void ErrorFilterReturnsOnlyMissingIconAndNoAudioEvents()
+    {
+        var events = new[]
+        {
+            new PreviewEventModel { FolderName = "missing-icon", Status = "Missing Icon" },
+            new PreviewEventModel { FolderName = "no-audio", Status = "No Audio" },
+            new PreviewEventModel { FolderName = "pending", Status = "Pending" },
+            new PreviewEventModel { FolderName = "ready", Status = "Ready" }
+        };
+
+        var result = new EventFilterService().FilterEvents(events, "ALL", "ERRORS", string.Empty);
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, pipelineEvent => pipelineEvent.FolderName == "missing-icon");
+        Assert.Contains(result, pipelineEvent => pipelineEvent.FolderName == "no-audio");
+    }
 }
