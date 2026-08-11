@@ -147,6 +147,61 @@ public sealed class VideoServiceIntegrationTests
         }
     }
 
+    [Fact]
+    public async Task CancelsSegmentedRenderAndCleansTemporaryClips()
+    {
+        string root = Directory.CreateTempSubdirectory("VideoGenerator.Integration.").FullName;
+
+        try
+        {
+            string imagePath = Path.Combine(root, "source.png");
+            string firstAudioPath = Path.Combine(root, "first.wav");
+            string secondAudioPath = Path.Combine(root, "second.wav");
+            string outputPath = Path.Combine(root, "result.mp4");
+            string cacheDirectory = Path.Combine(root, "cache");
+
+            WritePng(imagePath, 72, 44, 128);
+            WriteWave(firstAudioPath, 440);
+            WriteWave(secondAudioPath, 660);
+
+            var workMessages = new List<string>();
+            using var cancellation = new CancellationTokenSource();
+            var service = new VideoService(new LogService(), cacheDirectory);
+
+            Action<string> cancelAfterFirstClip = message =>
+            {
+                workMessages.Add(message);
+                if (message == "Created temporary clip 1/2")
+                {
+                    cancellation.Cancel();
+                }
+            };
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.CreateVideoAsync(
+                new List<string> { imagePath, imagePath },
+                new List<string> { firstAudioPath, secondAudioPath },
+                outputPath,
+                silenceDuration: 0,
+                onWorkCompleted: cancelAfterFirstClip,
+                cancellationToken: cancellation.Token));
+
+            Assert.Contains("Created temporary clip 1/2", workMessages);
+            string[] leftoverClips = Directory.Exists(cacheDirectory)
+                ? Directory.GetFiles(cacheDirectory, "temp_clip_*", SearchOption.TopDirectoryOnly)
+                : Array.Empty<string>();
+
+            Assert.Empty(leftoverClips);
+            Assert.False(File.Exists(outputPath));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     private static void WritePng(string path, byte red, byte green, byte blue)
     {
         using var image = new Image<Rgba32>(2, 2);
