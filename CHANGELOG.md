@@ -1,11 +1,5 @@
 VideoGenerator - Patch Notes | v1.2.7.0
 
-Developer Tooling
-  - Added `VideoGenerator.Tests` as the deterministic xUnit test area for domain and pipeline helpers.
-  - Reorganized the xUnit project at repository root and grouped service tests under `VideoGenerator.Tests/Services`.
-  - Removed the obsolete `Diagnostics` probes and interactive `Analyzer`; regression checks now live in xUnit under `VideoGenerator.Tests`.
-  - Updated README build and validation commands to match the current project layout.
-
 MEDIUM UPDATE
 This version consolidates the application shell refresh, physical organization of services by domain, production pipeline refactoring, recursive event discovery, official data readiness, and a fully polished, pixel-perfect user interface.
 
@@ -29,6 +23,8 @@ New Features
   - UI / Semantic Design Tokens: Added reusable tokens for page hierarchy, status pills, hero surfaces, inset panels, ghost actions, and compact icon buttons.
 
 Improvements
+  - Configuration / Dictionary Language: Set English (`EN`) as the default application language, removed `ALL` from the Settings language selector, and normalized legacy `ALL` settings to `EN` during application use.
+  - UI / Dictionary and Dashboard Filters: Preserved `ALL` as a filter for dictionary entries, statuses, and characters without treating it as a processing language.
   - UI / Visual Framing: Removed the double-border card framing in MainWindow and simplified view containers (flat headers, borderless toolbars, clean panel borders).
   - UI / Sidebar Branding: Centered the branding logo and workspace titles in the sidebar.
   - UI / Minimalist ScrollBars: Reworked the default scrollbars into a modern, buttonless floating pill design that reacts dynamically on hover.

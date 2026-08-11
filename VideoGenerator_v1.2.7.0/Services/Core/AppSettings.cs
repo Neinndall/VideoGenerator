@@ -152,13 +152,18 @@ namespace VideoGenerator.Services
             }
         }
 
-        private string _defaultDictionaryLanguage = "ALL";
+        private string _defaultDictionaryLanguage = "EN";
         public string DefaultDictionaryLanguage
         {
             get => _defaultDictionaryLanguage;
             set
             {
-                if (SetProperty(ref _defaultDictionaryLanguage, value))
+                string normalized = string.IsNullOrWhiteSpace(value) ||
+                                    value.Equals("ALL", StringComparison.OrdinalIgnoreCase)
+                    ? "EN"
+                    : value;
+
+                if (SetProperty(ref _defaultDictionaryLanguage, normalized))
                     QueueSave();
             }
         }
