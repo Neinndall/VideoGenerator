@@ -36,6 +36,10 @@ namespace VideoGenerator.Views.Models
                 // 🗣️ EMOTES (Risas, Bromas, Respuestas)
                 // ==========================================
                 new EventRule { Keyword = "Joke", TranslationKey = "event_joke", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "JokeFail", TranslationKey = "event_joke_fail", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "JokeFailEnd", TranslationKey = "event_joke_fail", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "JokeSuccess", TranslationKey = "event_joke_success", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "JokeSuccessEnd", TranslationKey = "event_joke_success", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Taunt", TranslationKey = "event_taunt", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Laugh", TranslationKey = "event_laugh", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "JokeGeneralEnd", TranslationKey = "event_joke_end", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },

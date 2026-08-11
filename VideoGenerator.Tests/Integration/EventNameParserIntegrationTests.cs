@@ -194,6 +194,35 @@ public sealed class EventNameParserIntegrationTests
         }
     }
 
+    [Theory]
+    [InlineData("Play_vo_Locke_Joke3DFail", "Joke (Failed)")]
+    [InlineData("Play_vo_Locke_Joke3DFailEnd", "Joke (Failed)")]
+    [InlineData("Play_vo_Locke_Joke3DSuccess", "Joke (Successful)")]
+    [InlineData("Play_vo_Locke_Joke3DSuccessEnd", "Joke (Successful)")]
+    public async Task ParsesJokeOutcomeVariants(string folderName, string expectedDisplayText)
+    {
+        string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            var parser = CreateParser(root, httpClient);
+
+            ParsedEvent parsed = await parser.ParseFolderNameAsync(folderName, "EN");
+
+            Assert.Equal("generic", parsed.IconType);
+            Assert.Equal("Generic", parsed.IconLookupName);
+            Assert.Equal(expectedDisplayText, parsed.DisplayText);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     private static EventNameParser CreateParser(string root, HttpClient httpClient)
     {
         var logger = new LogService();
@@ -202,8 +231,10 @@ public sealed class EventNameParserIntegrationTests
             {
               "EN": {
                 "event_buy_item": "Buy Item {item_name}",
+                "event_joke_fail": "Joke (Failed)",
                 "event_kill_general": "Kill in General",
                 "event_move_r_ready": "Movement (Ultimate Ready)",
+                "event_joke_success": "Joke (Successful)",
                 "interaction_attack_monster": "Attack {monster}",
                 "interaction_first_encounter_one": "First Encounter with {0}",
                 "suffix_in_general": " in General"

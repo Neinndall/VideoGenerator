@@ -65,6 +65,7 @@ Improvements
   - Pipeline / Completion Delay: Introduced a `500ms` completion delay in `ProgressService.cs` so that the `100.0%` completed state is visible before returning to idle.
 
 Bug Fixes
+  - Pipeline / Joke Outcome Events: Recognize failed and successful joke variants, including their `End` folders, instead of showing raw folder names in the HUD.
   - Pipeline / Ultimate-Ready Movement Events: Recognize `Move2DRReady` audio folders and display their localized movement label instead of the raw folder name.
   - UI / Dashboard Filter Reset: Reset the character, status, and search filters when selecting a new source or processing folders, ensuring the full detected pipeline is visible and available for preparation and rendering.
   - Pipeline / Icon Resolution Cancellation: Propagate cancellation after concurrent icon hydration so an interrupted analysis is reported as canceled instead of completing silently.
