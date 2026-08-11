@@ -58,6 +58,7 @@ Improvements
   - Pipeline / Completion Delay: Introduced a `500ms` completion delay in `ProgressService.cs` so that the `100.0%` completed state is visible before returning to idle.
 
 Bug Fixes
+  - UI / Dashboard Workflow Lock: Disable preparation, review, and render actions while another workflow is processing.
   - Core / Cancellation: Cancel the previous operation before replacing its cancellation token, preventing stale workflows from continuing in the background.
   - UI / Dashboard Runtime Resource: Loaded `ButtonStyles.xaml` before `ProductionWorkspaceStyles.xaml`, resolving the `ModernSecondaryButton` dependency.
   - Analyzer / Project Reference: Fixed the Analyzer to build against the current application project.

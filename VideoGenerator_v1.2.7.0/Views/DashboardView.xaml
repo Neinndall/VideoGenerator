@@ -388,7 +388,7 @@
                     
                     <Button Grid.Column="0" 
                             Click="PrepareTranscription_Click"
-                            IsEnabled="{Binding DashboardModel.IsAnalyzed}"
+                            IsEnabled="{Binding DashboardModel.CanRunWorkflow}"
                             Style="{StaticResource WorkflowStepButton}"
                             Background="{StaticResource SurfaceBrush}"
                             Padding="10,0"
@@ -403,7 +403,7 @@
                     <!-- Review Dialogues (Dialogue Editor) -->
                     <Button Grid.Column="1" 
                             Click="ReviewDialogues_Click"
-                            IsEnabled="{Binding DashboardModel.IsAnalyzed}"
+                            IsEnabled="{Binding DashboardModel.CanRunWorkflow}"
                             Style="{StaticResource WorkflowStepButton}"
                             Background="{StaticResource SurfaceBrush}"
                             Padding="10,0"
@@ -418,7 +418,7 @@
                     <!-- Render Videos -->
                     <Button Grid.Column="2" 
                             Click="Generate_Click"
-                            IsEnabled="{Binding DashboardModel.IsAnalyzed}"
+                            IsEnabled="{Binding DashboardModel.CanRunWorkflow}"
                             Style="{StaticResource WorkflowPrimaryStepButton}"
                             Padding="10,0"
                             Height="44" Margin="6,0,0,0"

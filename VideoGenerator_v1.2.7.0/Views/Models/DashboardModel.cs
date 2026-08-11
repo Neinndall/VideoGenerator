@@ -23,6 +23,18 @@ namespace VideoGenerator.Views.Models
         [ObservableProperty]
         private bool _isAnalyzed = false;
 
+        public bool CanRunWorkflow => IsAnalyzed && !IsProcessing;
+
+        partial void OnIsAnalyzedChanged(bool value)
+        {
+            OnPropertyChanged(nameof(CanRunWorkflow));
+        }
+
+        partial void OnIsProcessingChanged(bool value)
+        {
+            OnPropertyChanged(nameof(CanRunWorkflow));
+        }
+
         [ObservableProperty]
         private PreviewEventModel _selectedEvent;
 
