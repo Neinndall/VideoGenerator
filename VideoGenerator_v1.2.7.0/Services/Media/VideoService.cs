@@ -17,13 +17,15 @@ namespace VideoGenerator.Services
     {
         private readonly LogService _logger;
         private readonly string _ffmpegDir;
+        private readonly string _cacheDir;
         private readonly SemaphoreSlim _binaryInitializationGate = new(1, 1);
         private bool _binariesReady;
 
-        public VideoService(LogService logger)
+        public VideoService(LogService logger, string cacheDirectory = null)
         {
             _logger = logger;
             _ffmpegDir = Path.Combine(Path.GetTempPath(), "VideoGenerator_FFmpeg");
+            _cacheDir = string.IsNullOrWhiteSpace(cacheDirectory) ? AppConfig.CacheDir : cacheDirectory;
         }
 
         public async Task EnsureBinariesReadyAsync()
@@ -159,7 +161,7 @@ namespace VideoGenerator.Services
             }
 
             string sourceId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprint.ToString())))[..16];
-            string familyCacheDir = Path.Combine(AppConfig.CacheDir, "AudioFamilies");
+            string familyCacheDir = Path.Combine(_cacheDir, "AudioFamilies");
             string currentPath = Path.Combine(familyCacheDir, $"{Sanitize(eventName)}_{Sanitize(familyName)}_{sourceId}.wav");
             if (File.Exists(currentPath) && new FileInfo(currentPath).Length > 0)
                 return currentPath;
@@ -210,7 +212,7 @@ namespace VideoGenerator.Services
             await EnsureBinariesReadyAsync();
             cancellationToken.ThrowIfCancellationRequested();
 
-            string familyCacheDir = Path.GetDirectoryName(outputPath) ?? Path.Combine(AppConfig.CacheDir, "AudioFamilies");
+            string familyCacheDir = Path.GetDirectoryName(outputPath) ?? Path.Combine(_cacheDir, "AudioFamilies");
             DirectoriesCreator.CreateDirectory(familyCacheDir);
             string concatPath = Path.Combine(familyCacheDir, $"concat_{Guid.NewGuid():N}.txt");
 
@@ -268,7 +270,7 @@ namespace VideoGenerator.Services
                 await EnsureBinariesReadyAsync();
 
                 DirectoriesCreator.CreateParentDirectory(outputPath);
-                string cacheDir = AppConfig.CacheDir;
+                string cacheDir = _cacheDir;
                 DirectoriesCreator.CreateDirectory(cacheDir);
 
                 if (imagePaths != null && imagePaths.Count > 1)

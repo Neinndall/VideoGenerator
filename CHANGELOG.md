@@ -24,6 +24,7 @@ New Features
 
 Improvements
   - Testing / Workflow Coverage: Expanded deterministic xUnit coverage for preparation and render plans, segmented HUD image counts, dialogue cleanup, progress state transitions, and error filtering.
+  - Testing / Media Integration: Added an isolated FFmpeg integration test that renders segmented images and audio tracks through the real video service without touching user AppData.
   - UI / Secondary Button Language: Standardized secondary actions on a borderless surface with shared hover feedback across Dashboard and Dialogue Editor controls.
   - UI / Dialogue Editor Layout: Replaced the floating event-action card with a flat separated toolbar to keep event edits and batch approval visually distinct.
   - UI / Dialogue Editor Events Queue: Added a complete rounded panel frame with a compact event counter and a restrained validation indicator.
