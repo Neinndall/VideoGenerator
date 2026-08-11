@@ -21,7 +21,7 @@ namespace VideoGenerator.Services
         {
             _logger = logger;
             _configPath = string.IsNullOrWhiteSpace(aliasesFilePath)
-                ? Path.Combine(AppConfig.ConfigDir, "champion_aliases.json")
+                ? AppConfig.Paths.AliasesPath
                 : aliasesFilePath;
             LoadAliases();
         }
@@ -131,9 +131,9 @@ namespace VideoGenerator.Services
             var list = new List<string>();
             try
             {
-                if (File.Exists(AppConfig.ChampionsPath))
+                if (File.Exists(AppConfig.Paths.ChampionsPath))
                 {
-                    string json = File.ReadAllText(AppConfig.ChampionsPath);
+                    string json = File.ReadAllText(AppConfig.Paths.ChampionsPath);
                     var loaded = JsonSerializer.Deserialize<List<string>>(json);
                     if (loaded != null)
                     {

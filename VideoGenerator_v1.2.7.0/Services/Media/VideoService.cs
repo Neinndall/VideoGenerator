@@ -24,8 +24,8 @@ namespace VideoGenerator.Services
         public VideoService(LogService logger, string cacheDirectory = null)
         {
             _logger = logger;
-            _ffmpegDir = Path.Combine(Path.GetTempPath(), "VideoGenerator_FFmpeg");
-            _cacheDir = string.IsNullOrWhiteSpace(cacheDirectory) ? AppConfig.CacheDir : cacheDirectory;
+            _ffmpegDir = AppConfig.Paths.RuntimeFfmpegDirectory;
+            _cacheDir = string.IsNullOrWhiteSpace(cacheDirectory) ? AppConfig.Paths.CacheDirectory : cacheDirectory;
         }
 
         public async Task EnsureBinariesReadyAsync()

@@ -332,7 +332,7 @@ namespace VideoGenerator.Services.Parsers
         {
             try
             {
-                string path = AppConfig.StructuresPath;
+                string path = AppConfig.Paths.StructuresPath;
                 if (File.Exists(path))
                 {
                     // Use FileStream with ReadWrite share to avoid "File in use" errors during sync
@@ -366,7 +366,7 @@ namespace VideoGenerator.Services.Parsers
         {
             try
             {
-                string path = AppConfig.MonstersPath;
+                string path = AppConfig.Paths.MonstersPath;
                 if (File.Exists(path))
                 {
                     using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -381,7 +381,7 @@ namespace VideoGenerator.Services.Parsers
                 // Fallback to legacy flat list format
                 try
                 {
-                    string path = AppConfig.MonstersPath;
+                    string path = AppConfig.Paths.MonstersPath;
                     if (File.Exists(path))
                     {
                         string json = File.ReadAllText(path);

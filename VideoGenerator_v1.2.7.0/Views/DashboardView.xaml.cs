@@ -713,7 +713,7 @@ namespace VideoGenerator.Views
                         _progressService.SetStatus($"Compiling video for {ev.FolderName}");
 
                         // Compile video Frame + Audio using FFmpeg
-                        string outputVideoDir = Path.Combine(AppConfig.OutputVideosDir, ev.CharacterName);
+                        string outputVideoDir = Path.Combine(AppConfig.Paths.OutputVideosDirectory, ev.CharacterName);
                         DirectoriesCreator.CreateDirectory(outputVideoDir);
                         string outputPath = Path.Combine(outputVideoDir, ev.FolderName + ".mp4");
                         

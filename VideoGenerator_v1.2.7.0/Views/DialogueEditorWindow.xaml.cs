@@ -198,7 +198,7 @@ namespace VideoGenerator.Views
                         if (ext != ".wav")
                         {
                             // Convert on-the-fly to a temporary wav for WPF MediaPlayer compatibility
-                            string tempWav = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.wav");
+                            string tempWav = AppConfig.Paths.CreateTemporaryWavPath();
                             bool convertResult = await FFMpegCore.FFMpegArguments
                                 .FromFileInput(file)
                                 .OutputToFile(tempWav, true, options => options.WithCustomArgument("-c:a pcm_s16le"))

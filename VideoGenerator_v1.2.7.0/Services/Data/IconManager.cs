@@ -34,7 +34,7 @@ namespace VideoGenerator.Services
             _skinlineManager = skinlineManager;
             _logger = logger;
             _iconCacheDirectory = string.IsNullOrWhiteSpace(iconCacheDirectory)
-                ? AppConfig.IconCacheDir
+                ? AppConfig.Paths.IconCacheDirectory
                 : iconCacheDirectory;
         }
 

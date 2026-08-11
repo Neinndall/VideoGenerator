@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Encodings.Web;
 using System.Threading;
+using VideoGenerator.Models;
 using VideoGenerator.Utils;
 
 namespace VideoGenerator.Services
@@ -13,7 +14,7 @@ namespace VideoGenerator.Services
     public class AppSettings : ObservableObject
     {
         private static AppSettings _instance;
-        private static readonly string _settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoGenerator", "Config", "settings.json");
+        private static readonly string _settingsPath = AppConfig.Paths.SettingsPath;
 
         private static Timer _saveTimer;
         private static readonly object _saveLock = new();

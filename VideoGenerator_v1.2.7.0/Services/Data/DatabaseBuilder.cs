@@ -18,12 +18,7 @@ namespace VideoGenerator.Services
     {
         private readonly HttpClient _httpClient;
         private readonly LogService _logger;
-        private readonly string _championsPath;
-        private readonly string _itemsPath;
-        private readonly string _monstersPath;
-        private readonly string _structuresPath;
-        private readonly string _localVersionPath;
-        private readonly string _cacheDirectory;
+        private readonly StoragePaths _storagePaths;
         private readonly SemaphoreSlim _initializationGate = new(1, 1);
         private readonly TaskCompletionSource<bool> _initializationReady = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -37,18 +32,7 @@ namespace VideoGenerator.Services
         {
             _httpClient = httpClient;
             _logger = logger;
-            bool useIsolatedStorage = !string.IsNullOrWhiteSpace(storageRoot);
-            string configDirectory = useIsolatedStorage
-                ? Path.Combine(storageRoot, "Config")
-                : AppConfig.ConfigDir;
-            _cacheDirectory = useIsolatedStorage
-                ? Path.Combine(storageRoot, "Cache")
-                : AppConfig.CacheDir;
-            _championsPath = Path.Combine(configDirectory, "champions.json");
-            _itemsPath = Path.Combine(configDirectory, "items.json");
-            _monstersPath = Path.Combine(configDirectory, "monsters.json");
-            _structuresPath = Path.Combine(configDirectory, "structures.json");
-            _localVersionPath = Path.Combine(configDirectory, "version.json");
+            _storagePaths = StoragePaths.Create(storageRoot);
         }
 
         public async Task InitializeDatabasesAsync(string currentLolVersion)
@@ -62,12 +46,12 @@ namespace VideoGenerator.Services
                 bool versionChanged = CheckIfVersionChanged(currentLolVersion);
 
                 // 1. Sync Champions and Items from DDragon if version changed or files missing
-                if (versionChanged || !File.Exists(_championsPath))
+                if (versionChanged || !File.Exists(_storagePaths.ChampionsPath))
                 {
                     await SyncChampionsAsync(currentLolVersion);
                 }
 
-                if (versionChanged || !File.Exists(_itemsPath))
+                if (versionChanged || !File.Exists(_storagePaths.ItemsPath))
                 {
                     await SyncItemsAsync(currentLolVersion);
                 }
@@ -77,9 +61,9 @@ namespace VideoGenerator.Services
                 // the server for updates on every application session.
                 string defaultLocale = AppConfig.GetCdragonLocale();
                 await Task.WhenAll(
-                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinsDataUrl(defaultLocale), GetSkinsCachePath(defaultLocale)),
-                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinLinesUrl(defaultLocale), GetSkinLinesCachePath(defaultLocale)),
-                    SyncCommunityDragonJsonAsync(AppConfig.GetItemsDataUrl(defaultLocale), GetItemsCachePath(defaultLocale))
+                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinsDataUrl(defaultLocale), _storagePaths.GetSkinsCachePath(defaultLocale)),
+                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinLinesUrl(defaultLocale), _storagePaths.GetSkinLinesCachePath(defaultLocale)),
+                    SyncCommunityDragonJsonAsync(AppConfig.GetItemsDataUrl(defaultLocale), _storagePaths.GetItemsCachePath(defaultLocale))
                 );
 
                 // 3. Fandom sync (Monsters/Structures) - These are lore-based, so we always try to merge new ones
@@ -103,15 +87,6 @@ namespace VideoGenerator.Services
                 _initializationGate.Release();
             }
         }
-
-        private string GetSkinsCachePath(string locale) =>
-            Path.Combine(_cacheDirectory, $"skins_data_{locale}.json");
-
-        private string GetSkinLinesCachePath(string locale) =>
-            Path.Combine(_cacheDirectory, $"skinlines_data_{locale}.json");
-
-        private string GetItemsCachePath(string locale) =>
-            Path.Combine(_cacheDirectory, $"items_data_{locale}.json");
 
         private async Task SyncCommunityDragonJsonAsync(string url, string cachePath)
         {
@@ -156,8 +131,8 @@ namespace VideoGenerator.Services
         {
             try
             {
-                if (!File.Exists(_localVersionPath)) return true;
-                string localVersion = File.ReadAllText(_localVersionPath).Trim();
+                if (!File.Exists(_storagePaths.LocalVersionPath)) return true;
+                string localVersion = File.ReadAllText(_storagePaths.LocalVersionPath).Trim();
                 return !localVersion.Equals(currentVersion, StringComparison.OrdinalIgnoreCase);
             }
             catch (Exception ex)
@@ -172,11 +147,11 @@ namespace VideoGenerator.Services
         {
             try
             {
-                string temporaryPath = $"{_localVersionPath}.{Guid.NewGuid():N}.tmp";
+                string temporaryPath = $"{_storagePaths.LocalVersionPath}.{Guid.NewGuid():N}.tmp";
                 try
                 {
                     File.WriteAllText(temporaryPath, version, Encoding.UTF8);
-                    File.Move(temporaryPath, _localVersionPath, true);
+                    File.Move(temporaryPath, _storagePaths.LocalVersionPath, true);
                 }
                 finally
                 {
@@ -211,7 +186,7 @@ namespace VideoGenerator.Services
                         }
                     }
 
-                    SaveToJson(_championsPath, championsList.OrderBy(x => x).ToList());
+                    SaveToJson(_storagePaths.ChampionsPath, championsList.OrderBy(x => x).ToList());
                 }
             }
             catch (Exception ex)
@@ -243,7 +218,7 @@ namespace VideoGenerator.Services
                         }
                     }
 
-                    SaveToJson(_itemsPath, itemsDict);
+                    SaveToJson(_storagePaths.ItemsPath, itemsDict);
                 }
             }
             catch (Exception ex)
@@ -328,11 +303,11 @@ namespace VideoGenerator.Services
             try
             {
                 var existing = new MonsterDatabase();
-                if (File.Exists(_monstersPath))
+                if (File.Exists(_storagePaths.MonstersPath))
                 {
                     try
                     {
-                        string existingJson = await File.ReadAllTextAsync(_monstersPath);
+                        string existingJson = await File.ReadAllTextAsync(_storagePaths.MonstersPath);
                         var loaded = JsonSerializer.Deserialize<MonsterDatabase>(existingJson);
                         if (loaded != null) existing = loaded;
                     }
@@ -360,9 +335,9 @@ namespace VideoGenerator.Services
                 bool epicChanged = MergeInto(existing.Epic, epicMonsters);
                 bool largeChanged = MergeInto(existing.Large, largeMonsters);
 
-                if (epicChanged || largeChanged || !File.Exists(_monstersPath))
+                if (epicChanged || largeChanged || !File.Exists(_storagePaths.MonstersPath))
                 {
-                    SaveToJson(_monstersPath, existing);
+                    SaveToJson(_storagePaths.MonstersPath, existing);
                 }
             }
             catch (Exception ex)
@@ -376,11 +351,11 @@ namespace VideoGenerator.Services
             try
             {
                 var existing = new List<StructureMapping>();
-                if (File.Exists(_structuresPath))
+                if (File.Exists(_storagePaths.StructuresPath))
                 {
                     try
                     {
-                        string existingJson = await File.ReadAllTextAsync(_structuresPath);
+                        string existingJson = await File.ReadAllTextAsync(_storagePaths.StructuresPath);
                         var loaded = JsonSerializer.Deserialize<List<StructureMapping>>(existingJson);
                         if (loaded != null) existing = loaded;
                     }
@@ -407,9 +382,9 @@ namespace VideoGenerator.Services
                     }
                 }
 
-                if (changed || !File.Exists(_structuresPath))
+                if (changed || !File.Exists(_storagePaths.StructuresPath))
                 {
-                    SaveToJson(_structuresPath, existing.OrderBy(x => x.Keyword).ToList());
+                    SaveToJson(_storagePaths.StructuresPath, existing.OrderBy(x => x.Keyword).ToList());
                 }
             }
             catch (Exception ex)

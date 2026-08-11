@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using VideoGenerator.Models;
 using VideoGenerator.Utils;
 
 namespace VideoGenerator.Services
@@ -21,13 +22,12 @@ namespace VideoGenerator.Services
 
         public LogService()
         {
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string logsDir = Path.Combine(baseDir, "logs");
+            string logsDir = AppConfig.Paths.LogsDirectory;
             
             DirectoriesCreator.CreateDirectory(logsDir);
 
-            _infoLogPath = Path.Combine(logsDir, "application_logs.log");
-            _errorLogPath = Path.Combine(logsDir, "application_errors.log");
+            _infoLogPath = AppConfig.Paths.ApplicationLogPath;
+            _errorLogPath = AppConfig.Paths.ApplicationErrorsPath;
             _dispatcher = System.Windows.Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
         }
 
