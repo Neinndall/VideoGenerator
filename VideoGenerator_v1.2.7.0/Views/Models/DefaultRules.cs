@@ -53,6 +53,7 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "MoveLong", TranslationKey = "event_move_long", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveStandard", TranslationKey = "event_move_standard", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveRiver", TranslationKey = "event_move_river", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "MoveRReady", TranslationKey = "event_move_r_ready", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveLongAllSwords", TranslationKey = "event_move_long_all_swords", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Recall", TranslationKey = "event_recall", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Respawn", Section = "MOVEMENT", TranslationKey = "event_respawn", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },

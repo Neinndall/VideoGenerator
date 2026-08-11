@@ -65,6 +65,10 @@ Improvements
   - Pipeline / Completion Delay: Introduced a `500ms` completion delay in `ProgressService.cs` so that the `100.0%` completed state is visible before returning to idle.
 
 Bug Fixes
+  - Pipeline / Ultimate-Ready Movement Events: Recognize `Move2DRReady` audio folders and display their localized movement label instead of the raw folder name.
+  - UI / Dashboard Filter Reset: Reset the character, status, and search filters when selecting a new source or processing folders, ensuring the full detected pipeline is visible and available for preparation and rendering.
+  - Pipeline / Icon Resolution Cancellation: Propagate cancellation after concurrent icon hydration so an interrupted analysis is reported as canceled instead of completing silently.
+  - Core / Progress Completion Race: Made delayed progress completion awaitable and operation-aware, preventing an earlier workflow from resetting the progress state of a newer one.
   - Media / Failed Render Cleanup: Remove temporary segmented render files when FFmpeg fails or a render is canceled.
   - UI / Dialogue Editor Queue Counter: Made the read-only event count binding explicitly one-way to prevent a startup binding error.
   - Pipeline / Image Cache Invalidation: Regenerate HUD images when dialogue or Quick Edit content changes before rendering videos.

@@ -161,9 +161,9 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <RadioButton Grid.Column="0" Content="ALL" GroupName="FilterGroup" IsChecked="True" Checked="Filter_Checked" Tag="ALL" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
-                            <RadioButton Grid.Column="1" Content="ERRORS" GroupName="FilterGroup" Checked="Filter_Checked" Tag="ERRORS" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
-                            <RadioButton Grid.Column="2" Content="PENDING" GroupName="FilterGroup" Checked="Filter_Checked" Tag="PENDING" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                            <RadioButton Grid.Column="0" Content="ALL" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=ALL, Mode=TwoWay}" Checked="Filter_Checked" Tag="ALL" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                            <RadioButton Grid.Column="1" Content="ERRORS" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=ERRORS, Mode=TwoWay}" Checked="Filter_Checked" Tag="ERRORS" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                            <RadioButton Grid.Column="2" Content="PENDING" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=PENDING, Mode=TwoWay}" Checked="Filter_Checked" Tag="PENDING" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
                         </Grid>
                     </Border>
 

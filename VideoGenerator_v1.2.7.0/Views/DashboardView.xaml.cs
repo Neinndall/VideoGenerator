@@ -369,9 +369,9 @@ namespace VideoGenerator.Views
                 _model.IsAnalyzed = false;
                 _model.ProcessedEvents.Clear();
                 _model.FilteredProcessedEvents.Clear();
-                ResetEventFilters();
                 _model.CharactersList.Clear();
                 _model.CharactersList.Add("ALL");
+                ResetEventFilters();
             }
         }
 
@@ -396,9 +396,9 @@ namespace VideoGenerator.Views
             _progressService.Start("Waiting for official data synchronization", true);
             _model.ProcessedEvents.Clear();
             _model.FilteredProcessedEvents.Clear();
-            ResetEventFilters();
             _model.CharactersList.Clear();
             _model.CharactersList.Add("ALL");
+            ResetEventFilters();
             _logger.Logs.Clear();
             _logger.LogInfo($">>> ANALYZING: {_model.AudioPath}");
 

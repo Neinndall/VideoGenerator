@@ -167,6 +167,33 @@ public sealed class EventNameParserIntegrationTests
         }
     }
 
+    [Fact]
+    public async Task ParsesUltimateReadyMovementVariant()
+    {
+        string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            var parser = CreateParser(root, httpClient);
+
+            ParsedEvent parsed = await parser.ParseFolderNameAsync(
+                "Play_vo_AatroxSkin33_Move2DRReady",
+                "EN");
+
+            Assert.Equal("generic", parsed.IconType);
+            Assert.Equal("Generic", parsed.IconLookupName);
+            Assert.Equal("Movement (Ultimate Ready)", parsed.DisplayText);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     private static EventNameParser CreateParser(string root, HttpClient httpClient)
     {
         var logger = new LogService();
@@ -176,6 +203,7 @@ public sealed class EventNameParserIntegrationTests
               "EN": {
                 "event_buy_item": "Buy Item {item_name}",
                 "event_kill_general": "Kill in General",
+                "event_move_r_ready": "Movement (Ultimate Ready)",
                 "interaction_attack_monster": "Attack {monster}",
                 "interaction_first_encounter_one": "First Encounter with {0}",
                 "suffix_in_general": " in General"
