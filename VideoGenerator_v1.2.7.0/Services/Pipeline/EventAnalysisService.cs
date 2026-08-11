@@ -21,17 +21,17 @@ namespace VideoGenerator.Services
             RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
         private readonly AudioFolderDiscoveryService _folderDiscovery;
-        private readonly NameParser _nameParser;
+        private readonly IEventNameParser _nameParser;
         private readonly VideoService _videoService;
-        private readonly DialogueService _dialogueService;
+        private readonly IDialogueStore _dialogueService;
         private readonly LogService _logger;
         private readonly AppSettings _settings;
 
         public EventAnalysisService(
             AudioFolderDiscoveryService folderDiscovery,
-            NameParser nameParser,
+            IEventNameParser nameParser,
             VideoService videoService,
-            DialogueService dialogueService,
+            IDialogueStore dialogueService,
             LogService logger,
             AppSettings settings)
         {

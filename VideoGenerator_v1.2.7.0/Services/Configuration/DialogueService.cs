@@ -9,7 +9,7 @@ using VideoGenerator.Utils;
 
 namespace VideoGenerator.Services
 {
-    public class DialogueService
+    public class DialogueService : IDialogueStore
     {
         private Dictionary<string, Dictionary<string, string>> _dialogues = new(StringComparer.OrdinalIgnoreCase);
         private readonly string _filePath;

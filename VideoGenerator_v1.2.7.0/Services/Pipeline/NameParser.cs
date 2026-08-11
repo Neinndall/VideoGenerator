@@ -9,7 +9,7 @@ using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Services
 {
-    public class NameParser
+    public class NameParser : IEventNameParser
     {
         private readonly List<IEventParser> _parsers;
         private readonly RuleManager _ruleManager;

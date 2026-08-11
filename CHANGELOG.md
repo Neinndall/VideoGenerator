@@ -23,8 +23,6 @@ New Features
   - UI / Semantic Design Tokens: Added reusable tokens for page hierarchy, status pills, hero surfaces, inset panels, ghost actions, and compact icon buttons.
 
 Improvements
-  - Testing / Workflow Coverage: Expanded deterministic xUnit coverage for preparation and render plans, segmented HUD image counts, dialogue cleanup, progress state transitions, and error filtering.
-  - Testing / Media Integration: Added isolated FFmpeg integration coverage for segmented images, single-image multi-audio renders, and cancellation cleanup without touching user AppData.
   - UI / Secondary Button Language: Standardized secondary actions on a borderless surface with shared hover feedback across Dashboard and Dialogue Editor controls.
   - UI / Dialogue Editor Layout: Replaced the floating event-action card with a flat separated toolbar to keep event edits and batch approval visually distinct.
   - UI / Dialogue Editor Events Queue: Added a complete rounded panel frame with a compact event counter and a restrained validation indicator.
