@@ -58,6 +58,7 @@ Improvements
   - Pipeline / Completion Delay: Introduced a `500ms` completion delay in `ProgressService.cs` so that the `100.0%` completed state is visible before returning to idle.
 
 Bug Fixes
+  - Core / Cancellation: Cancel the previous operation before replacing its cancellation token, preventing stale workflows from continuing in the background.
   - UI / Dashboard Runtime Resource: Loaded `ButtonStyles.xaml` before `ProductionWorkspaceStyles.xaml`, resolving the `ModernSecondaryButton` dependency.
   - Analyzer / Project Reference: Fixed the Analyzer to build against the current application project.
   - Audio / Recursive Folder Scan: Fixed nested champion/skin event folders returning zero events.

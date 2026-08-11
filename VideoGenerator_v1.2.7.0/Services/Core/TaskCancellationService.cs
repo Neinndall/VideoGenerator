@@ -34,6 +34,7 @@ namespace VideoGenerator.Services
         {
             lock (_lock)
             {
+                _cts?.Cancel();
                 _cts?.Dispose();
                 _cts = new CancellationTokenSource();
                 return _cts.Token;
