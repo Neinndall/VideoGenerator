@@ -17,15 +17,25 @@ namespace VideoGenerator.Services
         private readonly AliasManager _aliasManager;
         private readonly SkinlineManager _skinlineManager;
         private readonly LogService _logger;
+        private readonly string _iconCacheDirectory;
         private static readonly Random _random = new();
 
-        public IconManager(DataFetcher dataFetcher, GroupManager groupManager, AliasManager aliasManager, SkinlineManager skinlineManager, LogService logger)
+        public IconManager(
+            DataFetcher dataFetcher,
+            GroupManager groupManager,
+            AliasManager aliasManager,
+            SkinlineManager skinlineManager,
+            LogService logger,
+            string iconCacheDirectory = null)
         {
             _dataFetcher = dataFetcher;
             _groupManager = groupManager;
             _aliasManager = aliasManager;
             _skinlineManager = skinlineManager;
             _logger = logger;
+            _iconCacheDirectory = string.IsNullOrWhiteSpace(iconCacheDirectory)
+                ? AppConfig.IconCacheDir
+                : iconCacheDirectory;
         }
 
         public async Task<string> GetChampionIconAsync(string championName, string lolVersion)
@@ -93,7 +103,7 @@ namespace VideoGenerator.Services
                 if (matchedGroup.Category.Equals("Region", StringComparison.OrdinalIgnoreCase))
                 {
                     string fileName = GetRegionCrestFileName(matchedGroup.Name);
-                    string localPath = Path.Combine(AppConfig.IconCacheDir, "region", fileName);
+                    string localPath = Path.Combine(_iconCacheDirectory, "region", fileName);
                     if (File.Exists(localPath)) return localPath;
 
                     string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(fileName);
@@ -234,7 +244,7 @@ namespace VideoGenerator.Services
                 if (finalFileName.Equals("Lord_Dominiks_Regards_item.png", StringComparison.OrdinalIgnoreCase)) finalFileName = "Lord_Dominik%27s_Regards_item.png";
 
                 string localFileName = finalFileName.Replace("%27", "'");
-                string localPath = Path.Combine(AppConfig.IconCacheDir, "item", localFileName);
+                string localPath = Path.Combine(_iconCacheDirectory, "item", localFileName);
                 if (File.Exists(localPath)) return localPath;
 
                 string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(finalFileName);
@@ -267,7 +277,7 @@ namespace VideoGenerator.Services
 
             foreach (var wikiFileName in patterns)
             {
-                string localPath = Path.Combine(AppConfig.IconCacheDir, "monster", wikiFileName);
+                string localPath = Path.Combine(_iconCacheDirectory, "monster", wikiFileName);
                 if (File.Exists(localPath)) return localPath;
 
                 string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(wikiFileName);
@@ -358,7 +368,7 @@ namespace VideoGenerator.Services
 
             foreach (var wikiFileName in patterns)
             {
-                string localPath = Path.Combine(AppConfig.IconCacheDir, "structure", wikiFileName);
+                string localPath = Path.Combine(_iconCacheDirectory, "structure", wikiFileName);
                 if (File.Exists(localPath)) return localPath;
 
                 string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(wikiFileName);
@@ -409,7 +419,7 @@ namespace VideoGenerator.Services
 
             foreach (var wikiFileName in candidates)
             {
-                string localPath = Path.Combine(AppConfig.IconCacheDir, "system", wikiFileName);
+                string localPath = Path.Combine(_iconCacheDirectory, "system", wikiFileName);
                 if (File.Exists(localPath)) return localPath;
 
                 string fandomUrl = await _dataFetcher.ResolveFandomImageUrlAsync(wikiFileName);
