@@ -1,0 +1,39 @@
+name: "💡 Suggestion / Feature Request"
+description: "Propose a new feature, improvement, or idea for VideoGenerator."
+title: "[SUGGESTION] "
+labels: 
+  - "enhancement"
+  - "triage"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!NOTE]
+        > Thank you for sharing your ideas with us! 
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "💡 Description of the Suggestion"
+      description: "Describe the new feature or improvement you would like to see in VideoGenerator."
+      placeholder: "Clearly explain the feature or change you are proposing..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: "🎯 Why is this needed?"
+      description: "What problem does this solve? Why is it a valuable addition to the application?"
+      placeholder: "Explain the benefit or use case for this suggestion..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockups-context
+    attributes:
+      label: "🎨 Mockups or Additional Context (Optional)"
+      description: "Attach screenshots, drawings, mockups, or any other references."
+      placeholder: "Drag and drop images, paste links, or provide extra details..."
+    validations:
+      required: false

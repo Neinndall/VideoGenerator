@@ -1,0 +1,78 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Production workspace tokens. These styles establish hierarchy without coupling views to layout details. -->
+    <Thickness x:Key="WorkspacePagePadding">0,16,0,8</Thickness>
+    <Style x:Key="WorkspaceEyebrowText" TargetType="TextBlock" BasedOn="{StaticResource SectionLabelText}">
+        <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+    </Style>
+
+    <Style x:Key="WorkspaceTitleText" TargetType="TextBlock" BasedOn="{StaticResource PageTitleText}">
+        <Setter Property="FontSize" Value="30"/>
+    </Style>
+
+    <Style x:Key="WorkspaceHeaderContainer" TargetType="Border">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="0,0,0,16"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="CornerRadius" Value="0"/>
+    </Style>
+
+    <Style x:Key="WorkspaceToolbarContainer" TargetType="Border">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="0,12"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <Style x:Key="WorkspacePanelContainer" TargetType="Border">
+        <Setter Property="Background" Value="#131316"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <Style x:Key="WorkspacePanelHeader" TargetType="Border" BasedOn="{StaticResource SectionHeaderBorder}">
+        <Setter Property="Padding" Value="16,12"/>
+        <Setter Property="CornerRadius" Value="7,7,0,0"/>
+    </Style>
+
+    <Style x:Key="WorkspaceCanvasContainer" TargetType="Border" BasedOn="{StaticResource WorkspacePanelContainer}">
+        <Setter Property="Background" Value="#09090B"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
+    <Style x:Key="WorkspaceInspectorContainer" TargetType="Border">
+        <Setter Property="Background" Value="#17171C"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Margin" Value="0,12,0,0"/>
+        <Setter Property="Padding" Value="16"/>
+    </Style>
+
+    <Style x:Key="WorkspaceMetricPill" TargetType="Border" BasedOn="{StaticResource StatusPill}">
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="CornerRadius" Value="7"/>
+    </Style>
+
+    <Style x:Key="WorkflowStepButton" TargetType="Button" BasedOn="{StaticResource ModernSecondaryButton}">
+        <Setter Property="Height" Value="52"/>
+        <Setter Property="Padding" Value="14,0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="WorkflowPrimaryStepButton" TargetType="Button" BasedOn="{StaticResource ModernPrimaryButton}">
+        <Setter Property="Height" Value="52"/>
+        <Setter Property="Padding" Value="14,0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="ConsolePanelContainer" TargetType="Border" BasedOn="{StaticResource WorkspacePanelContainer}">
+        <Setter Property="MinHeight" Value="108"/>
+    </Style>
+</ResourceDictionary>

@@ -1,0 +1,25 @@
+<UserControl x:Class="VideoGenerator.Views.ModernProgressBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="20" d:DesignWidth="300">
+    <Grid>
+        <!-- Custom Progress Recipient (HUD style pill container) -->
+        <Border Height="8" 
+                CornerRadius="4" 
+                Background="#2D2D30" 
+                BorderThickness="0"
+                Padding="1">
+            <ProgressBar Value="{Binding Value, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}" 
+                         IsIndeterminate="{Binding IsIndeterminate, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
+                         Style="{StaticResource MaterialDesignLinearProgressBar}"
+                         Background="Transparent"
+                         Foreground="{StaticResource AccentBrush}"
+                         Height="6"
+                         BorderThickness="0"/>
+        </Border>
+    </Grid>
+</UserControl>
