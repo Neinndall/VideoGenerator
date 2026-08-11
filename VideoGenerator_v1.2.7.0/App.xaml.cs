@@ -70,7 +70,7 @@ namespace VideoGenerator
             services.AddSingleton<GroupManager>();
             services.AddSingleton<AliasManager>();
             services.AddSingleton<IconManager>();
-            services.AddSingleton<IEventNameParser, NameParser>();
+            services.AddSingleton<IEventNameParser, EventNameParser>();
             services.AddSingleton<ImageGenerator>();
             services.AddSingleton<VideoService>();
             services.AddSingleton<TranscriptionService>();
