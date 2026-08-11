@@ -21,7 +21,7 @@ namespace VideoGenerator.Services
         {
             _logger = logger;
             _configPath = string.IsNullOrWhiteSpace(groupsFilePath)
-                ? AppConfig.Paths.GroupsPath
+                ? AppConfig.GroupsPath
                 : groupsFilePath;
             LoadGroups();
         }

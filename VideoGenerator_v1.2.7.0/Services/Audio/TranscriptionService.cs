@@ -29,7 +29,7 @@ namespace VideoGenerator.Services
 
         private string GetModelPath()
         {
-            return AppConfig.Paths.GetWhisperModelPath(GetModelFileName());
+            return AppConfig.GetWhisperModelPath(GetModelFileName());
         }
 
         private string GetModelUrl()
@@ -133,7 +133,7 @@ namespace VideoGenerator.Services
             await EnsureModelReadyAsync();
             await _videoService.EnsureBinariesReadyAsync();
 
-            string tempWavPath = AppConfig.Paths.CreateTemporaryWavPath();
+            string tempWavPath = AppConfig.CreateTemporaryWavPath();
             
             try
             {

@@ -18,7 +18,7 @@ namespace VideoGenerator.Services
     {
         private readonly HttpClient _httpClient;
         private readonly LogService _logger;
-        private readonly StoragePaths _storagePaths;
+        private readonly string _storageRoot;
         private Dictionary<string, JsonElement> _skinsCache;
         private List<JsonElement> _skinLinesCache;
         private Dictionary<int, ItemData> _itemsCache;
@@ -40,13 +40,26 @@ namespace VideoGenerator.Services
         {
             _httpClient = httpClient;
             _logger = logger;
-            _storagePaths = StoragePaths.Create(storageRoot);
+            _storageRoot = storageRoot;
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             _httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8");
             _httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
         }
 
         private string _cachedVersion;
+
+        private string GetSkinsCachePath(string locale) =>
+            AppConfig.GetSkinsCachePath(locale, _storageRoot);
+
+        private string GetSkinLinesCachePath(string locale) =>
+            AppConfig.GetSkinLinesCachePath(locale, _storageRoot);
+
+        private string GetItemsCachePath(string locale) =>
+            AppConfig.GetItemsCachePath(locale, _storageRoot);
+
+        private string IconCacheDirectory => AppConfig.GetIconCacheDirectory(_storageRoot);
+        private string ItemsFilePath => AppConfig.GetItemsFilePath(_storageRoot);
+        private string MonstersFilePath => AppConfig.GetMonstersFilePath(_storageRoot);
 
         public async Task<string> GetLatestLolVersionAsync()
         {
@@ -71,7 +84,7 @@ namespace VideoGenerator.Services
             string locale = AppConfig.GetCdragonLocale(language);
             if (_skinsCache != null && _loadedSkinsLocale == locale) return _skinsCache;
 
-            string cachePath = _storagePaths.GetSkinsCachePath(locale);
+            string cachePath = GetSkinsCachePath(locale);
             if (File.Exists(cachePath))
             {
                 try
@@ -129,7 +142,7 @@ namespace VideoGenerator.Services
             string locale = AppConfig.GetCdragonLocale(language);
             if (_skinLinesCache != null && _loadedSkinlinesLocale == locale) return _skinLinesCache;
 
-            string cachePath = _storagePaths.GetSkinLinesCachePath(locale);
+            string cachePath = GetSkinLinesCachePath(locale);
             if (File.Exists(cachePath))
             {
                 try
@@ -154,7 +167,7 @@ namespace VideoGenerator.Services
             string locale = AppConfig.GetCdragonLocale(language);
             if (_itemsCache != null && _loadedItemsLocale == locale) return _itemsCache;
 
-            string cachePath = _storagePaths.GetItemsCachePath(locale);
+            string cachePath = GetItemsCachePath(locale);
             if (File.Exists(cachePath))
             {
                 try
@@ -207,7 +220,7 @@ namespace VideoGenerator.Services
         {
             try
             {
-                string categoryDir = Path.Combine(_storagePaths.IconCacheDirectory, category);
+                string categoryDir = Path.Combine(IconCacheDirectory, category);
                 DirectoriesCreator.CreateDirectory(categoryDir);
                 
                 string fileName = customFileName ?? Path.GetFileName(new Uri(url).LocalPath);
@@ -343,9 +356,9 @@ namespace VideoGenerator.Services
         {
             try
             {
-                if (File.Exists(_storagePaths.MonstersPath))
+                if (File.Exists(MonstersFilePath))
                 {
-                    string json = File.ReadAllText(_storagePaths.MonstersPath);
+                    string json = File.ReadAllText(MonstersFilePath);
                     var db = JsonSerializer.Deserialize<MonsterDatabase>(json);
                     if (db != null) return db;
                 }
@@ -356,9 +369,9 @@ namespace VideoGenerator.Services
                 // Legacy flat list fallback
                 try
                 {
-                    if (File.Exists(_storagePaths.MonstersPath))
+                    if (File.Exists(MonstersFilePath))
                     {
-                        string json = File.ReadAllText(_storagePaths.MonstersPath);
+                        string json = File.ReadAllText(MonstersFilePath);
                         var list = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
                         return new MonsterDatabase { Large = list };
                     }
@@ -444,9 +457,9 @@ namespace VideoGenerator.Services
             {
                 try
                 {
-                    if (File.Exists(_storagePaths.ItemsPath))
+                    if (File.Exists(ItemsFilePath))
                     {
-                        string jsonStr = await File.ReadAllTextAsync(_storagePaths.ItemsPath);
+                        string jsonStr = await File.ReadAllTextAsync(ItemsFilePath);
                         var baseMap = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonStr) ?? new Dictionary<string, string>();
                         
                         var tempMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

@@ -21,7 +21,7 @@ namespace VideoGenerator.Services
         {
             _logger = logger;
             _rulesFilePath = string.IsNullOrWhiteSpace(rulesFilePath)
-                ? AppConfig.Paths.EventRulesPath
+                ? AppConfig.EventRulesPath
                 : rulesFilePath;
             LoadRules();
         }

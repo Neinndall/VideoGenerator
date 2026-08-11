@@ -116,9 +116,9 @@ namespace VideoGenerator.Services
                 return _cachedBackground.Clone();
             }
 
-            if (File.Exists(AppConfig.Paths.BackgroundPath))
+            if (File.Exists(AppConfig.BackgroundPath))
             {
-                _cachedBackground = await Image.LoadAsync<Rgba32>(AppConfig.Paths.BackgroundPath);
+                _cachedBackground = await Image.LoadAsync<Rgba32>(AppConfig.BackgroundPath);
                 return _cachedBackground.Clone();
             }
 
@@ -131,8 +131,8 @@ namespace VideoGenerator.Services
         {
             cancellationToken.ThrowIfCancellationRequested();
             string targetDir = string.IsNullOrEmpty(subFolder)
-                ? AppConfig.Paths.OutputImagesDirectory
-                : Path.Combine(AppConfig.Paths.OutputImagesDirectory, subFolder);
+                ? AppConfig.OutputImagesDir
+                : Path.Combine(AppConfig.OutputImagesDir, subFolder);
             DirectoriesCreator.CreateDirectory(targetDir);
             string filename = string.IsNullOrEmpty(customSuffix) ? $"{eventData.OriginalFolder}.png" : $"{eventData.OriginalFolder}_{customSuffix}.png";
             string outputPath = Path.Combine(targetDir, filename);

@@ -19,7 +19,7 @@ namespace VideoGenerator.Services
         public DialogueService(LogService logger)
         {
             _logger = logger;
-            _filePath = AppConfig.Paths.DialoguesPath;
+            _filePath = AppConfig.DialoguesPath;
             LoadDialogues();
         }
 
@@ -93,9 +93,9 @@ namespace VideoGenerator.Services
                 }
 
                 // Migrate from translations.json if it exists and dialogues.json is empty
-                if (File.Exists(AppConfig.Paths.TranslationsPath))
+                if (File.Exists(AppConfig.TranslationsPath))
                 {
-                    string transJson = File.ReadAllText(AppConfig.Paths.TranslationsPath);
+                    string transJson = File.ReadAllText(AppConfig.TranslationsPath);
                     var transData = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(transJson);
                     if (transData != null)
                     {

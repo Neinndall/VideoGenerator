@@ -14,7 +14,7 @@ namespace VideoGenerator.Services
     public class AppSettings : ObservableObject
     {
         private static AppSettings _instance;
-        private static readonly string _settingsPath = AppConfig.Paths.SettingsPath;
+        private static readonly string _settingsPath = AppConfig.SettingsPath;
 
         private static Timer _saveTimer;
         private static readonly object _saveLock = new();

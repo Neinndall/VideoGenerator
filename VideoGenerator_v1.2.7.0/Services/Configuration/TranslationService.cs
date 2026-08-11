@@ -24,7 +24,7 @@ namespace VideoGenerator.Services
         {
             _logger = logger;
             _localTranslationsPath = string.IsNullOrWhiteSpace(localTranslationsPath)
-                ? AppConfig.Paths.TranslationsPath
+                ? AppConfig.TranslationsPath
                 : localTranslationsPath;
             LoadTranslations();
         }

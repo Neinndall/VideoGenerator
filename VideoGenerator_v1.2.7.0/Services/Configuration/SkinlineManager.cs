@@ -161,9 +161,9 @@ namespace VideoGenerator.Services
         {
             try
             {
-                if (!File.Exists(AppConfig.Paths.SkinlineCachePath)) return null;
+                if (!File.Exists(AppConfig.SkinlineCachePath)) return null;
 
-                string json = File.ReadAllText(AppConfig.Paths.SkinlineCachePath);
+                string json = File.ReadAllText(AppConfig.SkinlineCachePath);
                 var data = JsonSerializer.Deserialize<SkinlineCacheData>(json);
                 if (data?.SkinlineMap != null)
                 {
@@ -190,7 +190,7 @@ namespace VideoGenerator.Services
         {
             try
             {
-                DirectoriesCreator.CreateParentDirectory(AppConfig.Paths.SkinlineCachePath);
+                DirectoriesCreator.CreateParentDirectory(AppConfig.SkinlineCachePath);
 
                 var map = new Dictionary<string, SkinlineCacheEntry>();
                 foreach (var kvp in catalog.DisplayNames)
@@ -208,7 +208,7 @@ namespace VideoGenerator.Services
                     WriteIndented = true,
                     Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 });
-                File.WriteAllText(AppConfig.Paths.SkinlineCachePath, json, Encoding.UTF8);
+                File.WriteAllText(AppConfig.SkinlineCachePath, json, Encoding.UTF8);
             }
             catch (Exception ex)
             {

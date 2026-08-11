@@ -188,7 +188,7 @@ namespace VideoGenerator.Views
             try
             {
                 // Ensure a dummy icon exists in the local cache for the designer preview
-                string dummyIconPath = AppConfig.Paths.PreviewIconPlaceholderPath;
+                string dummyIconPath = AppConfig.PreviewIconPlaceholderPath;
                 if (!File.Exists(dummyIconPath))
                 {
                     try

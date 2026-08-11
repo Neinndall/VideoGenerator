@@ -22,12 +22,12 @@ namespace VideoGenerator.Services
 
         public LogService()
         {
-            string logsDir = AppConfig.Paths.LogsDirectory;
+            string logsDir = AppConfig.LogsDir;
             
             DirectoriesCreator.CreateDirectory(logsDir);
 
-            _infoLogPath = AppConfig.Paths.ApplicationLogPath;
-            _errorLogPath = AppConfig.Paths.ApplicationErrorsPath;
+            _infoLogPath = AppConfig.ApplicationLogPath;
+            _errorLogPath = AppConfig.ApplicationErrorsPath;
             _dispatcher = System.Windows.Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
         }
 

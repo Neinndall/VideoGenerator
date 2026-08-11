@@ -36,7 +36,7 @@ namespace VideoGenerator.Services
             int imageCount = dialogueParts.Length > 1 && pipelineEvent.AudioFiles.Count > 1
                 ? pipelineEvent.AudioFiles.Count
                 : 1;
-            string outputDirectory = Path.Combine(AppConfig.Paths.OutputImagesDirectory, pipelineEvent.CharacterName);
+            string outputDirectory = Path.Combine(AppConfig.OutputImagesDir, pipelineEvent.CharacterName);
             bool imagesReady = true;
 
             for (int index = 0; index < imageCount; index++)

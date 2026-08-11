@@ -113,7 +113,7 @@ namespace VideoGenerator
             else
             {
                 // Fallback if DI is not ready
-                string logPath = AppConfig.Paths.ApplicationErrorsPath;
+                string logPath = AppConfig.ApplicationErrorsPath;
                 DirectoriesCreator.CreateParentDirectory(logPath);
                 File.AppendAllText(logPath, $"[CRITICAL] {DateTime.Now}: {ex.Message}\n{ex.StackTrace}\n\n");
             }

@@ -18,7 +18,7 @@ namespace VideoGenerator.Services
     {
         private readonly HttpClient _httpClient;
         private readonly LogService _logger;
-        private readonly StoragePaths _storagePaths;
+        private readonly string _storageRoot;
         private readonly SemaphoreSlim _initializationGate = new(1, 1);
         private readonly TaskCompletionSource<bool> _initializationReady = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -32,8 +32,14 @@ namespace VideoGenerator.Services
         {
             _httpClient = httpClient;
             _logger = logger;
-            _storagePaths = StoragePaths.Create(storageRoot);
+            _storageRoot = storageRoot;
         }
+
+        private string ChampionsFilePath => AppConfig.GetChampionsFilePath(_storageRoot);
+        private string ItemsFilePath => AppConfig.GetItemsFilePath(_storageRoot);
+        private string MonstersFilePath => AppConfig.GetMonstersFilePath(_storageRoot);
+        private string StructuresFilePath => AppConfig.GetStructuresFilePath(_storageRoot);
+        private string LocalVersionFilePath => AppConfig.GetLocalVersionFilePath(_storageRoot);
 
         public async Task InitializeDatabasesAsync(string currentLolVersion)
         {
@@ -46,12 +52,12 @@ namespace VideoGenerator.Services
                 bool versionChanged = CheckIfVersionChanged(currentLolVersion);
 
                 // 1. Sync Champions and Items from DDragon if version changed or files missing
-                if (versionChanged || !File.Exists(_storagePaths.ChampionsPath))
+                if (versionChanged || !File.Exists(ChampionsFilePath))
                 {
                     await SyncChampionsAsync(currentLolVersion);
                 }
 
-                if (versionChanged || !File.Exists(_storagePaths.ItemsPath))
+                if (versionChanged || !File.Exists(ItemsFilePath))
                 {
                     await SyncItemsAsync(currentLolVersion);
                 }
@@ -61,9 +67,9 @@ namespace VideoGenerator.Services
                 // the server for updates on every application session.
                 string defaultLocale = AppConfig.GetCdragonLocale();
                 await Task.WhenAll(
-                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinsDataUrl(defaultLocale), _storagePaths.GetSkinsCachePath(defaultLocale)),
-                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinLinesUrl(defaultLocale), _storagePaths.GetSkinLinesCachePath(defaultLocale)),
-                    SyncCommunityDragonJsonAsync(AppConfig.GetItemsDataUrl(defaultLocale), _storagePaths.GetItemsCachePath(defaultLocale))
+                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinsDataUrl(defaultLocale), AppConfig.GetSkinsCachePath(defaultLocale, _storageRoot)),
+                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinLinesUrl(defaultLocale), AppConfig.GetSkinLinesCachePath(defaultLocale, _storageRoot)),
+                    SyncCommunityDragonJsonAsync(AppConfig.GetItemsDataUrl(defaultLocale), AppConfig.GetItemsCachePath(defaultLocale, _storageRoot))
                 );
 
                 // 3. Fandom sync (Monsters/Structures) - These are lore-based, so we always try to merge new ones
@@ -131,8 +137,8 @@ namespace VideoGenerator.Services
         {
             try
             {
-                if (!File.Exists(_storagePaths.LocalVersionPath)) return true;
-                string localVersion = File.ReadAllText(_storagePaths.LocalVersionPath).Trim();
+                if (!File.Exists(LocalVersionFilePath)) return true;
+                string localVersion = File.ReadAllText(LocalVersionFilePath).Trim();
                 return !localVersion.Equals(currentVersion, StringComparison.OrdinalIgnoreCase);
             }
             catch (Exception ex)
@@ -147,11 +153,11 @@ namespace VideoGenerator.Services
         {
             try
             {
-                string temporaryPath = $"{_storagePaths.LocalVersionPath}.{Guid.NewGuid():N}.tmp";
+                string temporaryPath = $"{LocalVersionFilePath}.{Guid.NewGuid():N}.tmp";
                 try
                 {
                     File.WriteAllText(temporaryPath, version, Encoding.UTF8);
-                    File.Move(temporaryPath, _storagePaths.LocalVersionPath, true);
+                    File.Move(temporaryPath, LocalVersionFilePath, true);
                 }
                 finally
                 {
@@ -186,7 +192,7 @@ namespace VideoGenerator.Services
                         }
                     }
 
-                    SaveToJson(_storagePaths.ChampionsPath, championsList.OrderBy(x => x).ToList());
+                    SaveToJson(ChampionsFilePath, championsList.OrderBy(x => x).ToList());
                 }
             }
             catch (Exception ex)
@@ -218,7 +224,7 @@ namespace VideoGenerator.Services
                         }
                     }
 
-                    SaveToJson(_storagePaths.ItemsPath, itemsDict);
+                    SaveToJson(ItemsFilePath, itemsDict);
                 }
             }
             catch (Exception ex)
@@ -303,11 +309,11 @@ namespace VideoGenerator.Services
             try
             {
                 var existing = new MonsterDatabase();
-                if (File.Exists(_storagePaths.MonstersPath))
+                if (File.Exists(MonstersFilePath))
                 {
                     try
                     {
-                        string existingJson = await File.ReadAllTextAsync(_storagePaths.MonstersPath);
+                        string existingJson = await File.ReadAllTextAsync(MonstersFilePath);
                         var loaded = JsonSerializer.Deserialize<MonsterDatabase>(existingJson);
                         if (loaded != null) existing = loaded;
                     }
@@ -335,9 +341,9 @@ namespace VideoGenerator.Services
                 bool epicChanged = MergeInto(existing.Epic, epicMonsters);
                 bool largeChanged = MergeInto(existing.Large, largeMonsters);
 
-                if (epicChanged || largeChanged || !File.Exists(_storagePaths.MonstersPath))
+                if (epicChanged || largeChanged || !File.Exists(MonstersFilePath))
                 {
-                    SaveToJson(_storagePaths.MonstersPath, existing);
+                    SaveToJson(MonstersFilePath, existing);
                 }
             }
             catch (Exception ex)
@@ -351,11 +357,11 @@ namespace VideoGenerator.Services
             try
             {
                 var existing = new List<StructureMapping>();
-                if (File.Exists(_storagePaths.StructuresPath))
+                if (File.Exists(StructuresFilePath))
                 {
                     try
                     {
-                        string existingJson = await File.ReadAllTextAsync(_storagePaths.StructuresPath);
+                        string existingJson = await File.ReadAllTextAsync(StructuresFilePath);
                         var loaded = JsonSerializer.Deserialize<List<StructureMapping>>(existingJson);
                         if (loaded != null) existing = loaded;
                     }
@@ -382,9 +388,9 @@ namespace VideoGenerator.Services
                     }
                 }
 
-                if (changed || !File.Exists(_storagePaths.StructuresPath))
+                if (changed || !File.Exists(StructuresFilePath))
                 {
-                    SaveToJson(_storagePaths.StructuresPath, existing.OrderBy(x => x.Keyword).ToList());
+                    SaveToJson(StructuresFilePath, existing.OrderBy(x => x.Keyword).ToList());
                 }
             }
             catch (Exception ex)

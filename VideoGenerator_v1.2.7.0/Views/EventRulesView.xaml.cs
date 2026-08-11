@@ -384,7 +384,7 @@ namespace VideoGenerator.Views
 
             try
             {
-                string path = AppConfig.Paths.MonstersPath;
+                string path = AppConfig.MonstersPath;
                 if (System.IO.File.Exists(path))
                 {
                     string json = System.IO.File.ReadAllText(path);
@@ -397,7 +397,7 @@ namespace VideoGenerator.Views
                 // Legacy flat list fallback
                 try
                 {
-                    string path = AppConfig.Paths.MonstersPath;
+                    string path = AppConfig.MonstersPath;
                     if (System.IO.File.Exists(path))
                     {
                         string json = System.IO.File.ReadAllText(path);
@@ -415,7 +415,7 @@ namespace VideoGenerator.Views
         {
             try
             {
-                    string path = AppConfig.Paths.MonstersPath;
+                    string path = AppConfig.MonstersPath;
                 DirectoriesCreator.CreateParentDirectory(path);
 
                 var db = new MonsterDatabase();
@@ -492,7 +492,7 @@ namespace VideoGenerator.Views
             List<StructureMapping> loadedList = new();
             try
             {
-                string path = AppConfig.Paths.StructuresPath;
+                string path = AppConfig.StructuresPath;
                 if (System.IO.File.Exists(path))
                 {
                     string json = System.IO.File.ReadAllText(path);
@@ -522,7 +522,7 @@ namespace VideoGenerator.Views
         {
             try
             {
-                string path = AppConfig.Paths.StructuresPath;
+                string path = AppConfig.StructuresPath;
                 DirectoriesCreator.CreateParentDirectory(path);
                 string json = System.Text.Json.JsonSerializer.Serialize(StructureList.ToList(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                 System.IO.File.WriteAllText(path, json);
