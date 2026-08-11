@@ -66,6 +66,7 @@ Improvements
   - Pipeline / Completion Delay: Introduced a `500ms` completion delay in `ProgressService.cs` so that the `100.0%` completed state is visible before returning to idle.
 
 Bug Fixes
+  - Media / Failed Render Cleanup: Remove temporary segmented render files when FFmpeg fails or a render is canceled.
   - UI / Dialogue Editor Queue Counter: Made the read-only event count binding explicitly one-way to prevent a startup binding error.
   - Pipeline / Image Cache Invalidation: Regenerate HUD images when dialogue or Quick Edit content changes before rendering videos.
   - UI / Dashboard Workflow Lock: Disable preparation, review, and render actions while another workflow is processing.

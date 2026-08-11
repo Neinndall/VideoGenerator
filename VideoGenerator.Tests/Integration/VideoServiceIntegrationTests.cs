@@ -105,6 +105,48 @@ public sealed class VideoServiceIntegrationTests
         }
     }
 
+    [Fact]
+    public async Task CleansTemporaryClipsWhenSegmentedRenderFails()
+    {
+        string root = Directory.CreateTempSubdirectory("VideoGenerator.Integration.").FullName;
+
+        try
+        {
+            string imagePath = Path.Combine(root, "source.png");
+            string validAudioPath = Path.Combine(root, "valid.wav");
+            string missingAudioPath = Path.Combine(root, "missing.wav");
+            string outputPath = Path.Combine(root, "result.mp4");
+            string cacheDirectory = Path.Combine(root, "cache");
+
+            WritePng(imagePath, 72, 44, 128);
+            WriteWave(validAudioPath, 440);
+
+            var service = new VideoService(new LogService(), cacheDirectory);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+            await Assert.ThrowsAnyAsync<Exception>(() => service.CreateVideoAsync(
+                new List<string> { imagePath, imagePath },
+                new List<string> { validAudioPath, missingAudioPath },
+                outputPath,
+                silenceDuration: 0,
+                cancellationToken: timeout.Token));
+
+            string[] leftoverClips = Directory.Exists(cacheDirectory)
+                ? Directory.GetFiles(cacheDirectory, "temp_clip_*", SearchOption.TopDirectoryOnly)
+                : Array.Empty<string>();
+
+            Assert.Empty(leftoverClips);
+            Assert.False(File.Exists(outputPath));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     private static void WritePng(string path, byte red, byte green, byte blue)
     {
         using var image = new Image<Rgba32>(2, 2);

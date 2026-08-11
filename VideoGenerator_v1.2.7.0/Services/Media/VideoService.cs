@@ -263,6 +263,7 @@ namespace VideoGenerator.Services
             string concatListPath = null;
             string finalAudioInput = null;
             string srtPath = null;
+            var temporaryMediaPaths = new List<string>();
 
             try
             {
@@ -305,6 +306,8 @@ namespace VideoGenerator.Services
                         {
                             tempClipAudioPath = Path.Combine(cacheDir, $"temp_clip_audio_{i}_{Guid.NewGuid()}.wav");
                             tempConcatPath = Path.Combine(cacheDir, $"temp_clip_concat_{i}_{Guid.NewGuid()}.txt");
+                            temporaryMediaPaths.Add(tempClipAudioPath);
+                            temporaryMediaPaths.Add(tempConcatPath);
 
                             using (var writer = new StreamWriter(tempConcatPath))
                             {
@@ -326,6 +329,7 @@ namespace VideoGenerator.Services
 
                         // Generate the temporary video clip
                         string clipOutputPath = Path.Combine(cacheDir, $"temp_clip_{i}_{Guid.NewGuid()}.mp4");
+                        temporaryMediaPaths.Add(clipOutputPath);
                         var audioAnalysis = await FFProbe.AnalyseAsync(clipAudioInput);
                         var duration = audioAnalysis.Duration;
 
@@ -491,6 +495,14 @@ namespace VideoGenerator.Services
                     if (silentAudioPath != null && File.Exists(silentAudioPath)) File.Delete(silentAudioPath);
                     if (concatListPath != null && File.Exists(concatListPath)) File.Delete(concatListPath);
                     if (srtPath != null && File.Exists(srtPath)) File.Delete(srtPath);
+                    foreach (string temporaryMediaPath in temporaryMediaPaths)
+                    {
+                        try
+                        {
+                            if (File.Exists(temporaryMediaPath)) File.Delete(temporaryMediaPath);
+                        }
+                        catch { }
+                    }
                 }
                 catch { }
             }
