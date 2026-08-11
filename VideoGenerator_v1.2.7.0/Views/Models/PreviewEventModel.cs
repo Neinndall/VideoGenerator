@@ -70,6 +70,23 @@ namespace VideoGenerator.Views.Models
             get => _dialogue;
             set => SetProperty(ref _dialogue, value);
         }
+
+        private bool _imagesNeedRegeneration = true;
+        public bool ImagesNeedRegeneration
+        {
+            get => _imagesNeedRegeneration;
+            private set => SetProperty(ref _imagesNeedRegeneration, value);
+        }
+
+        public void MarkImagesDirty()
+        {
+            ImagesNeedRegeneration = true;
+        }
+
+        public void MarkImagesReady()
+        {
+            ImagesNeedRegeneration = false;
+        }
     }
 
     public class AudioFamilyModel

@@ -311,6 +311,11 @@ namespace VideoGenerator.Views
                 if (resolvedId != null) iconName = resolvedId;
             }
 
+            bool dialogueChanged = !string.Equals(ev.Dialogue, QuickEditDialogue.Text, StringComparison.Ordinal);
+            bool visualDataChanged = !string.Equals(ev.ParsedData.DisplayText, text, StringComparison.Ordinal) ||
+                                     !string.Equals(ev.ParsedData.IconLookupName, iconName, StringComparison.Ordinal) ||
+                                     !string.Equals(ev.ParsedData.IconType, iconType, StringComparison.Ordinal);
+
             ev.ParsedData.DisplayText = text;
             ev.ParsedData.IconLookupName = iconName;
             ev.ParsedData.IconType = iconType;
@@ -325,6 +330,10 @@ namespace VideoGenerator.Views
             if (ev.ParsedData != null)
             {
                 ev.ParsedData.Dialogue = dialogue;
+            }
+            if (dialogueChanged || visualDataChanged)
+            {
+                ev.MarkImagesDirty();
             }
             _dialogueService.SetDialogue(selectedLang, ev.FolderName, dialogue);
 
@@ -762,6 +771,7 @@ namespace VideoGenerator.Views
                         {
                             ev.ParsedData.Dialogue = transcription;
                         }
+                        ev.MarkImagesDirty();
                         QuickEditDialogue.Text = transcription;
                         string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
                         _dialogueService.SetDialogue(selectedLang, ev.FolderName, transcription);

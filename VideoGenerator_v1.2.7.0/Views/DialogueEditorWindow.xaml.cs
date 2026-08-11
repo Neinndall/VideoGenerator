@@ -329,6 +329,7 @@ namespace VideoGenerator.Views
                 }
 
                 SelectedEvent.Status = "Ready";
+                SelectedEvent.MarkImagesReady();
                 
                 // Refresh listbox trigger
                 var index = EventsListBox.SelectedIndex;
@@ -364,6 +365,7 @@ namespace VideoGenerator.Views
                         SelectedEvent.ParsedData.Dialogue = combinedDialogue;
                     }
                     _dialogueService.SetDialogue(_language, SelectedEvent.FolderName, combinedDialogue);
+                    SelectedEvent.MarkImagesDirty();
                 }
             }
 

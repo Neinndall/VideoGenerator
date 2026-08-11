@@ -37,6 +37,7 @@ namespace VideoGenerator.Services
                 ? pipelineEvent.AudioFiles.Count
                 : 1;
             string outputDirectory = Path.Combine(AppConfig.OutputImagesDir, pipelineEvent.CharacterName);
+            bool imagesReady = true;
 
             for (int index = 0; index < imageCount; index++)
             {
@@ -53,7 +54,10 @@ namespace VideoGenerator.Services
                     ? $"Preparing HUD image: {pipelineEvent.FolderName}"
                     : $"Preparing HUD image for {pipelineEvent.FolderName}");
 
-                if (!reuseExistingImages || !File.Exists(expectedPath))
+                bool mustRegenerate = !reuseExistingImages ||
+                                      pipelineEvent.ImagesNeedRegeneration ||
+                                      !File.Exists(expectedPath);
+                if (mustRegenerate)
                 {
                     expectedPath = await GenerateAsync(
                         pipelineEvent,
@@ -64,12 +68,22 @@ namespace VideoGenerator.Services
                         cancellationToken);
                 }
 
+                if (string.IsNullOrEmpty(expectedPath) || !File.Exists(expectedPath))
+                {
+                    imagesReady = false;
+                }
+
                 imagePaths.Add(expectedPath);
                 reportProgress?.Invoke(
                     1,
                     segmented
-                        ? $"Prepared image: {pipelineEvent.FolderName} ({index + 1}/{imageCount})"
-                        : $"Prepared image: {pipelineEvent.FolderName}");
+                    ? $"Prepared image: {pipelineEvent.FolderName} ({index + 1}/{imageCount})"
+                    : $"Prepared image: {pipelineEvent.FolderName}");
+            }
+
+            if (imagesReady)
+            {
+                pipelineEvent.MarkImagesReady();
             }
 
             return imagePaths;
