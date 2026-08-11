@@ -116,7 +116,8 @@
                     Click="ProcessFolders_Click"
                     IsEnabled="{Binding DashboardModel.IsProcessing, Converter={StaticResource InverseBooleanConverter}}"
                     Style="{StaticResource ModernPrimaryButton}"
-                    Width="172" Height="64">
+                    Width="172" Height="42"
+                    VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileSearchOutline" Margin="0,0,10,0" VerticalAlignment="Center" Width="18" Height="18"/>
                     <TextBlock Text="PROCESS FOLDERS" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>

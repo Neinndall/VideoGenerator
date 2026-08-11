@@ -23,6 +23,12 @@ New Features
   - UI / Semantic Design Tokens: Added reusable tokens for page hierarchy, status pills, hero surfaces, inset panels, ghost actions, and compact icon buttons.
 
 Improvements
+  - UI / Secondary Button Language: Standardized secondary actions on a borderless surface with shared hover feedback across Dashboard and Dialogue Editor controls.
+  - UI / Dialogue Editor Layout: Replaced the floating event-action card with a flat separated toolbar to keep event edits and batch approval visually distinct.
+  - UI / Dialogue Editor Events Queue: Added a complete rounded panel frame with a compact event counter and a restrained validation indicator.
+  - UI / Dialogue Editor Actions: Grouped selected-event actions separately from batch review actions, with clearer hierarchy for transcription, applying changes, canceling, and approving.
+  - UI / Workflow Controls: Removed the static border from `PREPARE DIALOGUES` and `REVIEW`, preserving the shared hover surface with keyboard-focus feedback.
+  - UI / Dashboard Toolbar Alignment: Matched the `PROCESS FOLDERS` button height to the directory, search, and character filter controls.
   - Configuration / Dictionary Language: Set English (`EN`) as the default application language, removed `ALL` from the Settings language selector, and normalized legacy `ALL` settings to `EN` during application use.
   - UI / Dictionary and Dashboard Filters: Preserved `ALL` as a filter for dictionary entries, statuses, and characters without treating it as a processing language.
   - UI / Visual Framing: Removed the double-border card framing in MainWindow and simplified view containers (flat headers, borderless toolbars, clean panel borders).
@@ -58,6 +64,7 @@ Improvements
   - Pipeline / Completion Delay: Introduced a `500ms` completion delay in `ProgressService.cs` so that the `100.0%` completed state is visible before returning to idle.
 
 Bug Fixes
+  - UI / Dialogue Editor Queue Counter: Made the read-only event count binding explicitly one-way to prevent a startup binding error.
   - Pipeline / Image Cache Invalidation: Regenerate HUD images when dialogue or Quick Edit content changes before rendering videos.
   - UI / Dashboard Workflow Lock: Disable preparation, review, and render actions while another workflow is processing.
   - Core / Cancellation: Cancel the previous operation before replacing its cancellation token, preventing stale workflows from continuing in the background.

@@ -27,7 +27,7 @@
         </Grid.RowDefinitions>
 
         <!-- Main Workspace -->
-        <Grid Grid.Row="0">
+        <Grid Grid.Row="0" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="320" MinWidth="250" MaxWidth="500"/>
                 <ColumnDefinition Width="Auto"/>
@@ -36,20 +36,66 @@
 
             <GridSplitter Grid.Column="1" Width="4" Background="Transparent" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
 
-            <!-- Left Panel: Pipeline List -->
-            <Border Grid.Column="0" Style="{StaticResource WorkspacePanelContainer}">
+            <!-- Left Panel: Fixed Events Queue -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource SecondaryBackgroundBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    ClipToBounds="True"
+                    SnapsToDevicePixels="True">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header -->
-                    <Border Grid.Row="0" Style="{StaticResource WorkspacePanelHeader}">
-                        <StackPanel>
-                            <TextBlock Text="EVENTS QUEUE" FontWeight="Black" Foreground="{StaticResource TextHighlightBrush}" FontSize="12"/>
-                            <TextBlock Text="Select an event to edit segments" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
-                        </StackPanel>
+                    <!-- Fixed panel header -->
+                    <Border Grid.Row="0"
+                            Background="{StaticResource SurfaceBrush}"
+                            Padding="16,14"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,0,0,1"
+                            CornerRadius="7,7,0,0"
+                            ClipToBounds="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FormatListBulleted"
+                                                              Width="16"
+                                                              Height="16"
+                                                              Foreground="{StaticResource AccentBrush}"
+                                                              VerticalAlignment="Center"
+                                                              Margin="0,0,8,0"/>
+                                    <TextBlock Text="EVENTS QUEUE"
+                                               FontWeight="Black"
+                                               Foreground="{StaticResource TextHighlightBrush}"
+                                               FontSize="12"/>
+                                </StackPanel>
+                                <TextBlock Text="Select an event to edit segments"
+                                           FontSize="10"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="24,3,0,0"/>
+                            </StackPanel>
+
+                            <Border Grid.Column="1"
+                                    Background="{StaticResource ElevatedSurfaceBrush}"
+                                    CornerRadius="6"
+                                    Padding="8,4"
+                                    VerticalAlignment="Top">
+                                <TextBlock FontSize="8"
+                                           FontWeight="Black"
+                                           Foreground="{StaticResource TextSecondaryBrush}">
+                                    <Run Text="{Binding Events.Count, Mode=OneWay}"/>
+                                    <Run Text=" EVENTS"/>
+                                </TextBlock>
+                            </Border>
+                        </Grid>
                     </Border>
 
                     <!-- ListBox of Events -->
@@ -58,7 +104,7 @@
                              SelectionChanged="EventsListBox_SelectionChanged">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="16,12">
+                                <Border Padding="12,10">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -66,13 +112,24 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
                                             <TextBlock Text="{Binding FolderName}" FontWeight="Bold" FontSize="11" Foreground="{StaticResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding CharacterName}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                                <TextBlock Text="{Binding ParsedData.DisplayText}" FontSize="9" Foreground="{StaticResource AccentBrush}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text=" • " FontSize="9" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding CharacterName}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
                                         </StackPanel>
 
-                                        <!-- Validation Indicator -->
-                                        <Border Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
-                                            <materialDesign:PackIcon x:Name="CheckIcon" Kind="CheckCircleOutline" Width="16" Height="16" Foreground="{StaticResource SuccessBrush}" Visibility="Collapsed"/>
-                                        </Border>
+                                        <!-- Validation indicator -->
+                                        <materialDesign:PackIcon x:Name="CheckIcon"
+                                                                  Grid.Column="1"
+                                                                  Kind="CheckCircleOutline"
+                                                                  Width="16"
+                                                                  Height="16"
+                                                                  Foreground="{StaticResource SuccessBrush}"
+                                                                  Visibility="Collapsed"
+                                                                  VerticalAlignment="Center"
+                                                                  Margin="8,0,0,0"
+                                                                  ToolTip="{Binding Status}"/>
                                     </Grid>
                                 </Border>
                                 <DataTemplate.Triggers>
@@ -188,35 +245,53 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- Editor Action Buttons -->
+                <!-- Selected Event Actions -->
                 <Grid Grid.Row="2" Margin="0,8,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="0" Click="TranscribeCurrentEvent_Click"
-                            Style="{StaticResource ModernPrimaryButton}" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
-                            Height="44" Padding="16,0"
-                            IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Microphone" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
-                            <TextBlock Text="AUTO-TRANSCRIBE WHISPER" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                            <TextBlock Text="CURRENT EVENT"
+                                       FontSize="9"
+                                       FontWeight="Black"
+                                       Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Text="Transcribe or apply edits before continuing"
+                                       FontSize="10"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Margin="0,3,0,0"/>
                         </StackPanel>
-                    </Button>
 
-                    <Button Grid.Column="2" Click="ApplyEventChanges_Click"
-                            Style="{StaticResource ModernPrimaryButton}"
-                            Height="44" Padding="24,0">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Check" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
-                            <TextBlock Text="SAVE &amp; APPLY CHANGES" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
-                        </StackPanel>
-                    </Button>
+                        <Button Grid.Column="1"
+                                Click="TranscribeCurrentEvent_Click"
+                                Style="{StaticResource ModernSecondaryButton}"
+                                Height="40"
+                                Padding="14,0"
+                                Margin="0,0,8,0"
+                                ToolTip="Run Whisper transcription for the selected event"
+                                IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Microphone" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
+                                <TextBlock Text="AUTO-TRANSCRIBE" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Column="2"
+                                Click="ApplyEventChanges_Click"
+                                Style="{StaticResource ModernPrimaryButton}"
+                                Height="40"
+                                Padding="16,0"
+                                ToolTip="Save and regenerate the selected event frames">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Check" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
+                                <TextBlock Text="APPLY EVENT CHANGES" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
+                                </StackPanel>
+                        </Button>
+                    </Grid>
                 </Grid>
             </Grid>
-        </Grid>
 
         <!-- Bottom Window Bar -->
         <Border Grid.Row="1" Background="{StaticResource PrimaryBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="24,16">
@@ -227,21 +302,34 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Verify transcripts, edit errors, and press Approve once complete." 
-                           VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource TextMutedBrush}" FontWeight="SemiBold"/>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="BATCH REVIEW"
+                               FontSize="9"
+                               FontWeight="Black"
+                               Foreground="{StaticResource TextMutedBrush}"/>
+                    <TextBlock Text="Finish the review when all events are ready."
+                               VerticalAlignment="Center"
+                               FontSize="10"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
 
                 <Button Grid.Column="1" Click="Cancel_Click"
-                        Style="{StaticResource MaterialDesignFlatButton}" Foreground="{StaticResource TextSecondaryBrush}"
-                        Height="44" Padding="16,0" Margin="0,0,12,0">
-                    <TextBlock Text="CANCEL" FontSize="11" FontWeight="Black"/>
+                        Style="{StaticResource ModernSecondaryButton}"
+                        Height="40"
+                        Padding="16,0"
+                        Margin="0,0,8,0">
+                    <TextBlock Text="CANCEL" FontSize="10" FontWeight="Black"/>
                 </Button>
 
                 <Button Grid.Column="2" Click="Done_Click"
                         Style="{StaticResource ModernPrimaryButton}"
-                        Height="44" Padding="24,0">
+                        Height="40"
+                        Padding="20,0"
+                        ToolTip="Approve the reviewed batch and close the editor">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="CheckAll" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
-                        <TextBlock Text="APPROVE BATCH &amp; CLOSE" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                        <TextBlock Text="DONE" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
                     </StackPanel>
                 </Button>
             </Grid>

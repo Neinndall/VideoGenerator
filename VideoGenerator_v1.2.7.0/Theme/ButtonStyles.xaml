@@ -51,7 +51,7 @@
         <Setter Property="Height" Value="42"/>
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -79,7 +79,8 @@
                             <Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.985" ScaleY="0.985"/></Setter.Value></Setter>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource HoverSurfaceBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Root" Property="Opacity" Value="0.42"/>
