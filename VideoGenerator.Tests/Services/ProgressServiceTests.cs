@@ -38,4 +38,35 @@ public sealed class ProgressServiceTests
         Assert.Equal(0d, progress.Value);
         Assert.Equal("CANCELED - TASK ANNULLED", progress.StatusText);
     }
+
+    [Fact]
+    public void StartingANonBudgetedPhaseClearsThePreviousWorkBudget()
+    {
+        var progress = new ProgressService();
+        progress.StartWork("Previous operation", 4);
+        progress.Advance(2);
+
+        progress.Start("Analyzing folders", indeterminate: false);
+        progress.Report(25, "Analyzing folder");
+
+        Assert.Equal(25d, progress.Value);
+        Assert.Equal("ANALYZING FOLDER", progress.StatusText);
+    }
+
+    [Fact]
+    public async Task PreviousCompletionCannotResetANewerOperation()
+    {
+        var progress = new ProgressService();
+        progress.StartWork("First operation", 1);
+        progress.FinishWork("First complete");
+
+        Task previousCompletion = progress.CompleteAsync();
+        progress.StartWork("Second operation", 2);
+
+        await previousCompletion;
+
+        Assert.True(progress.IsBusy);
+        Assert.Equal(0d, progress.Value);
+        Assert.Equal("[0/2] SECOND OPERATION", progress.StatusText);
+    }
 }

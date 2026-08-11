@@ -368,7 +368,18 @@ namespace VideoGenerator.Views
                 _model.AudioPath = dialog.FolderName;
                 _model.IsAnalyzed = false;
                 _model.ProcessedEvents.Clear();
+                _model.FilteredProcessedEvents.Clear();
+                ResetEventFilters();
+                _model.CharactersList.Clear();
+                _model.CharactersList.Add("ALL");
             }
+        }
+
+        private void ResetEventFilters()
+        {
+            _model.SelectedFilter = "ALL";
+            _model.SearchQuery = string.Empty;
+            _model.SelectedCharacter = "ALL";
         }
 
         private async void ProcessFolders_Click(object sender, RoutedEventArgs e)
@@ -385,9 +396,9 @@ namespace VideoGenerator.Views
             _progressService.Start("Waiting for official data synchronization", true);
             _model.ProcessedEvents.Clear();
             _model.FilteredProcessedEvents.Clear();
+            ResetEventFilters();
             _model.CharactersList.Clear();
             _model.CharactersList.Add("ALL");
-            _model.SelectedCharacter = "ALL";
             _logger.Logs.Clear();
             _logger.LogInfo($">>> ANALYZING: {_model.AudioPath}");
 
@@ -417,6 +428,7 @@ namespace VideoGenerator.Views
 
                 // Resolve icons concurrently and await to keep the progress bar active
                 await ResolvePendingIconsAsync(token);
+                token.ThrowIfCancellationRequested();
             } catch (OperationCanceledException) {
                 HandleCancellation();
             } catch (Exception ex) { 
@@ -425,7 +437,7 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
-                _progressService.Complete();
+                await _progressService.CompleteAsync();
             }
         }
 
@@ -588,7 +600,7 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
-                _progressService.Complete();
+                await _progressService.CompleteAsync();
             }
         }
 
@@ -651,7 +663,7 @@ namespace VideoGenerator.Views
                 if (ownsProcessingState)
                 {
                     _model.IsProcessing = false;
-                    _progressService.Complete();
+                    await _progressService.CompleteAsync();
                 }
             }
 
@@ -741,7 +753,7 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
-                _progressService.Complete();
+                await _progressService.CompleteAsync();
             }
         }
 
@@ -795,7 +807,7 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
-                _progressService.Complete();
+                await _progressService.CompleteAsync();
             }
         }
 

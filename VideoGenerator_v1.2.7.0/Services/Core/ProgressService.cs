@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace VideoGenerator.Services
@@ -33,6 +34,7 @@ namespace VideoGenerator.Services
         private bool _isIndeterminate = true;
         private double _totalWork;
         private double _completedWork;
+        private int _operationId;
         public bool IsIndeterminate
         {
             get => _isIndeterminate;
@@ -43,9 +45,12 @@ namespace VideoGenerator.Services
         {
             Update(() =>
             {
+                _operationId++;
                 IsBusy = true;
                 StatusText = NormalizeStatus(status);
                 Value = 0;
+                _totalWork = 0;
+                _completedWork = 0;
                 IsIndeterminate = indeterminate;
             });
         }
@@ -54,6 +59,7 @@ namespace VideoGenerator.Services
         {
             Update(() =>
             {
+                _operationId++;
                 _totalWork = Math.Max(0, totalWork);
                 _completedWork = 0;
                 IsBusy = true;
@@ -114,20 +120,19 @@ namespace VideoGenerator.Services
             });
         }
 
-        public async void Complete()
+        public async Task CompleteAsync()
         {
-            // Keep 100% progress visible for 600ms so the user can see it finish!
-            try
-            {
-                await System.Threading.Tasks.Task.Delay(500);
-            }
-            catch
-            {
-                // Safety fallback
-            }
+            int operationId = 0;
+            Update(() => operationId = _operationId);
+
+            // Keep 100% progress visible briefly without allowing an old completion
+            // to reset a newer operation.
+            await Task.Delay(500);
 
             Update(() =>
             {
+                if (operationId != _operationId) return;
+
                 IsBusy = false;
                 _totalWork = 0;
                 _completedWork = 0;
@@ -142,6 +147,7 @@ namespace VideoGenerator.Services
         {
             Update(() =>
             {
+                _operationId++;
                 IsBusy = false;
                 _totalWork = 0;
                 _completedWork = 0;

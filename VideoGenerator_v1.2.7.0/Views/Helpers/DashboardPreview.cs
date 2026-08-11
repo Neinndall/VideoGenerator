@@ -136,6 +136,8 @@ namespace VideoGenerator.Views
             {
                 // Hydration is best-effort and is safely interrupted by new analysis.
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
         }
     }
 }
