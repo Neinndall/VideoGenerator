@@ -31,6 +31,7 @@ Improvements
   - UI / Dashboard Toolbar Alignment: Matched the `PROCESS FOLDERS` button height to the directory, search, and character filter controls.
   - Configuration / Dictionary Language: Set English (`EN`) as the default application language, removed `ALL` from the Settings language selector, and normalized legacy `ALL` settings to `EN` during application use.
   - UI / Dictionary and Dashboard Filters: Preserved `ALL` as a filter for dictionary entries, statuses, and characters without treating it as a processing language.
+  - Parser / 3D Monster Attack Routing: Fixed `Attack3D` folders being skipped by `MonsterEventParser`, so 2D and 3D monster attacks now resolve consistently.
   - UI / Visual Framing: Removed the double-border card framing in MainWindow and simplified view containers (flat headers, borderless toolbars, clean panel borders).
   - UI / Sidebar Branding: Centered the branding logo and workspace titles in the sidebar.
   - UI / Minimalist ScrollBars: Reworked the default scrollbars into a modern, buttonless floating pill design that reacts dynamically on hover.
