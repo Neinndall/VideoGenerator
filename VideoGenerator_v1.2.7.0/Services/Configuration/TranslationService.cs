@@ -20,10 +20,12 @@ namespace VideoGenerator.Services
 
         public IEnumerable<string> AvailableLanguages => _translations.Keys;
 
-        public TranslationService(LogService logger)
+        public TranslationService(LogService logger, string localTranslationsPath = null)
         {
             _logger = logger;
-            _localTranslationsPath = AppConfig.TranslationsPath; // Points to an external path like Config/translations.json
+            _localTranslationsPath = string.IsNullOrWhiteSpace(localTranslationsPath)
+                ? AppConfig.TranslationsPath
+                : localTranslationsPath;
             LoadTranslations();
         }
 

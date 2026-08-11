@@ -17,10 +17,12 @@ namespace VideoGenerator.Services
         private readonly string _configPath;
         private readonly LogService _logger;
 
-        public GroupManager(LogService logger)
+        public GroupManager(LogService logger, string groupsFilePath = null)
         {
             _logger = logger;
-            _configPath = AppConfig.GroupsPath;
+            _configPath = string.IsNullOrWhiteSpace(groupsFilePath)
+                ? AppConfig.GroupsPath
+                : groupsFilePath;
             LoadGroups();
         }
 

@@ -17,10 +17,12 @@ namespace VideoGenerator.Services
         private readonly string _rulesFilePath;
         private readonly LogService _logger;
 
-        public RuleManager(LogService logger)
+        public RuleManager(LogService logger, string rulesFilePath = null)
         {
             _logger = logger;
-            _rulesFilePath = Path.Combine(AppConfig.ConfigDir, "event_rules.json");
+            _rulesFilePath = string.IsNullOrWhiteSpace(rulesFilePath)
+                ? Path.Combine(AppConfig.ConfigDir, "event_rules.json")
+                : rulesFilePath;
             LoadRules();
         }
 
@@ -28,7 +30,11 @@ namespace VideoGenerator.Services
         {
             try
             {
-                DirectoriesCreator.CreateDirectory(AppConfig.ConfigDir);
+                string directory = Path.GetDirectoryName(_rulesFilePath);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    DirectoriesCreator.CreateDirectory(directory);
+                }
                 string json = JsonSerializer.Serialize(Rules, new JsonSerializerOptions 
                 { 
                     WriteIndented = true, 

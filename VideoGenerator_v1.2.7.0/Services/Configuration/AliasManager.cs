@@ -17,10 +17,12 @@ namespace VideoGenerator.Services
         private readonly LogService _logger;
         public ObservableCollection<ChampionAlias> Aliases { get; } = new();
 
-        public AliasManager(LogService logger)
+        public AliasManager(LogService logger, string aliasesFilePath = null)
         {
             _logger = logger;
-            _configPath = Path.Combine(AppConfig.ConfigDir, "champion_aliases.json");
+            _configPath = string.IsNullOrWhiteSpace(aliasesFilePath)
+                ? Path.Combine(AppConfig.ConfigDir, "champion_aliases.json")
+                : aliasesFilePath;
             LoadAliases();
         }
 
