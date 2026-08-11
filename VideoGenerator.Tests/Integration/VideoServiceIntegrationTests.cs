@@ -60,6 +60,51 @@ public sealed class VideoServiceIntegrationTests
         }
     }
 
+    [Fact]
+    public async Task CreatesVideoFromOneImageAndMultipleAudioTracks()
+    {
+        string root = Directory.CreateTempSubdirectory("VideoGenerator.Integration.").FullName;
+
+        try
+        {
+            string imagePath = Path.Combine(root, "single.png");
+            string firstAudioPath = Path.Combine(root, "first.wav");
+            string secondAudioPath = Path.Combine(root, "second.wav");
+            string outputPath = Path.Combine(root, "result.mp4");
+            string cacheDirectory = Path.Combine(root, "cache");
+
+            WritePng(imagePath, 72, 44, 128);
+            WriteWave(firstAudioPath, 440);
+            WriteWave(secondAudioPath, 660);
+
+            var workMessages = new List<string>();
+            var service = new VideoService(new LogService(), cacheDirectory);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+            bool rendered = await service.CreateVideoAsync(
+                imagePath,
+                new List<string> { firstAudioPath, secondAudioPath },
+                outputPath,
+                silenceDuration: 0.1,
+                dialogue: "Combined dialogue",
+                onWorkCompleted: workMessages.Add,
+                cancellationToken: timeout.Token);
+
+            Assert.True(rendered);
+            Assert.True(File.Exists(outputPath));
+            Assert.True(new FileInfo(outputPath).Length > 0);
+            Assert.Contains(workMessages, message => message == "Combined event audio");
+            Assert.Contains(workMessages, message => message == "Encoded final video");
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     private static void WritePng(string path, byte red, byte green, byte blue)
     {
         using var image = new Image<Rgba32>(2, 2);
