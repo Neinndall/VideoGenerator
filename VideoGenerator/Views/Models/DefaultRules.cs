@@ -36,6 +36,10 @@ namespace VideoGenerator.Views.Models
                 // 🗣️ EMOTES (Risas, Bromas, Respuestas)
                 // ==========================================
                 new EventRule { Keyword = "Joke", TranslationKey = "event_joke", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "JokeFail", TranslationKey = "event_joke_fail", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "JokeFailEnd", TranslationKey = "event_joke_fail", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "JokeSuccess", TranslationKey = "event_joke_success", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "JokeSuccessEnd", TranslationKey = "event_joke_success", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Taunt", TranslationKey = "event_taunt", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Laugh", TranslationKey = "event_laugh", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "JokeGeneralEnd", TranslationKey = "event_joke_end", Section = "EMOTES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
@@ -53,9 +57,11 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "MoveLong", TranslationKey = "event_move_long", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveStandard", TranslationKey = "event_move_standard", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveRiver", TranslationKey = "event_move_river", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "MoveRReady", TranslationKey = "event_move_r_ready", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveLongAllSwords", TranslationKey = "event_move_long_all_swords", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Recall", TranslationKey = "event_recall", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "Respawn", Section = "MOVEMENT", TranslationKey = "event_respawn", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Idle", TranslationKey = "event_idle", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "LevelUp", TranslationKey = "event_level_up", Section = "ABILITIES", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveAllyNear", TranslationKey = "event_move_ally_near", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "MoveEnemyNear", TranslationKey = "event_move_enemy_near", Section = "MOVEMENT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },

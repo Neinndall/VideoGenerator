@@ -50,11 +50,22 @@ namespace VideoGenerator.Views.Models
             set => SetProperty(ref _areAudioFamiliesMerged, value);
         }
 
-        private string _status; // "Ready", "Missing Icon", "No Audio", "Pending Translation"
+        private string _status; // "Ready", "Needs Mapping", "Missing Icon", "No Audio", "Pending", "Pending Icon"
         public string Status
         {
             get => _status;
             set => SetProperty(ref _status, value);
+        }
+
+        public bool RequiresMapping => ParsedData != null && !ParsedData.IsMapped;
+
+        public bool NeedsMapping => RequiresMapping || Status == EventStatuses.NeedsMapping;
+
+        private bool _isSelected = true;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set => SetProperty(ref _isSelected, value);
         }
 
         private string _characterName;
@@ -70,6 +81,68 @@ namespace VideoGenerator.Views.Models
             get => _dialogue;
             set => SetProperty(ref _dialogue, value);
         }
+
+        private bool _isDialogueValidated;
+        public bool IsDialogueValidated
+        {
+            get => _isDialogueValidated;
+            set => SetProperty(ref _isDialogueValidated, value);
+        }
+
+        private bool _imagesNeedRegeneration = true;
+        public bool ImagesNeedRegeneration
+        {
+            get => _imagesNeedRegeneration;
+            private set => SetProperty(ref _imagesNeedRegeneration, value);
+        }
+
+        public void MarkImagesDirty()
+        {
+            ImagesNeedRegeneration = true;
+        }
+
+        public void MarkImagesReady()
+        {
+            ImagesNeedRegeneration = false;
+        }
+
+        public void UpdateStatusAfterIconResolution(string iconPath)
+        {
+            if (Status == EventStatuses.NoAudio)
+            {
+                return;
+            }
+
+            if (NeedsMapping)
+            {
+                Status = EventStatuses.NeedsMapping;
+                return;
+            }
+
+            Status = string.IsNullOrEmpty(iconPath) && ParsedData?.IconType != "generic"
+                ? EventStatuses.MissingIcon
+                : EventStatuses.Ready;
+        }
+
+        public void MarkReadyAfterProcessing()
+        {
+            if (Status == EventStatuses.NoAudio || Status == EventStatuses.MissingIcon)
+            {
+                return;
+            }
+
+            Status = NeedsMapping ? EventStatuses.NeedsMapping : EventStatuses.Ready;
+        }
+    }
+
+    public static class EventStatuses
+    {
+        public const string Ready = "Ready";
+        public const string NeedsMapping = "Needs Mapping";
+        public const string MissingIcon = "Missing Icon";
+        public const string NoAudio = "No Audio";
+        public const string Pending = "Pending";
+        public const string PendingIcon = "Pending Icon";
     }
 
     public class AudioFamilyModel

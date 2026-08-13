@@ -10,7 +10,7 @@
         <converters:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="0,16,0,16">
+    <Grid Margin="{StaticResource WorkspacePagePadding}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -18,38 +18,35 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Grid Grid.Row="0" Margin="0,0,0,32">
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="DICTIONARY &amp; LOCALIZATION" 
-                           FontSize="28" 
-                           FontWeight="Black" 
-                           Foreground="{StaticResource TextHighlightBrush}" />
-                <TextBlock Text="Manage supported languages and HUD event translations." 
-                           FontSize="13" 
-                           FontWeight="SemiBold" 
-                           Foreground="{StaticResource TextSecondaryBrush}" 
-                           Opacity="0.7" 
-                           Margin="0,4,0,0"/>
-            </StackPanel>
-            
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource ModernSearchTextBox}"
-                         materialDesign:HintAssist.Hint="Search..."
-                         Width="180"
-                         Margin="0,0,16,0"/>
+        <Border Grid.Row="0" Style="{StaticResource WorkspaceHeaderContainer}" Margin="0,0,0,16">
+            <Grid>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="LOCALIZATION WORKSPACE" Style="{StaticResource WorkspaceEyebrowText}"/>
+                    <TextBlock Text="Dictionary" Style="{StaticResource WorkspaceTitleText}" Margin="0,4,0,0"/>
+                    <TextBlock Text="Manage supported languages and HUD event translations." 
+                               Style="{StaticResource PageSubtitleText}" 
+                               Margin="0,5,0,0"/>
+                </StackPanel>
                 
-                <Button Click="AddNew_Click"
-                        Style="{StaticResource ModernPrimaryButton}"
-                        Height="42" Padding="16,0"
-                        Width="140">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Plus" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="ADD ENTRY" VerticalAlignment="Center" FontSize="11" FontWeight="Bold"/>
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-        </Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource ModernSearchTextBox}"
+                             materialDesign:HintAssist.Hint="Search..."
+                             Width="180"
+                             Margin="0,0,16,0"/>
+                    
+                    <Button Click="AddNew_Click"
+                             Style="{StaticResource ModernPrimaryButton}"
+                             Height="42" Padding="16,0"
+                             Width="140">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Plus" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="ADD ENTRY" VerticalAlignment="Center" FontSize="11" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <!-- Main Content (Sidebar + List) -->
         <Grid Grid.Row="1">
@@ -59,29 +56,27 @@
             </Grid.ColumnDefinitions>
 
             <!-- Sidebar (Language Selector) -->
-            <Border Grid.Column="0" Style="{StaticResource ModernContainer}" Margin="0,0,16,0" Padding="0">
+            <Border Grid.Column="0" Style="{StaticResource WorkspacePanelContainer}" Margin="0,0,16,0" Padding="0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
-                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="12,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="12,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                         <TextBlock Text="LANGS" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="9" HorizontalAlignment="Center"/>
                     </Border>
 
                     <ListBox Grid.Row="1" 
-                              ItemsSource="{Binding AvailableLanguages}"
-                              SelectedItem="{Binding SelectedLanguage}"
-                              Style="{StaticResource VirtualizedListBoxStyle}">
+                               ItemsSource="{Binding AvailableLanguages}"
+                               SelectedItem="{Binding SelectedLanguage}"
+                               Style="{StaticResource VirtualizedListBoxStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="12,10">
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="Translate" Width="14" Height="14" Margin="0,0,10,0" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" Opacity="0.5"/>
-                                        <TextBlock Text="{Binding}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Translate" Width="14" Height="14" Margin="0,0,10,0" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" Opacity="0.5"/>
+                                    <TextBlock Text="{Binding}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
@@ -89,7 +84,7 @@
             </Border>
 
             <!-- DataGrid Area -->
-            <Border Grid.Column="1" Style="{StaticResource ModernContainer}" Padding="0">
+            <Border Grid.Column="1" Style="{StaticResource WorkspacePanelContainer}" Padding="0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -98,7 +93,7 @@
                     </Grid.RowDefinitions>
                     
                     <!-- Title Header -->
-                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="BookOpenOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
                             <TextBlock Text="TRANSLATIONS DICTIONARY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
@@ -174,7 +169,7 @@
                                                   PreviewKeyDown="KeyTextBox_PreviewKeyDown"
                                                   Margin="4" 
                                                   Foreground="{StaticResource AccentBrush}"
-                                                  FontFamily="Consolas" FontWeight="SemiBold"
+                                                  FontFamily="{StaticResource AppMonoFontFamily}" FontWeight="SemiBold"
                                                   HorizontalAlignment="Stretch"/>
                                          
                                          <TextBox Grid.Column="2" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
@@ -182,7 +177,7 @@
                                                   Margin="4"
                                                   HorizontalAlignment="Stretch"/>
 
-                                         <Button Grid.Column="3" Click="Delete_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="30" Height="30" Opacity="0.7" HorizontalAlignment="Right">
+                                         <Button Grid.Column="3" Click="Delete_Click" Style="{StaticResource DangerIconButton}" Width="30" Height="30" HorizontalAlignment="Right">
                                             <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                         </Button>
                                     </Grid>

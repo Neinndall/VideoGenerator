@@ -1,55 +1,39 @@
-name: "💡 Requests a Suggestion"
-description: "Got an idea for a new feature or an improvement? We'd love to hear it!"
+name: "💡 Suggestion / Feature Request"
+description: "Propose a new feature, improvement, or idea for VideoGenerator."
 title: "[SUGGESTION] "
-labels: ["enhancement", "status/triage"]
+labels: 
+  - "enhancement"
+  - "triage"
 body:
   - type: markdown
     attributes:
       value: |
         > [!NOTE]
-        > Thanks for taking the time to suggest or improvement the currently tool! Please be as detailed as possible.
+        > Thank you for sharing your ideas with us! 
 
   - type: textarea
-    id: tedious-feature
+    id: description
     attributes:
-      label: "Is there any feature or implemented method that is tedious to use?"
-      description: "Please describe which feature is complicated or tedious and explain why."
-      placeholder: "e.g., 'The process for exporting images requires too many clicks...'"
+      label: "💡 Description of the Suggestion"
+      description: "Describe the new feature or improvement you would like to see in VideoGenerator."
+      placeholder: "Clearly explain the feature or change you are proposing..."
     validations:
       required: true
 
   - type: textarea
-    id: proposed-improvement
+    id: use-case
     attributes:
-      label: "How would you improve what was mentioned before?"
-      description: "Provide a clear and concise description of your proposed solution."
-      placeholder: "e.g., 'It could be simplified by adding a right-click context menu option to export directly.'"
-    validations:
-      required: true
-      
-  - type: textarea
-    id: what-to-add
-    attributes:
-      label: "What would you like to be added?"
-      description: "A clear and concise description of the new feature or enhancement you are proposing."
-      placeholder: "e.g., 'Add a button to export data as a CSV file.'"
+      label: "🎯 Why is this needed?"
+      description: "What problem does this solve? Why is it a valuable addition to the application?"
+      placeholder: "Explain the benefit or use case for this suggestion..."
     validations:
       required: true
 
   - type: textarea
-    id: why-needed
+    id: mockups-context
     attributes:
-      label: "Why is this needed?"
-      description: "Explain the problem or limitation this feature would solve. Why would this be a valuable addition to the application?"
-      placeholder: "e.g., 'Currently, there is no easy way to share data with other team members who don't use this app. Exporting to CSV would solve this.'"
-    validations:
-      required: true
-
-  - type: textarea
-    id: other-context
-    attributes:
-      label: "Anything else you want to share?"
-      description: "Add any other context, mockups, screenshots, or links about the feature request here."
-      placeholder: "You can drag and drop images, paste links, or provide any other relevant information."
+      label: "🎨 Mockups or Additional Context (Optional)"
+      description: "Attach screenshots, drawings, mockups, or any other references."
+      placeholder: "Drag and drop images, paste links, or provide extra details..."
     validations:
       required: false

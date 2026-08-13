@@ -19,16 +19,19 @@ namespace VideoGenerator.Services.Parsers
         private readonly GroupManager _groupManager;
         private readonly AliasManager _aliasManager;
         private readonly SkinlineManager _skinlineManager;
+        private readonly DataFetcher _dataFetcher;
         private static readonly Random _random = new();
 
         public DynamicRuleParser(
             TranslationService translationService,
+            DataFetcher dataFetcher,
             RuleManager ruleManager,
             GroupManager groupManager,
             AliasManager aliasManager,
             SkinlineManager skinlineManager)
         {
             _translationService = translationService;
+            _dataFetcher = dataFetcher;
             _ruleManager = ruleManager;
             _groupManager = groupManager;
             _aliasManager = aliasManager;
@@ -54,12 +57,17 @@ namespace VideoGenerator.Services.Parsers
                 {
                     // Strip 2D/3D infixes for matching (e.g. Kill3DBaronSteal -> KillBaronSteal)
                     string cleanedFolder = Regex.Replace(normalizedFolder, @"(2D|3D)", "", RegexOptions.IgnoreCase);
+                    bool isNumberedGeneralMatch = Regex.IsMatch(
+                        cleanedFolder,
+                        $@"^{Regex.Escape(normalizedKeyword)}(?:General|inGeneral)\d+$",
+                        RegexOptions.IgnoreCase);
 
                     bool isExactMatch = cleanedFolder.Equals(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
                     bool isGeneralMatch = cleanedFolder.Equals(normalizedKeyword + "General", StringComparison.OrdinalIgnoreCase) ||
                                           cleanedFolder.Equals(normalizedKeyword + "inGeneral", StringComparison.OrdinalIgnoreCase) ||
                                           normalizedFolder.Equals(normalizedKeyword + "3DGeneral", StringComparison.OrdinalIgnoreCase) ||
-                                          normalizedFolder.Equals(normalizedKeyword + "2DGeneral", StringComparison.OrdinalIgnoreCase);
+                                          normalizedFolder.Equals(normalizedKeyword + "2DGeneral", StringComparison.OrdinalIgnoreCase) ||
+                                          isNumberedGeneralMatch;
 
                     bool isPrefixedGeneralMatch = !isExactMatch && !isGeneralMatch &&
                         (cleanedFolder.EndsWith("General", StringComparison.OrdinalIgnoreCase) ||
@@ -139,10 +147,7 @@ namespace VideoGenerator.Services.Parsers
                 iconTarget = string.IsNullOrEmpty(targetName) ? "General" : targetName;
             }
 
-            if (iconTarget.Equals("inGeneral", StringComparison.OrdinalIgnoreCase) || 
-                iconTarget.Equals("3DGeneral", StringComparison.OrdinalIgnoreCase) || 
-                iconTarget.Equals("2DGeneral", StringComparison.OrdinalIgnoreCase) ||
-                iconTarget.Equals("General", StringComparison.OrdinalIgnoreCase))
+            if (Regex.IsMatch(iconTarget, @"^(?:in)?General\d*$", RegexOptions.IgnoreCase))
             {
                 iconTarget = "General";
             }
@@ -162,6 +167,8 @@ namespace VideoGenerator.Services.Parsers
 
                 if (rule.Keyword.Equals("FirstEncounter", StringComparison.OrdinalIgnoreCase))
                     displayText = _translationService.GetText(language, "event_first_encounter_general");
+                else if (rule.Keyword.Equals("Assist", StringComparison.OrdinalIgnoreCase))
+                    displayText = _translationService.GetText(language, "event_assist_general");
                 else if (rule.Keyword.Equals("Kill", StringComparison.OrdinalIgnoreCase))
                     displayText = _translationService.GetText(language, "event_kill_general");
                 else if (rule.Keyword.Equals("Death", StringComparison.OrdinalIgnoreCase))
@@ -260,6 +267,12 @@ namespace VideoGenerator.Services.Parsers
                             iconTarget = GetStructureLookupName(iconTarget);
                             displayTargetName = iconTarget;
                         }
+                        else if (iconType != "system" &&
+                                 iconType != "item" &&
+                                 await IsKnownItemAsync(iconTarget))
+                        {
+                            iconType = "item";
+                        }
                         else if (iconType != "system" && iconType != "item")
                         {
                             iconType = "generic";
@@ -299,6 +312,14 @@ namespace VideoGenerator.Services.Parsers
             }
 
             return new ParsedEvent { OriginalFolder = folderName, DisplayText = displayText, IconLookupName = iconTarget, IconType = iconType };
+        }
+
+        private async Task<bool> IsKnownItemAsync(string target)
+        {
+            if (string.IsNullOrWhiteSpace(target)) return false;
+
+            string resolvedItemId = await _dataFetcher.ResolveItemNameToIdAsync(target);
+            return !string.IsNullOrEmpty(resolvedItemId);
         }
 
         private List<StructureMapping> _cachedStructures;

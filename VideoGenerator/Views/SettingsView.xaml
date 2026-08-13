@@ -8,28 +8,29 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="0,16,0,16">
+    <Grid Margin="{StaticResource WorkspacePagePadding}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,32">
-            <TextBlock Text="ENGINE CONFIGURATION" 
-                       FontSize="28" 
-                       FontWeight="Black" 
-                       Foreground="{StaticResource TextHighlightBrush}" />
+        <Border Grid.Row="0" Style="{StaticResource WorkspaceHeaderContainer}" Margin="0,0,0,16">
+            <StackPanel>
+            <TextBlock Text="APPLICATION SYSTEM" Style="{StaticResource WorkspaceEyebrowText}"/>
+            <TextBlock Text="Settings" Style="{StaticResource WorkspaceTitleText}" Margin="0,4,0,0"/>
             <TextBlock Text="Adjust global parameters, rendering behaviors, and audio timing." 
-                       FontSize="13" 
-                       FontWeight="SemiBold" 
-                       Foreground="{StaticResource TextSecondaryBrush}" 
-                       Opacity="0.7" 
-                       Margin="0,4,0,0"/>
-        </StackPanel>
+                       Style="{StaticResource PageSubtitleText}" 
+                       Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
 
-        <!-- Settings Container with Tabs -->
-        <TabControl Grid.Row="1" Style="{StaticResource LoreEngineTabControl}">
+        <!-- Settings categories remain scrollable while the page context stays fixed. -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Focusable="False"
+                      Padding="0,0,8,0">
+        <TabControl Style="{StaticResource LoreEngineTabControl}">
             
             <!-- TAB 1: GENERAL & MEDIA -->
             <TabItem Style="{StaticResource LoreEngineTabItem}">
@@ -40,8 +41,8 @@
                     </StackPanel>
                 </TabItem.Header>
                 
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
-                    <Border Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,8,16">
+                <Grid>
+                    <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,8,16">
                         <StackPanel>
                             <!-- SECTION: MEDIA DIRECTORY CONFIGURATION -->
                             <Border Background="{StaticResource SurfaceBrush}" 
@@ -74,8 +75,8 @@
                                                   Width="250" IsReadOnly="True" Margin="0,0,8,0"
                                                   materialDesign:HintAssist.Hint="No directory selected"/>
                                         <Button Click="SelectMediaDirectory_Click" 
-                                                Style="{StaticResource MaterialDesignIconButton}" 
-                                                Foreground="{StaticResource AccentBrush}" Width="36" Height="36">
+                                                Style="{StaticResource IconActionButton}"
+                                                Width="36" Height="36">
                                             <materialDesign:PackIcon Kind="FolderSearchOutline" Width="18" Height="18"/>
                                         </Button>
                                     </StackPanel>
@@ -191,7 +192,7 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                </ScrollViewer>
+                </Grid>
             </TabItem>
             
             <!-- TAB 2: TRANSCRIPTION -->
@@ -203,8 +204,8 @@
                     </StackPanel>
                 </TabItem.Header>
                 
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
-                    <Border Style="{StaticResource ModernContainer}" Padding="0" Margin="0,0,8,16">
+                <Grid>
+                    <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,8,16">
                         <StackPanel>
                             <!-- SECTION: TRANSCRIPTION ENGINE -->
                             <Border Background="{StaticResource SurfaceBrush}" 
@@ -375,8 +376,9 @@
                               </Border>
                          </StackPanel>
                      </Border>
-                </ScrollViewer>
+                </Grid>
             </TabItem>
         </TabControl>
+        </ScrollViewer>
     </Grid>
 </UserControl>

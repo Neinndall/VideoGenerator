@@ -5,26 +5,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Imaging;
-using Microsoft.Extensions.DependencyInjection;
 using VideoGenerator.Models;
 using VideoGenerator.Services;
+using VideoGenerator.Utils;
 using VideoGenerator.Views.Models;
+using VideoGenerator.Views.Dialogs;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Reflection;
 
 namespace VideoGenerator.Views
 {
     public partial class DashboardView : UserControl
     {
         private readonly DashboardModel _model = new();
-        private readonly DataFetcher _dataFetcher;
-        private CancellationTokenSource _previewCancellationSource;
+        private readonly DatabaseBuilder _databaseBuilder;
         private readonly TaskCancellationService _cancellationService;
         private readonly TranslationService _translationService;
-        private readonly IconManager _iconManager;
-        private readonly NameParser _nameParser;
         private readonly ImageGenerator _imageGenerator;
         private readonly VideoService _videoService;
         private readonly LogService _logger;
@@ -32,12 +27,17 @@ namespace VideoGenerator.Views
         private readonly DialogueService _dialogueService;
         private readonly EventFilterService _eventFilterService;
         private readonly ProgressService _progressService;
+        private readonly EventRulesView _eventRulesView;
+        private readonly EventAnalysisService _eventAnalysisService;
+        private readonly EventIconResolutionService _eventIconResolutionService;
+        private readonly PreviewImageService _previewImageService;
+        private readonly AudioFamilyMergeService _audioFamilyMergeService;
+        private readonly HudImagePreparationService _hudImagePreparationService;
+        private readonly ProductionWorkPlanningService _productionWorkPlanningService;
 
         public DashboardView(
-            DataFetcher dataFetcher,
+            DatabaseBuilder databaseBuilder,
             TranslationService translationService,
-            IconManager iconManager,
-            NameParser nameParser,
             ImageGenerator imageGenerator,
             VideoService videoService,
             LogService logger,
@@ -45,13 +45,18 @@ namespace VideoGenerator.Views
             DialogueService dialogueService,
             TaskCancellationService cancellationService,
             EventFilterService eventFilterService,
-            ProgressService progressService)
+            ProgressService progressService,
+            EventRulesView eventRulesView,
+            EventAnalysisService eventAnalysisService,
+            EventIconResolutionService eventIconResolutionService,
+            PreviewImageService previewImageService,
+            AudioFamilyMergeService audioFamilyMergeService,
+            HudImagePreparationService hudImagePreparationService,
+            ProductionWorkPlanningService productionWorkPlanningService)
         {
             InitializeComponent();
-            _dataFetcher = dataFetcher;
+            _databaseBuilder = databaseBuilder;
             _translationService = translationService;
-            _iconManager = iconManager;
-            _nameParser = nameParser;
             _imageGenerator = imageGenerator;
             _videoService = videoService;
             _logger = logger;
@@ -60,6 +65,13 @@ namespace VideoGenerator.Views
             _cancellationService = cancellationService;
             _eventFilterService = eventFilterService;
             _progressService = progressService;
+            _eventRulesView = eventRulesView;
+            _eventAnalysisService = eventAnalysisService;
+            _eventIconResolutionService = eventIconResolutionService;
+            _previewImageService = previewImageService;
+            _audioFamilyMergeService = audioFamilyMergeService;
+            _hudImagePreparationService = hudImagePreparationService;
+            _productionWorkPlanningService = productionWorkPlanningService;
             
             DataContext = this;
             DashboardModel = _model;
@@ -71,65 +83,32 @@ namespace VideoGenerator.Views
         public DashboardModel DashboardModel { get; }
         public LogService LogService { get; }
 
-        private static bool IsSupportedAudioFile(string path)
-        {
-            string extension = Path.GetExtension(path);
-            return extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase) ||
-                   extension.Equals(".wav", StringComparison.OrdinalIgnoreCase) ||
-                   extension.Equals(".ogg", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static List<string> GetDirectAudioFiles(string directory)
-        {
-            return Directory.GetFiles(directory)
-                .Where(IsSupportedAudioFile)
-                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
-        private static bool IsAudioFamilyDirectory(string directory)
-        {
-            return Regex.IsMatch(Path.GetFileName(directory), @"^\[[^\]]+\](?:\s+.+)?$", RegexOptions.CultureInvariant);
-        }
-
         private async Task EnsureAudioFamiliesMergedAsync(
             PreviewEventModel ev,
             CancellationToken token,
             Action<AudioFamilyModel> onFamilyMerged = null)
         {
-            if (!AppSettings.Instance.MergeAudioFamilies || ev.AudioFamilies.Count == 0 || ev.AreAudioFamiliesMerged)
-                return;
-
-            var mergedTracks = new List<string>(ev.DirectAudioFiles);
             if (onFamilyMerged == null)
                 _progressService.Report(0);
 
-            for (int index = 0; index < ev.AudioFamilies.Count; index++)
-            {
-                var family = ev.AudioFamilies[index];
-                token.ThrowIfCancellationRequested();
-                _progressService.SetStatus($"Merging audio family: {family.Name}");
-                string mergedPath = await _videoService.MergeAudioFamilyAsync(
-                    family.AudioFiles,
-                    ev.FolderName,
-                    family.Name,
-                    ev.FolderPath,
-                    token);
-                mergedTracks.Add(mergedPath);
+            int completedFamilies = 0;
+            int totalFamilies = ev.AudioFamilies.Count;
+            await _audioFamilyMergeService.MergeAsync(
+                ev,
+                token,
+                family =>
+                {
+                    if (onFamilyMerged != null)
+                    {
+                        onFamilyMerged(family);
+                        return;
+                    }
 
-                if (onFamilyMerged != null)
-                {
-                    onFamilyMerged(family);
-                }
-                else
-                {
-                    double progress = (double)(index + 1) / ev.AudioFamilies.Count * 100.0;
+                    completedFamilies++;
+                    double progress = (double)completedFamilies / totalFamilies * 100.0;
                     _progressService.Report(progress, $"Merged audio family: {family.Name} ({progress:0}%)");
-                }
-            }
-
-            ev.AudioFiles = mergedTracks;
-            ev.AreAudioFamiliesMerged = true;
+                },
+                status => _progressService.SetStatus(status));
         }
 
         private async Task EnsureAudioFamiliesMergedAsync(
@@ -137,31 +116,29 @@ namespace VideoGenerator.Views
             CancellationToken token,
             Action<AudioFamilyModel> onFamilyMerged = null)
         {
-            var pendingEvents = events
-                .Where(ev => AppSettings.Instance.MergeAudioFamilies &&
-                             ev.AudioFamilies.Count > 0 &&
-                             !ev.AreAudioFamiliesMerged)
-                .ToList();
+            var pendingEvents = events.Where(_audioFamilyMergeService.IsPending).ToList();
             int totalFamilies = pendingEvents.Sum(ev => ev.AudioFamilies.Count);
             if (totalFamilies == 0) return;
 
             int completedFamilies = 0;
             _progressService.Report(0);
 
-            foreach (var ev in pendingEvents)
-            {
-                await EnsureAudioFamiliesMergedAsync(ev, token, family =>
+            await _audioFamilyMergeService.MergeAsync(
+                (IReadOnlyList<PreviewEventModel>)pendingEvents,
+                token,
+                family =>
                 {
                     if (onFamilyMerged != null)
                     {
                         onFamilyMerged(family);
                         return;
                     }
+
                     completedFamilies++;
                     double progress = (double)completedFamilies / totalFamilies * 100.0;
                     _progressService.Report(progress, $"Merging audio families: {completedFamilies}/{totalFamilies} ({progress:0}%)");
-                });
-            }
+                },
+                status => _progressService.SetStatus(status));
         }
 
         private void InitializeData()
@@ -232,19 +209,13 @@ namespace VideoGenerator.Views
                                 _model.CharactersList.Add(ev.CharacterName);
                         }
 
-                        var filter = _model.SelectedFilter;
-                        var characterFilter = _model.SelectedCharacter ?? "ALL";
-
-                        if (characterFilter == "ALL" || string.Equals(ev.CharacterName, characterFilter, StringComparison.OrdinalIgnoreCase))
+                        if (_eventFilterService.MatchesEvent(
+                            ev,
+                            _model.SelectedCharacter,
+                            _model.SelectedFilter,
+                            _model.SearchQuery))
                         {
-                            bool include = filter switch
-                            {
-                                "ERRORS" => ev.Status == "Missing Icon" || ev.Status == "No Audio",
-                                "PENDING" => ev.Status == "Pending",
-                                _ => true
-                            };
-
-                            if (include) _model.FilteredProcessedEvents.Add(ev);
+                            _model.FilteredProcessedEvents.Add(ev);
                         }
                     }
                     if (_model.SelectedEvent == null && _model.FilteredProcessedEvents.Count > 0)
@@ -305,156 +276,18 @@ namespace VideoGenerator.Views
             }
         }
 
-        private async Task UpdatePreviewAsync()
-        {
-            if (_model.SelectedEvent == null) return;
-
-            // Cancel any pending preview generation
-            _previewCancellationSource?.Cancel();
-            _previewCancellationSource = new CancellationTokenSource();
-            var token = _previewCancellationSource.Token;
-
-            try
-            {
-                // Debounce rapid keyboard navigation/clicks by 50ms
-                await Task.Delay(50, token);
-
-                // 1. Draw the preview immediately (so text/bubble appears instantly)
-                await GeneratePreviewAsync(_model.SelectedEvent, token);
-                if (token.IsCancellationRequested) return;
-
-                // 2. Resolve the icon in the background if it's missing
-                var ev = _model.SelectedEvent;
-                if (ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
-                {
-                    await ResolveEventIconAsync(ev);
-                    if (token.IsCancellationRequested) return;
-
-                    // 3. Re-draw preview now with the resolved icon
-                    await GeneratePreviewAsync(ev, token);
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                // Selection changed, task cancelled as expected
-            }
-        }
-
-        private async Task GeneratePreviewAsync(PreviewEventModel ev, CancellationToken token)
-        {
-            try
-            {
-                if (ev.ParsedData == null) return;
-                if (token.IsCancellationRequested) return;
-
-                var bytes = await Task.Run(async () => 
-                    await _imageGenerator.CreateImageBytesAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset),
-                    token);
-                if (token.IsCancellationRequested) return;
-
-                if (bytes != null)
-                {
-                    var bitmap = new BitmapImage();
-                    using (var ms = new MemoryStream(bytes))
-                    {
-                        bitmap.BeginInit();
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.StreamSource = ms;
-                        bitmap.EndInit();
-                    }
-                    bitmap.Freeze(); // Make read-only and thread-safe
-
-                    if (token.IsCancellationRequested) return;
-
-                    Application.Current.Dispatcher.Invoke(() => {
-                        _model.PreviewImageSource = bitmap;
-                    });
-                }
-            }
-            catch (Exception ex) 
-            { 
-                if (!token.IsCancellationRequested)
-                    _logger.LogError("Preview generation failed", ex); 
-            }
-        }
-
-        private async Task ResolveEventIconAsync(PreviewEventModel ev)
-        {
-            if (ev?.ParsedData == null || ev.ParsedData.IconType == "generic" || !string.IsNullOrEmpty(ev.ParsedData.IconPath))
-                return;
-
-            string iconPath = await ResolveIconPathAsync(ev.ParsedData);
-            ev.ParsedData.IconPath = string.IsNullOrEmpty(iconPath) ? "MISSING" : iconPath;
-            ev.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
-        }
-
-        private async Task<string> ResolveIconPathAsync(ParsedEvent parsedEvent)
-        {
-            if (parsedEvent == null || parsedEvent.IconType == "generic")
-                return null;
-
-            try
-            {
-                string lolVersion = null;
-                if (parsedEvent.IconType is "champion" or "region")
-                    lolVersion = await _dataFetcher.GetLatestLolVersionAsync();
-
-                return parsedEvent.IconType switch
-                {
-                    "champion" => await _iconManager.GetChampionIconAsync(parsedEvent.IconLookupName, lolVersion),
-                    "item" => await _iconManager.GetItemIconAsync(parsedEvent.IconLookupName),
-                    "monster" => await _iconManager.GetMonsterIconAsync(parsedEvent.IconLookupName),
-                    "region" => await _iconManager.GetChampionIconAsync(parsedEvent.IconLookupName, lolVersion),
-                    "structure" => await _iconManager.GetStructureIconAsync(parsedEvent.IconLookupName),
-                    "system" => await _iconManager.GetSystemIconAsync(parsedEvent.IconLookupName),
-                    _ => null
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Icon resolution failed for {parsedEvent.IconType}:{parsedEvent.IconLookupName}", ex);
-                return null;
-            }
-        }
-
-        private async Task ResolvePendingIconsAsync()
-        {
-            var pending = _model.ProcessedEvents
-                .Where(ev => ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
-                .ToList();
-
-            if (pending.Count == 0) return;
-
-            var semaphore = new SemaphoreSlim(3, 3);
-            var tasks = pending.Select(async ev =>
-            {
-                await semaphore.WaitAsync();
-                try
-                {
-                    string iconPath = await ResolveIconPathAsync(ev.ParsedData);
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        ev.ParsedData.IconPath = iconPath;
-                        ev.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
-                    });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Background icon resolution failed for {ev.FolderName}", ex);
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }).ToArray();
-
-            await Task.WhenAll(tasks);
-        }
-
         private void Filter_Checked(object sender, RoutedEventArgs e)
         {
             if (sender is RadioButton rb && rb.IsChecked == true && rb.Tag != null)
                 _model.SelectedFilter = rb.Tag.ToString();
+        }
+
+        private void SelectAllVisible_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_model.HasVisibleEvents) return;
+
+            bool shouldSelect = !_model.AreAllVisibleEventsSelected;
+            _model.SetVisibleEventsSelection(shouldSelect);
         }
 
         private void DeleteEvent_Click(object sender, RoutedEventArgs e)
@@ -477,27 +310,23 @@ namespace VideoGenerator.Views
 
             if (iconType == "item" && !string.IsNullOrEmpty(iconName))
             {
-                string resolvedId = await _dataFetcher.ResolveItemNameToIdAsync(iconName);
+                string resolvedId = await _eventIconResolutionService.ResolveItemNameToIdAsync(iconName);
                 if (resolvedId != null) iconName = resolvedId;
             }
+
+            bool dialogueChanged = !string.Equals(ev.Dialogue, QuickEditDialogue.Text, StringComparison.Ordinal);
+            bool visualDataChanged = !string.Equals(ev.ParsedData.DisplayText, text, StringComparison.Ordinal) ||
+                                     !string.Equals(ev.ParsedData.IconLookupName, iconName, StringComparison.Ordinal) ||
+                                     !string.Equals(ev.ParsedData.IconType, iconType, StringComparison.Ordinal);
 
             ev.ParsedData.DisplayText = text;
             ev.ParsedData.IconLookupName = iconName;
             ev.ParsedData.IconType = iconType;
 
-            var lolVersion = await _dataFetcher.GetLatestLolVersionAsync();
-            string iconPath = iconType switch {
-                "item" => await _iconManager.GetItemIconAsync(iconName),
-                "monster" => await _iconManager.GetMonsterIconAsync(iconName),
-                "champion" => await _iconManager.GetChampionIconAsync(iconName, lolVersion),
-                "region" => await _iconManager.GetChampionIconAsync(iconName, lolVersion),
-                "structure" => await _iconManager.GetStructureIconAsync(iconName),
-                "system" => await _iconManager.GetSystemIconAsync(iconName),
-                _ => null
-            };
+            string iconPath = await _eventIconResolutionService.ResolveAsync(ev.ParsedData);
 
             ev.ParsedData.IconPath = iconPath;
-            ev.Status = string.IsNullOrEmpty(iconPath) && iconType != "generic" ? "Missing Icon" : "Ready";
+            ev.UpdateStatusAfterIconResolution(iconPath);
 
             string dialogue = QuickEditDialogue.Text;
             ev.Dialogue = dialogue;
@@ -505,22 +334,28 @@ namespace VideoGenerator.Views
             {
                 ev.ParsedData.Dialogue = dialogue;
             }
+            if (dialogueChanged || visualDataChanged)
+            {
+                ev.MarkImagesDirty();
+            }
             _dialogueService.SetDialogue(selectedLang, ev.FolderName, dialogue);
 
             await UpdatePreviewAsync();
         }
 
-        private void QuickMap_Click(object sender, RoutedEventArgs e)
+        private void CreateRule_Click(object sender, RoutedEventArgs e)
         {
-            if (_model.SelectedEvent == null) return;
-            var rulesView = App.ServiceProvider.GetRequiredService<EventRulesView>();
-            rulesView.PreFillFromDashboard(_model.SelectedEvent.FolderName);
-
-            var mainWindow = Application.Current.MainWindow as MainWindow;
-            if (mainWindow != null)
+            if (sender is not Button button || button.DataContext is not PreviewEventModel pipelineEvent)
             {
-                var navMethod = mainWindow.GetType().GetMethod("NavigateTo", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-                navMethod?.Invoke(mainWindow, new object[] { "EventRules" });
+                return;
+            }
+
+            _model.SelectedEvent = pipelineEvent;
+            _eventRulesView.PreFillFromDashboard(pipelineEvent.FolderName);
+
+            if (Application.Current.MainWindow is MainWindow mainWindow)
+            {
+                mainWindow.NavigateTo("EventRules");
             }
         }
 
@@ -540,7 +375,18 @@ namespace VideoGenerator.Views
                 _model.AudioPath = dialog.FolderName;
                 _model.IsAnalyzed = false;
                 _model.ProcessedEvents.Clear();
+                _model.FilteredProcessedEvents.Clear();
+                _model.CharactersList.Clear();
+                _model.CharactersList.Add("ALL");
+                ResetEventFilters();
             }
+        }
+
+        private void ResetEventFilters()
+        {
+            _model.SelectedFilter = "ALL";
+            _model.SearchQuery = string.Empty;
+            _model.SelectedCharacter = "ALL";
         }
 
         private async void ProcessFolders_Click(object sender, RoutedEventArgs e)
@@ -554,138 +400,42 @@ namespace VideoGenerator.Views
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
-            _progressService.Start("Analyzing audio folders", false);
+            _progressService.Start("Waiting for official data synchronization", true);
             _model.ProcessedEvents.Clear();
             _model.FilteredProcessedEvents.Clear();
             _model.CharactersList.Clear();
             _model.CharactersList.Add("ALL");
-            _model.SelectedCharacter = "ALL";
+            ResetEventFilters();
             _logger.Logs.Clear();
             _logger.LogInfo($">>> ANALYZING: {_model.AudioPath}");
 
             string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
 
             try {
-                var reportProgress = new Action<double>(value => _progressService.Report(value));
-                await Task.Run(async () => {
-                    var discoveredDirs = Directory.GetDirectories(_model.AudioPath, "*", SearchOption.AllDirectories)
-                        .Concat(new[] { _model.AudioPath })
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList();
+                await _databaseBuilder.ReadyTask.WaitAsync(token);
+                token.ThrowIfCancellationRequested();
+                _progressService.Start("Analyzing audio folders", false);
 
-                    var familyDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    foreach (string candidate in discoveredDirs)
-                    {
-                        try
-                        {
-                            foreach (string child in Directory.GetDirectories(candidate))
-                            {
-                                if (IsAudioFamilyDirectory(child) && GetDirectAudioFiles(child).Count > 0)
-                                    familyDirectories.Add(child);
-                            }
-                        }
-                        catch { }
-                    }
+                var analyzedEvents = await _eventAnalysisService.AnalyzeAsync(
+                    _model.AudioPath,
+                    selectedLang,
+                    status => _progressService.SetStatus(status),
+                    value => _progressService.Report(value),
+                    token);
 
-                    var allDirs = discoveredDirs
-                        .Where(dir => {
-                            if (familyDirectories.Contains(dir)) return false;
-                            if (Path.GetFileName(dir).Contains("_cast3D", StringComparison.OrdinalIgnoreCase)) return false;
-                            try {
-                                return GetDirectAudioFiles(dir).Count > 0 ||
-                                       Directory.GetDirectories(dir).Any(familyDirectories.Contains);
-                            } catch { return false; }
-                        })
-                        .ToList();
-
-                    int total = allDirs.Count;
-                    int processedCount = 0;
-
-                    foreach (var dir in allDirs) {
-                        token.ThrowIfCancellationRequested();
-                        _progressService.SetStatus($"Analyzing: {Path.GetFileName(dir)}");
-                        try {
-                            var directAudioFiles = GetDirectAudioFiles(dir);
-                            var audioFamilies = Directory.GetDirectories(dir)
-                                    .Where(familyDirectories.Contains)
-                                    .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
-                                    .Select(familyDir => new AudioFamilyModel
-                                    {
-                                        Name = Path.GetFileName(familyDir),
-                                        AudioFiles = GetDirectAudioFiles(familyDir)
-                                    })
-                                    .ToList();
-                            var audioFiles = directAudioFiles
-                                .Concat(audioFamilies.SelectMany(f => f.AudioFiles))
-                                .ToList();
-                            string folderName = Path.GetFileName(dir);
-                            var parsedEvent = await _nameParser.ParseFolderNameAsync(folderName, selectedLang);
-                            token.ThrowIfCancellationRequested();
-                            
-                            string charName = "General";
-                            var charMatch = Regex.Match(folderName, @"Play_vo_([A-Za-z0-9]+)(Skin\d+)?_");
-                            if (charMatch.Success) charName = charMatch.Groups[1].Value;
-
-                            string status = "Validated";
-                            if (parsedEvent == null || string.IsNullOrEmpty(parsedEvent.DisplayText) || parsedEvent.DisplayText.Contains("event_") || parsedEvent.DisplayText.Contains("interaction_") || parsedEvent.DisplayText.Equals(folderName)) 
-                                status = "Pending";
-                            else if (parsedEvent.IconType != "generic" && string.IsNullOrEmpty(parsedEvent.IconPath)) 
-                                status = "Missing Icon";
-
-                            // Mark status optimistically; icons are resolved in the background after analysis
-                            if (parsedEvent != null && parsedEvent.IconType == "generic")
-                                status = "Ready";
-                            else if (parsedEvent != null && !string.IsNullOrEmpty(parsedEvent.IconLookupName))
-                                status = "Pending Icon";
-
-                            string dialogueVal = AppSettings.Instance.ForceBatchRetranscribe ? "" : _dialogueService.GetDialogue(selectedLang, folderName);
-                            if (!AppSettings.Instance.ForceBatchRetranscribe && AppSettings.Instance.CleanWhisperHallucinations && !string.IsNullOrEmpty(dialogueVal))
-                            {
-                                string cleaned = DialogueService.CleanDialogue(dialogueVal);
-                                if (cleaned != dialogueVal)
-                                {
-                                    dialogueVal = cleaned;
-                                    _dialogueService.SetDialogue(selectedLang, folderName, cleaned);
-                                }
-                            }
-
-                            var ev = new PreviewEventModel { 
-                                CharacterName = charName, 
-                                FolderName = folderName, 
-                                FolderPath = dir, 
-                                ParsedData = parsedEvent ?? new ParsedEvent { OriginalFolder = folderName, DisplayText = folderName }, 
-                                AudioFiles = audioFiles, 
-                                DirectAudioFiles = directAudioFiles,
-                                AudioFamilies = audioFamilies,
-                                Status = status,
-                                Dialogue = dialogueVal
-                            };
-                            if (ev.ParsedData != null)
-                            {
-                                ev.ParsedData.Dialogue = dialogueVal;
-                            }
-                            
-                            token.ThrowIfCancellationRequested();
-                            Application.Current.Dispatcher.Invoke(() => _model.ProcessedEvents.Add(ev));
-                        } catch (OperationCanceledException) {
-                            throw;
-                        } catch (Exception innerEx) {
-                            _logger.LogError($"Failed to process folder: {Path.GetFileName(dir)} | Error: {innerEx.Message}");
-                        }
-                        
-                        processedCount++;
-                        reportProgress((double)processedCount / total * 100.0);
-                    }
-                    reportProgress(100.0);
-                }, token);
+                foreach (PreviewEventModel pipelineEvent in analyzedEvents)
+                {
+                    _model.ProcessedEvents.Add(pipelineEvent);
+                }
                 _model.IsAnalyzed = _model.ProcessedEvents.Count > 0;
                 if (_model.ProcessedEvents.Count > 0) _model.SelectedEvent = _model.ProcessedEvents[0];
-                _logger.LogInfo($">>> ANALYSIS COMPLETE. Found {_model.ProcessedEvents.Count} events. Resolving icons in background...");
-                // Keep 100% visible briefly before switching back to idle
+                _logger.LogInfo($">>> ANALYSIS COMPLETE. Found {_model.ProcessedEvents.Count} events. Resolving icons...");
+                // Keep 100% visible briefly before switching
                 await Task.Delay(400, token);
 
-                // Resolve icons concurrently in the background so the UI stays responsive
-                _ = Task.Run(async () => await ResolvePendingIconsAsync());
+                // Resolve icons concurrently and await to keep the progress bar active
+                await ResolvePendingIconsAsync(token);
+                token.ThrowIfCancellationRequested();
             } catch (OperationCanceledException) {
                 HandleCancellation();
             } catch (Exception ex) { 
@@ -694,69 +444,36 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
-                _progressService.Complete();
+                await _progressService.CompleteAsync();
             }
         }
 
         private async void PrepareTranscription_Click(object sender, RoutedEventArgs e)
         {
-            if (!_model.IsAnalyzed || _model.FilteredProcessedEvents.Count == 0) return;
+            if (!_model.CanRunWorkflow) return;
+
+            var eventsToPrepare = _model.GetSelectedVisibleWorkflowEvents().ToList();
+            if (eventsToPrepare.Count == 0) return;
             
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
             _logger.LogInfo(">>> STARTING BATCH PREPARATION (STAGE 1)...");
             try {
-                var eventsToPrepare = _model.FilteredProcessedEvents.ToList();
                 string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
 
                 await Task.Run(async () => {
-                    var transcriptionBudgets = new Dictionary<PreviewEventModel, int>();
-                    var imageBudgets = new Dictionary<PreviewEventModel, int>();
-                    int mergeWork = eventsToPrepare
-                        .Where(ev => AppSettings.Instance.MergeAudioFamilies && !ev.AreAudioFamiliesMerged)
-                        .SelectMany(ev => ev.AudioFamilies)
-                        .Sum(family => family.AudioFiles.Count);
-                    int iconWork = 0;
-                    int transcriptionWork = 0;
-                    int imageWork = 0;
-
-                    foreach (var ev in eventsToPrepare)
-                    {
-                        bool canPrepare = ev.Status != "No Audio" && ev.ParsedData != null;
-                        int plannedAudioCount = AppSettings.Instance.MergeAudioFamilies && ev.AudioFamilies.Count > 0
-                            ? ev.DirectAudioFiles.Count + ev.AudioFamilies.Count
-                            : ev.AudioFiles.Count;
-                        bool shouldTranscribe = canPrepare && AppSettings.Instance.EnableTranscriptions && plannedAudioCount > 0 &&
-                            (string.IsNullOrEmpty(ev.Dialogue) || AppSettings.Instance.ForceBatchRetranscribe);
-                        int transcriptionBudget = shouldTranscribe ? plannedAudioCount : 0;
-                        int existingParts = string.IsNullOrEmpty(ev.Dialogue)
-                            ? 0
-                            : ev.Dialogue.Split(new[] { "||" }, StringSplitOptions.None).Length;
-                        int imageBudget = canPrepare
-                            ? (plannedAudioCount > 1 && (shouldTranscribe || existingParts > 1) ? plannedAudioCount : 1)
-                            : 0;
-
-                        transcriptionBudgets[ev] = transcriptionBudget;
-                        imageBudgets[ev] = imageBudget;
-                        transcriptionWork += transcriptionBudget;
-                        imageWork += imageBudget;
-
-                        if (ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
-                            iconWork++;
-                    }
-
-                    int totalWork = mergeWork + iconWork + transcriptionWork + imageWork;
+                    PreparationWorkPlan workPlan = _productionWorkPlanningService.CreatePreparationPlan(eventsToPrepare);
                     var workSummary = new List<string>
                     {
-                        $"{transcriptionWork} audio",
-                        $"{imageWork} HUD"
+                        $"{workPlan.TranscriptionWork} audio",
+                        $"{workPlan.ImageWork} HUD"
                     };
-                    if (iconWork > 0) workSummary.Add($"{iconWork} icons");
-                    if (mergeWork > 0) workSummary.Add($"{mergeWork} merge");
+                    if (workPlan.IconWork > 0) workSummary.Add($"{workPlan.IconWork} icons");
+                    if (workPlan.MergeWork > 0) workSummary.Add($"{workPlan.MergeWork} merge");
                     _progressService.StartWork(
                         $"Preparing: {string.Join(" + ", workSummary)}",
-                        totalWork);
+                        workPlan.TotalWork);
 
                     await EnsureAudioFamiliesMergedAsync(eventsToPrepare, token, family =>
                     {
@@ -773,18 +490,25 @@ namespace VideoGenerator.Views
                         if (ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
                         {
                             _progressService.SetStatus($"Resolving icon for: {ev.FolderName}");
-                            string iconPath = await ResolveIconPathAsync(ev.ParsedData);
+                            string iconPath = await _eventIconResolutionService.ResolveAsync(ev.ParsedData);
+                            if (string.IsNullOrEmpty(iconPath))
+                            {
+                                _logger.LogWarn($"Failed to resolve icon for event '{ev.FolderName}' ({ev.ParsedData.IconType}:{ev.ParsedData.IconLookupName}). The event will remain without an icon.");
+                            }
                             token.ThrowIfCancellationRequested();
                             Application.Current.Dispatcher.Invoke(() => {
                                 ev.ParsedData.IconPath = string.IsNullOrEmpty(iconPath) ? "MISSING" : iconPath;
-                                ev.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
+                                ev.UpdateStatusAfterIconResolution(iconPath);
                             });
                             _progressService.Advance(1, $"Resolved icon: {ev.FolderName}");
                         }
 
-                        if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null)
+                        if (ev.Status == EventStatuses.NoAudio ||
+                            ev.Status == EventStatuses.MissingIcon ||
+                            ev.NeedsMapping ||
+                            ev.ParsedData == null)
                         {
-                            int skippedWork = transcriptionBudgets[ev] + imageBudgets[ev];
+                            int skippedWork = workPlan.TranscriptionWorkByEvent[ev] + workPlan.ImageWorkByEvent[ev];
                             if (skippedWork > 0)
                                 _progressService.Advance(skippedWork, $"Skipped invalid event: {ev.FolderName}");
                             continue;
@@ -851,40 +575,16 @@ namespace VideoGenerator.Views
                             }
                         }
 
-                        token.ThrowIfCancellationRequested();
-                        var dialogueParts = string.IsNullOrEmpty(dialogue) 
-                            ? new string[0] 
-                            : dialogue.Split(new[] { "||" }, StringSplitOptions.None)
-                                      .Select(s => s.Trim())
-                                      .ToArray();
+                        IReadOnlyList<string> imagePaths = await _hudImagePreparationService.PrepareAsync(
+                            ev,
+                            dialogue,
+                            reuseExistingImages: false,
+                            cancellationToken: token,
+                            status => _progressService.SetStatus(status),
+                            (work, status) => _progressService.Advance(work, status));
+                        int generatedImages = imagePaths.Count;
 
-                        // 2. Pre-render HUD image files
-                        int generatedImages = 0;
-                        if (dialogueParts.Length > 1 && ev.AudioFiles.Count > 1)
-                        {
-                            for (int i = 0; i < ev.AudioFiles.Count; i++)
-                            {
-                                token.ThrowIfCancellationRequested();
-                                _progressService.SetStatus($"Generating HUD image: {ev.FolderName}");
-                                string partDialogue = i < dialogueParts.Length ? dialogueParts[i] : "";
-                                string oldDialogue = ev.ParsedData.Dialogue;
-                                ev.ParsedData.Dialogue = partDialogue;
-                                await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName);
-                                ev.ParsedData.Dialogue = oldDialogue;
-                                generatedImages++;
-                                _progressService.Advance(1, $"Generated HUD: {ev.FolderName}");
-                            }
-                        }
-                        else
-                        {
-                            token.ThrowIfCancellationRequested();
-                            _progressService.SetStatus($"Generating HUD image for {ev.FolderName}");
-                            await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
-                            generatedImages = 1;
-                            _progressService.Advance(1, $"Generated HUD: {ev.FolderName}");
-                        }
-
-                        int unusedImageBudget = imageBudgets[ev] - generatedImages;
+                        int unusedImageBudget = workPlan.ImageWorkByEvent[ev] - generatedImages;
                         if (unusedImageBudget > 0)
                         {
                             _progressService.Advance(unusedImageBudget, $"Completed image set: {ev.FolderName}");
@@ -892,7 +592,7 @@ namespace VideoGenerator.Views
 
                         token.ThrowIfCancellationRequested();
                         Application.Current.Dispatcher.Invoke(() => {
-                            ev.Status = "Ready";
+                            ev.MarkReadyAfterProcessing();
                         });
 
                     }
@@ -912,13 +612,15 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
-                _progressService.Complete();
+                await _progressService.CompleteAsync();
             }
         }
 
         private async void ReviewDialogues_Click(object sender, RoutedEventArgs e)
         {
-            var events = _model.FilteredProcessedEvents.ToList();
+            if (!_model.IsAnalyzed) return;
+
+            var events = _model.GetSelectedVisibleWorkflowEvents().ToList();
             if (events.Count == 0) return;
 
             bool hasPendingFamilies = events.Any(ev =>
@@ -975,7 +677,7 @@ namespace VideoGenerator.Views
                 if (ownsProcessingState)
                 {
                     _model.IsProcessing = false;
-                    _progressService.Complete();
+                    await _progressService.CompleteAsync();
                 }
             }
 
@@ -998,44 +700,20 @@ namespace VideoGenerator.Views
 
         private async void Generate_Click(object sender, RoutedEventArgs e)
         {
-            if (!_model.IsAnalyzed || _model.FilteredProcessedEvents.Count == 0) return;
+            if (!_model.CanRunWorkflow) return;
+
+            var eventsToRender = _model.GetSelectedVisibleWorkflowEvents().ToList();
+            if (eventsToRender.Count == 0) return;
             
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
             _logger.LogInfo(">>> STARTING BATCH VIDEO RENDERING (STAGE 2)...");
             try {
-                var eventsToRender = _model.FilteredProcessedEvents.ToList();
-
                 await Task.Run(async () => {
                     double silenceDuration = AppSettings.Instance.SilenceDuration;
-                    int mergeWork = eventsToRender
-                        .Where(ev => AppSettings.Instance.MergeAudioFamilies && !ev.AreAudioFamiliesMerged)
-                        .SelectMany(ev => ev.AudioFamilies)
-                        .Sum(family => family.AudioFiles.Count);
-                    int imageWork = 0;
-                    int videoWork = 0;
-
-                    foreach (var ev in eventsToRender)
-                    {
-                        bool canRender = ev.Status != "No Audio" && ev.Status != "Missing Icon" && ev.ParsedData != null;
-                        int plannedAudioCount = AppSettings.Instance.MergeAudioFamilies && ev.AudioFamilies.Count > 0
-                            ? ev.DirectAudioFiles.Count + ev.AudioFamilies.Count
-                            : ev.AudioFiles.Count;
-                        int dialogueParts = string.IsNullOrEmpty(ev.Dialogue)
-                            ? 0
-                            : ev.Dialogue.Split(new[] { "||" }, StringSplitOptions.None).Length;
-                        int imageBudget = canRender && plannedAudioCount > 0
-                            ? (dialogueParts > 1 && plannedAudioCount > 1 ? plannedAudioCount : 1)
-                            : 0;
-
-                        imageWork += imageBudget;
-                        if (imageBudget > 0)
-                            videoWork += VideoService.CalculateVideoWorkUnits(imageBudget, plannedAudioCount, silenceDuration);
-                    }
-
-                    int totalWork = mergeWork + imageWork + videoWork;
-                    _progressService.StartWork("Rendering videos", totalWork);
+                    RenderWorkPlan workPlan = _productionWorkPlanningService.CreateRenderPlan(eventsToRender);
+                    _progressService.StartWork("Rendering videos", workPlan.TotalWork);
 
                     await EnsureAudioFamiliesMergedAsync(eventsToRender, token, family =>
                         _progressService.Advance(
@@ -1046,62 +724,32 @@ namespace VideoGenerator.Views
                         token.ThrowIfCancellationRequested();
                         _progressService.SetStatus($"Rendering video: {ev.FolderName}");
 
-                        if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null || ev.AudioFiles.Count == 0)
+                        if (ev.Status == EventStatuses.NoAudio ||
+                            ev.Status == EventStatuses.MissingIcon ||
+                            ev.NeedsMapping ||
+                            ev.ParsedData == null ||
+                            ev.AudioFiles.Count == 0)
                             continue;
 
                         string dialogue = ev.Dialogue;
-                        var dialogueParts = string.IsNullOrEmpty(dialogue) 
-                            ? new string[0] 
-                            : dialogue.Split(new[] { "||" }, StringSplitOptions.None)
-                                      .Select(s => s.Trim())
-                                      .ToArray();
-
-                        var imagePaths = new List<string>();
-
-                        // Locate pre-rendered images, or generate them if missing
-                        string targetDir = Path.Combine(AppConfig.OutputImagesDir, ev.CharacterName);
-                        if (dialogueParts.Length > 1 && ev.AudioFiles.Count > 1)
-                        {
-                            for (int i = 0; i < ev.AudioFiles.Count; i++)
-                            {
-                                token.ThrowIfCancellationRequested();
-                                _progressService.SetStatus($"Rendering image: {ev.FolderName}");
-                                string expectedPath = Path.Combine(targetDir, $"{ev.FolderName}_part_{i}.png");
-                                if (!File.Exists(expectedPath))
-                                {
-                                    string partDialogue = i < dialogueParts.Length ? dialogueParts[i] : "";
-                                    string oldDialogue = ev.ParsedData.Dialogue;
-                                    ev.ParsedData.Dialogue = partDialogue;
-                                    expectedPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, $"part_{i}", ev.CharacterName);
-                                    ev.ParsedData.Dialogue = oldDialogue;
-                                }
-                                imagePaths.Add(expectedPath);
-                                _progressService.Advance(1, $"Prepared image: {ev.FolderName} ({i + 1}/{ev.AudioFiles.Count})");
-                            }
-                        }
-                        else
-                        {
-                            token.ThrowIfCancellationRequested();
-                            _progressService.SetStatus($"Rendering image for {ev.FolderName}");
-                            string expectedPath = Path.Combine(targetDir, $"{ev.FolderName}.png");
-                            if (!File.Exists(expectedPath))
-                            {
-                                expectedPath = await _imageGenerator.CreateImageAsync(ev.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", ev.CharacterName);
-                            }
-                            imagePaths.Add(expectedPath);
-                            _progressService.Advance(1, $"Prepared image: {ev.FolderName}");
-                        }
+                        IReadOnlyList<string> imagePaths = await _hudImagePreparationService.PrepareAsync(
+                            ev,
+                            dialogue,
+                            reuseExistingImages: true,
+                            cancellationToken: token,
+                            status => _progressService.SetStatus(status),
+                            (work, status) => _progressService.Advance(work, status));
 
                         token.ThrowIfCancellationRequested();
                         _progressService.SetStatus($"Compiling video for {ev.FolderName}");
 
                         // Compile video Frame + Audio using FFmpeg
                         string outputVideoDir = Path.Combine(AppConfig.OutputVideosDir, ev.CharacterName);
-                        Directory.CreateDirectory(outputVideoDir);
+                        DirectoriesCreator.CreateDirectory(outputVideoDir);
                         string outputPath = Path.Combine(outputVideoDir, ev.FolderName + ".mp4");
                         
                         bool rendered = await _videoService.CreateVideoAsync(
-                            imagePaths,
+                            imagePaths.ToList(),
                             ev.AudioFiles,
                             outputPath,
                             silenceDuration,
@@ -1124,7 +772,7 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
-                _progressService.Complete();
+                await _progressService.CompleteAsync();
             }
         }
 
@@ -1154,6 +802,7 @@ namespace VideoGenerator.Views
                         {
                             ev.ParsedData.Dialogue = transcription;
                         }
+                        ev.MarkImagesDirty();
                         QuickEditDialogue.Text = transcription;
                         string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
                         _dialogueService.SetDialogue(selectedLang, ev.FolderName, transcription);
@@ -1177,67 +826,9 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
-                _progressService.Complete();
+                await _progressService.CompleteAsync();
             }
         }
 
-        private bool _isDashboardMaximized = false;
-        private GridLength _previousColumnWidth = new GridLength(380);
-        private GridLength _prevHeaderHeight = GridLength.Auto;
-        private GridLength _prevConfigHeight = GridLength.Auto;
-        private GridLength _prevLogsHeight = GridLength.Auto;
-        private GridLength _prevQuickEditHeight = GridLength.Auto;
-        private GridLength _prevProgressHeight = GridLength.Auto;
-        private Thickness _prevContainerMargin = new Thickness(12, 0, 0, 0);
-
-        private void PreviewImage_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == System.Windows.Input.MouseButton.Left)
-            {
-                if (_model.SelectedEvent == null || _model.PreviewImageSource == null) return;
-
-                _isDashboardMaximized = !_isDashboardMaximized;
-                if (_isDashboardMaximized)
-                {
-                    // Save layouts
-                    _previousColumnWidth = PipelineColumn.Width;
-                    _prevHeaderHeight = HeaderRow.Height;
-                    _prevConfigHeight = ConfigRow.Height;
-                    _prevLogsHeight = LogsRow.Height;
-                    _prevQuickEditHeight = QuickEditRow.Height;
-                    _prevProgressHeight = ProgressRow.Height;
-                    _prevContainerMargin = PreviewContainerGrid.Margin;
-
-                    // Collapse all surrounding layouts to let the preview expand fully
-                    PipelineColumn.MinWidth = 0;
-                    PipelineColumn.Width = new GridLength(0);
-                    SplitterColumn.Width = new GridLength(0);
-                    HeaderRow.Height = new GridLength(0);
-                    ConfigRow.Height = new GridLength(0);
-                    LogsRow.Height = new GridLength(0);
-                    QuickEditRow.Height = new GridLength(0);
-                    ProgressRow.Height = new GridLength(0);
-                    PreviewContainerGrid.Margin = new Thickness(0);
-                }
-                else
-                {
-                    // Restore layouts
-                    PipelineColumn.MinWidth = 250;
-                    PipelineColumn.Width = _previousColumnWidth.Value > 0 ? _previousColumnWidth : new GridLength(380);
-                    SplitterColumn.Width = GridLength.Auto;
-                    HeaderRow.Height = _prevHeaderHeight;
-                    ConfigRow.Height = _prevConfigHeight;
-                    LogsRow.Height = _prevLogsHeight;
-                    QuickEditRow.Height = _prevQuickEditHeight;
-                    ProgressRow.Height = _prevProgressHeight;
-                    PreviewContainerGrid.Margin = _prevContainerMargin;
-                }
-            }
-        }
-
-        private void ClearSearch_Click(object sender, RoutedEventArgs e)
-        {
-            _model.SearchQuery = string.Empty;
-        }
     }
 }

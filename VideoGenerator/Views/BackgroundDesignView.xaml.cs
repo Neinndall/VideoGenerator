@@ -9,7 +9,9 @@ using System.Threading;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
+using VideoGenerator.Views.Dialogs;
 using VideoGenerator.Models;
+using VideoGenerator.Utils;
 using SixLabors.ImageSharp;
 
 namespace VideoGenerator.Views
@@ -187,12 +189,12 @@ namespace VideoGenerator.Views
             try
             {
                 // Ensure a dummy icon exists in the local cache for the designer preview
-                string dummyIconPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoGenerator", "Cache", "preview_icon_placeholder.png");
+                string dummyIconPath = AppConfig.PreviewIconPlaceholderPath;
                 if (!File.Exists(dummyIconPath))
                 {
                     try
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(dummyIconPath));
+                        DirectoriesCreator.CreateParentDirectory(dummyIconPath);
                         using (var img = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(180, 180, SixLabors.ImageSharp.Color.ParseHex("#8B5CF6")))
                         {
                             img.SaveAsPng(dummyIconPath);
@@ -242,7 +244,7 @@ namespace VideoGenerator.Views
 
         private void ResetDefaults_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("Are you sure you want to reset all visual layout parameters to their default values?", "Reset Defaults", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (ModernMessageBox.Show("Are you sure you want to reset all visual layout parameters to their default values?", "Reset Defaults", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 AppSettings.Instance.TextVerticalOffset = -8f;
                 AppSettings.Instance.BackgroundBrightness = 1.0f;

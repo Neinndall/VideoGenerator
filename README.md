@@ -1,5 +1,6 @@
 ## VideoGenerator
 
+[![Version](https://img.shields.io/badge/version-1.3.0.0-blue?logo=github&logoColor=white&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![Latest Release](https://img.shields.io/github/v/release/Neinndall/VideoGenerator?color=yellow&logo=github&logoColor=white&label=Release&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![Downloads](https://img.shields.io/github/downloads/Neinndall/VideoGenerator/total?color=blue&logo=github&logoColor=white&label=Downloads&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![License](https://img.shields.io/github/license/Neinndall/VideoGenerator)](https://github.com/Neinndall/VideoGenerator/blob/main/LICENSE)
@@ -44,11 +45,21 @@ FFmpeg binaries are embedded and extracted automatically when required. Whisper 
 From the application project directory:
 
 ```powershell
-cd VideoGenerator
+cd VideoGenerator_v1.3.0.0
 dotnet restore
 dotnet build -c Release
 dotnet run -c Release
 ```
+
+## Developer validation
+
+Run deterministic tests with xUnit:
+
+```powershell
+dotnet test VideoGenerator.Tests\VideoGenerator.Tests.csproj
+```
+
+Parser and pipeline regressions are covered by the xUnit project; it does not open the WPF UI or access external services.
 
 ## Configuration files
 
@@ -63,7 +74,3 @@ The application creates and maintains its editable configuration under `%LOCALAP
 - `skinlines.json`
 
 Bundled defaults and newly introduced keys are merged without overwriting existing user customizations.
-
-## Analyzer
-
-The `Analyzer` console project reuses the application services to inspect large audio directories without opening the WPF interface. It reports parsed, pending, missing-icon, and failed events.

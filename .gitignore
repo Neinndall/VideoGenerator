@@ -1,0 +1,20 @@
+# .NET build outputs
+**/bin/
+**/obj/
+
+# IDE and user-specific files
+.vs/
+*.user
+*.suo
+
+# Local diagnostics and generated runtime data
+**/logs/
+**/cache/
+**/Cache/
+
+# Packages and publish output
+*.nupkg
+**/publish/
+*.rar
+*.zip
+*.7z

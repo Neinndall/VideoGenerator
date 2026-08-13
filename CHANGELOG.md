@@ -1,3 +1,119 @@
+VideoGenerator - Patch Notes | v1.3.0.0
+
+MAJOR UPDATE
+This version consolidates the application shell refresh, physical organization of services by domain, modal dialog architectural isolation in Views/Dialogs, production pipeline refactoring, recursive event discovery, modern obsidian dialogs replacing win32 popups, official data readiness, and a fully polished, pixel-perfect user interface.
+
+New Features
+  - Architecture / Service Domains: Reorganized `Services/` into `Core`, `Data`, `Pipeline`, `Media`, `Audio`, `Configuration`, and `Parsers` folders while keeping DI-facing namespaces stable.
+  - UI / Application Frame: Rebuilt `MainWindow` around a persistent application rail, orientation top bar, framed content area, and compact activity rail.
+  - UI / Production Workspace Theme: Added shared workspace containers, canvas, inspector, workflow-step, metric, toolbar, and console styles. The Dashboard consumes these visual resources.
+  - UI / Application Shell Theme: Added shared shell styles for the sidebar, brand mark, content host, status bar, activity badge, and progress labeling.
+  - UI / Production Workspace Header: Reworked the Dashboard entry point around a clear workspace header with event volume and pipeline-readiness feedback.
+  - Architecture / Audio Folder Discovery Service: Moved recursive event discovery, supported-audio detection, and bracketed-family recognition from `DashboardView` into the DI-registered `AudioFolderDiscoveryService`.
+  - Architecture / Event Analysis Service: Moved pipeline-event construction, cached family-track detection, initial validation state, and persisted dialogue cleanup from `DashboardView` into the DI-registered `EventAnalysisService`.
+  - Architecture / Preview and Icon Services: Moved preview bitmap creation and semantic icon resolution from `DashboardView` into DI-registered `PreviewImageService` and `EventIconResolutionService`.
+  - Architecture / Audio Family Merge Service: Moved audio-family merge execution and cached-track assignment from `DashboardView` into the DI-registered `AudioFamilyMergeService`; workflows retain progress presentation.
+  - Architecture / HUD Image Preparation Service: Centralized segmented HUD image generation, reuse, output-path resolution, and dialogue restoration for preparation and video-render workflows.
+  - Architecture / Production Work Planning Service: Moved deterministic preparation and rendering work-budget calculation out of `DashboardView`, keeping the global progress system consistent across workflows.
+  - Architecture / Dashboard Interaction Split: Moved fullscreen preview layout state and search interaction into `DashboardView.Interactions.cs`, keeping view-only mechanics separate.
+  - Architecture / Dashboard Preview Split: Moved cancellation-aware preview rendering and concurrent icon hydration into `DashboardView.Preview.cs`, separating presentation from workflow code.
+  - Core / Explicit Dependency Registration: Kept the singleton service registrations directly in the WPF composition root so the application's dependencies remain visible and easy to audit.
+  - Audio / Folder Event Detection: Folder scanning identifies event directories recursively, keeps parent folders for bracketed audio families, and excludes technical `_cast3D` folders.
+  - Database / Official Data Readiness: Added startup synchronization coordination so folder processing waits for the official-data check before parsing.
+  - Architecture / Dialog Organization: Grouped modal window dialogs (`DialogueEditorWindow`, `ModernMessageBoxWindow`) into a dedicated `Views/Dialogs/` folder.
+  - UI / Modern Message Box System: Replaced classic Win32 / Windows modal popups with a custom frameless, dark Obsidian/Hextech styled `ModernMessageBox` dialog supporting dynamic status icons (Success, Info, Question, Warning, Error), custom button layouts/labels, keyboard shortcuts (<kbd>Enter</kbd>/<kbd>Esc</kbd>), and seamless drop-in API compatibility across all views.
+  - UI / Semantic Design Tokens: Added reusable tokens for page hierarchy, status pills, hero surfaces, inset panels, ghost actions, and compact icon buttons.
+
+Improvements
+  - UI / Dialogue Editor Validation Workflow: Replaced disconnected per-part validation checkboxes with a real-time reactive validation system featuring a header progress badge (`X/Y VALIDATED`), live green/clock event status indicators, filter tabs (`ALL (X)` vs `PENDING (Y)`), quick event-level validation toggle (`MARK VALIDATED`), and pending navigation (`⚡ NEXT PENDING`).
+  - UI / Dialogue Editor Batch Protection: Added confirmation safeguards on `DONE` when unvalidated segments remain, offering to validate all, proceed as-is, or jump directly to the remaining pending items.
+  - Storage / Dialogue Validation Persistence: Created isolated `dialogue_validations.json` persistent storage in `DialogueService` with full backward compatibility, hydrating validation state directly into pipeline event models.
+  - UI / Header Metrics: Standardized the `EVENTS`, `SELECTED`, and `PIPELINE STATUS` metrics with shared typography, sizing, spacing, and pill formatting.
+  - UI / Accent Action Feedback: Reused the exact light-violet render hover tone for the icon and text hover state of the `CREATE RULE` and `SELECT/DESELECT VISIBLE` actions, without adding a hover surface.
+  - UI / Icon Action Consistency: Centralized non-destructive icon actions under `IconActionButton` with transparent hover feedback, while `DangerIconButton` is the single red variant for destructive actions.
+  - UI / Icon Hover Overrides: Removed local foreground overrides that prevented edit, search, folder, playback, and clear actions from reaching the shared light-violet hover state.
+  - UI / Pipeline Header: Expanded the detected pipeline panel and moved the visible-event selection action beside the selection counter for a cleaner toolbar layout.
+  - UI / Secondary Button Language: Standardized secondary actions on a borderless surface with shared hover feedback across Dashboard and Dialogue Editor controls.
+  - UI / Dialogue Editor Layout: Replaced the floating event-action card with a flat separated toolbar to keep event edits and batch approval visually distinct.
+  - UI / Dialogue Editor Events Queue: Added a complete rounded panel frame with a compact event counter and a restrained validation indicator.
+  - UI / Dialogue Editor Actions: Grouped selected-event actions separately from batch review actions, with clearer hierarchy for transcription, applying changes, canceling, and approving.
+  - UI / Workflow Controls: Removed the static border from `PREPARE DIALOGUES` and `REVIEW`, preserving the shared hover surface with keyboard-focus feedback.
+  - UI / Event Selection: Added per-event selection checkboxes, a visible-selection counter, and a `SELECT ALL VISIBLE` toggle so preparation, review, and rendering can target only the selected visible events.
+  - UI / Event Selection Layout: Aligned the checkbox with the left edge of the event queue and removed the duplicated selection counter from the action row.
+  - UI / Destructive Actions: Added a dedicated `DangerIconButton` style with a red icon at rest, a brighter red hover state, and no surrounding border while keeping Dashboard XAML semantic and compact.
+  - UI / Workflow Availability: Disabled batch actions when the active filters show no events or when no visible event is selected.
+  - Pipeline / Unmapped Event Detection: Added explicit mapping metadata and a `Needs Mapping` state so generic parser fallbacks cannot appear as `Ready`.
+  - UI / Mapping Workflow: Added a dedicated `MAPPING` filter and an inline `CREATE RULE` action that opens the rule editor pre-filled with the raw event name.
+  - UI / Rule Repository Editing: Added direct edit, save, and cancel actions for existing event rules alongside the existing add/delete workflow.
+  - UI / Dashboard Toolbar Alignment: Matched the `PROCESS FOLDERS` button height to the directory, search, and character filter controls.
+  - Configuration / Dictionary Language: Set English (`EN`) as the default application language, removed `ALL` from the Settings language selector, and normalized legacy `ALL` settings to `EN` during application use.
+  - UI / Dictionary and Dashboard Filters: Preserved `ALL` as a filter for dictionary entries, statuses, and characters without treating it as a processing language.
+  - Parser / 3D Monster Attack Routing: Fixed `Attack3D` folders being skipped by `MonsterEventParser`, so 2D and 3D monster attacks now resolve consistently.
+  - UI / Visual Framing: Removed the double-border card framing in MainWindow and simplified view containers (flat headers, borderless toolbars, clean panel borders).
+  - UI / Sidebar Branding: Centered the branding logo and workspace titles in the sidebar.
+  - UI / Minimalist ScrollBars: Reworked the default scrollbars into a modern, buttonless floating pill design that reacts dynamically on hover.
+  - UI / Settings Usability: Kept the Settings page context fixed while only its categories scroll, improving orientation.
+  - UI / Full Theme System Refresh: Reworked colors, typography, primary/secondary/icon actions, inputs, virtualized lists, scroll behavior, sliders, navigation states, and sidebar density under a single visual language.
+  - UI / Theme Cleanup: Removed unused button, brush, and scroll resources; replaced legacy scrollbar templates with compact accessible defaults.
+  - Architecture / Dashboard Helpers: Moved `DashboardInteractions` and `DashboardPreview` partials to `Views/Helpers/`.
+  - UI / Dashboard Layout: Reorganized the production view into source controls, event queue, preview canvas, inspector, workflow actions, and console surfaces.
+  - UI / Application Shell: Redesigned persistent navigation and global activity feedback (Idle, Busy, Canceled, Progress).
+  - UI / Shared View Headers: Visual Design, Event Mapping, Settings, and Dictionary now share the same workspace-header hierarchy.
+  - UI / Dialogue Editor: Aligned the modal editor with the workspace panel, header, spacing, and card surface system.
+  - UI / Surface Consolidation: Migrated all view card surfaces to the workspace panel system and replaced legacy containers.
+  - Architecture / Dashboard Boundaries: The Dashboard now delegates filesystem conventions to a focused service.
+  - Core / Visible Failure Logging: Restored user-visible `LogError` and `LogWarn` reporting for database synchronization, cache access, configuration persistence, icon resolution, and image generation failures.
+  - Core / On-Demand AppData: Replaced startup-wide directory preparation with safe, operation-owned creation through `DirectoriesCreator`.
+  - Core / Centralized Database Sync: `DataFetcher` now only reads local caches while `DatabaseBuilder` owns DDragon and CommunityDragon synchronization.
+  - Performance / Media Pipeline: Serialized FFmpeg extraction, isolated render temporaries, added cancellation checkpoints, and made ImageSharp caches concurrency-safe.
+  - Media / FFmpegCore: Updated the FFmpeg library integration used by `VideoService` for extraction, conversion, audio-family merging, and final rendering.
+  - Performance / Image and Logging Resources: Bounded icon caching, disposed generated images, and fixed RichTextBox log lifecycles.
+  - UX / Offline Resilience: Existing valid local caches remain usable when a network refresh fails.
+  - Core / On-Demand Directory Ownership: Added `DirectoriesCreator` as the single safe creation gateway.
+  - Audio / Folder-First Parsing: Dashboard and Analyzer parse only the event folder name; audio files are collected afterward.
+  - Analyzer / Interactive Event Debugger: Refactored the Analyzer into a lightweight, interactive debug tool.
+  - Media / Persistent Audio Family Cache: Reuses valid merged WAV families from `Cache/AudioFamilies` across restarts.
+  - UI / Panel Rounded Corners: Fixed subpixel rendering gaps and corner overflows globally in the application by applying `ClipToBounds="True"` and `SnapsToDevicePixels="True"` to `WorkspacePanelContainer` and setting `CornerRadius="7,7,0,0"` on all inner panel headers.
+  - UI / Status Bar Layout: Redesigned status bar layout in `MainWindow.xaml` to use an isolated grid for the icon and text to prevent layout measure-passes from stuttering the spinning icon animation.
+  - UI / Dynamic Active Icon: Added infinite rotation animation for the active `Sync` icon in the status bar.
+  - UI / Status Bar Styling: Standardized status bar active/stable text to `FontSize="10"` and `FontWeight="Black"` with matching colors.
+  - UI / Cancel Button Design: Redesigned `ModernCancelButton` to use its own template with orange-themed hover transitions and shadows, and reduced height to `28px` to prevent bottom-clipping within the status bar.
+  - Pipeline / Non-Resetting Progress: Refactored `DashboardPreview.cs` to update only the status text during icon resolution instead of resetting progress back to `0%`.
+  - Pipeline / Completion Delay: Introduced a `500ms` completion delay in `ProgressService.cs` so that the `100.0%` completed state is visible before returning to idle.
+
+Bug Fixes
+  - UI / Button Style Trigger: Replaced the invalid property-based `MultiDataTrigger` with a `MultiTrigger`, preventing the WPF resource-loading crash on startup.
+  - UI / Dashboard Startup: Removed the unresolved global checkbox style base and kept the standard Material Design checkbox lookup at view scope, preventing a StaticResource startup crash.
+  - Pipeline / Joke Outcome Events: Recognize failed and successful joke variants, including their `End` folders, instead of showing raw folder names in the HUD.
+  - Pipeline / General Assist Events: Use a dedicated localized label for `Assist3DGeneral`, preventing the `{0}` target placeholder from appearing in the HUD.
+  - Pipeline / Idle Events: Added the `Idle` rule so `Idle3DGeneral` is mapped as a localized general event instead of falling back to the raw folder name.
+  - Pipeline / Numbered Joke Variants: Recognize `Joke3DGeneral01` and `Joke3DGeneral02` as numbered variants of the existing general joke event.
+  - UI / Mapping Navigation: Synchronize the Event Mapping sidebar selection when `CREATE RULE` navigates from a `Needs Mapping` event.
+  - Pipeline / Ultimate-Ready Movement Events: Recognize `Move2DRReady` audio folders and display their localized movement label instead of the raw folder name.
+  - UI / Dashboard Filter Reset: Reset the character, status, and search filters when selecting a new source or processing folders, ensuring the full detected pipeline is visible and available for preparation and rendering.
+  - Pipeline / Icon Resolution Cancellation: Propagate cancellation after concurrent icon hydration so an interrupted analysis is reported as canceled instead of completing silently.
+  - Pipeline / Mapping Workflow Guard: Keep `Needs Mapping` visible after icon resolution, image preparation, quick edits, and dialogue review, while excluding unmapped events from preparation, review, rendering, and work budgets.
+  - Pipeline / Status Preservation: Keep `No Audio` from being overwritten by a successful icon resolution and normalize mapped events without a pending icon lookup to `Ready`.
+  - Core / Progress Completion Race: Made delayed progress completion awaitable and operation-aware, preventing an earlier workflow from resetting the progress state of a newer one.
+  - Media / Failed Render Cleanup: Remove temporary segmented render files when FFmpeg fails or a render is canceled.
+  - UI / Dialogue Editor Queue Counter: Made the read-only event count binding explicitly one-way to prevent a startup binding error.
+  - Pipeline / Image Cache Invalidation: Regenerate HUD images when dialogue or Quick Edit content changes before rendering videos.
+  - UI / Dashboard Workflow Lock: Disable preparation, review, and render actions while another workflow is processing.
+  - Core / Cancellation: Cancel the previous operation before replacing its cancellation token, preventing stale workflows from continuing in the background.
+  - UI / Dashboard Runtime Resource: Loaded `ButtonStyles.xaml` before `ProductionWorkspaceStyles.xaml`, resolving the `ModernSecondaryButton` dependency.
+  - Analyzer / Project Reference: Fixed the Analyzer to build against the current application project.
+  - Audio / Recursive Folder Scan: Fixed nested champion/skin event folders returning zero events.
+  - Database / Processing Race: Prevented parsing from starting against an incomplete official-data cache.
+  - Startup / Diagnostics: Routed early startup failures to `logs/application_errors.log`.
+  - UI / Dashboard Header: Removed the newly introduced `DUAL-PHASE PIPELINE` and `1920 × 1080` decorative pills.
+  - UI / Scroll Jumping: Fixed the Visual Design inspector jumping between logical content blocks when using the mouse wheel.
+  - UI / Navigation Scroll Host: Removed the global navigation `ScrollViewer` so each view controls its own scrolling.
+  - Transcription / Whisper Model Lock: Fixed the temporary model stream remaining open during the atomic move on Windows.
+  - Database / Structures Sync Warning: Fixed structure database loading from Fandom by deserializing structures.json correctly.
+  - UI / Icon Download Warnings: Changed intermediate network download failures to debug logs, showing a single clean warning only if resolution fails completely..
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.2.6.0
 
 MEDIUM UPDATE
@@ -42,8 +158,6 @@ Bug Fixes & Refinements
   - Core / Buff Receive Suffix Formatting: Added base translation key `event_buff_receive` ("Receive buff" / "Recibir mejora") and updated the default `SpellBuffReceive` rule to use it, preventing duplicate "general" suffixes like "Recibir mejora en General en General" by letting the parser append "en General" dynamically.
   - UI / Dashboard Searcher Selection Preservation: Updated `ApplyFilter` in `DashboardView.xaml.cs` to preserve the active selection if it remains in the filtered list after updating search queries or clearing filters. Added a `SelectionChanged` handler to automatically scroll the selected item back into view.
   - Architecture / Event Filter Decoupling: Created and registered `EventFilterService` to encapsulate all pipeline filtering and search matching logic, decoupling it from the dashboard view code-behind and improving testability and code organization.
-  - Core / AppData Upgrade Migration: Added logic inside `App.xaml.cs` to clear/delete the local `AppData/Local/VideoGenerator` directory exactly once when upgrading to version v1.2.5.1 (managed via a `.migrated_v1.2.5.1` flag file), ensuring a clean configuration sweep without losing settings on subsequent launches.
-  - Core / Redundant Migration Cleanup: Removed obsolete `RemoveAll` migration calls from `RuleManager.cs` since config is reset cleanly from defaults on upgrade launch.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -61,6 +175,7 @@ Improvements & Visual Polish
   - Translation / Clean Spanish Templates: Cleaned up the Spanish translation strings for `event_use_item` and `event_buy_item` in `translations.json` to remove the redundant word "objeto", resulting in cleaner HUD outputs like "Usar Guardián invisible" or "Comprar Filo Infinito". Added an automatic migration routine in `TranslationService` to sync this change to the user's local AppData config.
 
 Bug Fixes & Refinements
+  - Core / Generic Target Item Resolution: Dynamic combat targets now reuse the item resolver before falling back to `generic`, so `Kill3DWard` is classified as an item and receives its Ward icon automatically.
   - Core / Parser Execution Reordering: Reordered event parser registration in `NameParser` to evaluate specialized parsers (like `ItemEventParser`, `MonsterEventParser`, and `SkinInteractionParser`) before the catch-all `DynamicRuleParser`. This prevents generic rules from hijacking and displaying un-localized item names (e.g., "Ward") instead of their database-resolved names (e.g., "Guardián invisible").
   - Core / Item Map Language Unification: Forced `GetCommunityItemNameToIdMapAsync` in `DataFetcher` to construct its name-to-id cache using the English ("EN") items catalog, ensuring that English keywords parsed from folder names successfully resolve to their official IDs even when the user runs the app in Spanish/Turkish.
   - Core / Explicit Ward Translation Mapping: Added an explicit mapping override for the generic `"Ward"` keyword to the official Warding Totem ID `3340` in `DataFetcher` to guarantee correct resolution and download of the modern yellow ward icon.

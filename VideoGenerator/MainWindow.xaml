@@ -4,143 +4,120 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:converters="clr-namespace:VideoGenerator.Views.Converters"
         xmlns:local="clr-namespace:VideoGenerator.Views"
         mc:Ignorable="d"
-        Title="VideoGenerator" 
-        Height="950" 
-        Width="1400"
+        Title="VideoGenerator"
+        Height="960"
+        Width="1480"
         MinHeight="780"
         MinWidth="1200"
         Icon="Resources/logo.ico"
         Background="{StaticResource PrimaryBackgroundBrush}"
+        TextElement.FontFamily="{StaticResource AppFontFamily}"
         TextElement.Foreground="{StaticResource TextPrimaryBrush}"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
-    
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/> <!-- Global Footer Status Bar -->
-        </Grid.RowDefinitions>
+
+    <Grid Margin="0">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240"/>
+            <ColumnDefinition Width="260"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="46"/>
+        </Grid.RowDefinitions>
 
-        <!-- Modern Sidebar -->
-        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" 
-                Style="{StaticResource ModernContainer}"
-                Margin="16,24,8,16"
-                Padding="0">
+        <!-- Application rail: identity, navigation, and system availability remain visible everywhere. -->
+        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Style="{StaticResource AppShellSidebar}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Sidebar Header -->
-                <StackPanel Grid.Row="0" Margin="8,32,8,24">
-                    <Border Width="64" Height="64" 
-                            Background="#1A8B5CF6" 
-                            CornerRadius="16"
-                            HorizontalAlignment="Center"
-                            Margin="0,0,0,16">
-                        <materialDesign:PackIcon Kind="VideoOutline" 
-                                                 Width="32" 
-                                                 Height="32" 
-                                                 Foreground="{StaticResource AccentBrush}"
-                                                 VerticalAlignment="Center"
-                                                 HorizontalAlignment="Center"/>
+                <StackPanel Grid.Row="0" Margin="4,20,4,32" HorizontalAlignment="Center">
+                    <Border Style="{StaticResource AppShellBrandMark}" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="VideoOutline" Width="24" Height="24"
+                                                 Foreground="{StaticResource AccentBrushLight}"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="VIDEO GENERATOR" 
-                               FontSize="15"
-                               FontWeight="ExtraBold"
-                               HorizontalAlignment="Center"
-                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                    <TextBlock Text="{Binding AppVersion}" 
-                               FontSize="10"
-                               FontWeight="Bold"
-                               HorizontalAlignment="Center" 
-                               Opacity="0.7"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               Margin="0,4,0,0"/>
+                    <TextBlock Text="VIDEO GENERATOR" Margin="0,14,0,0" FontSize="15" FontWeight="Bold"
+                               Foreground="{StaticResource TextHighlightBrush}" HorizontalAlignment="Center" TextAlignment="Center"/>
+                    <TextBlock Text="{Binding AppVersion}" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{StaticResource AccentBrushLight}" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
 
-                <!-- Navigation -->
-                <StackPanel Grid.Row="1" Margin="10,0">
-                    <ListBox x:Name="NavListBox" 
-                             Style="{StaticResource VirtualizedListBoxStyle}"
-                             ItemContainerStyle="{StaticResource ModernNavItem}"
-                             SelectionChanged="NavListBox_SelectionChanged">
-                        <ListBoxItem IsSelected="True" Tag="Dashboard">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="ViewDashboardOutline" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Dashboard" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem Tag="Background">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="ImageEditOutline" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Visual Design" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem Tag="EventRules">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Cogs" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Event Mapping" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem Tag="Translations">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Translate" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Dictionary" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem Tag="Settings">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="SettingsOutline" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Settings" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </ListBoxItem>
-                    </ListBox>
-                </StackPanel>
+                <TextBlock Grid.Row="1" Text="WORKSPACES" Style="{StaticResource AppShellNavSectionText}"/>
+
+                <ListBox Grid.Row="2" x:Name="NavListBox"
+                          Style="{StaticResource VirtualizedListBoxStyle}"
+                          ItemContainerStyle="{StaticResource ModernNavItem}"
+                          SelectionChanged="NavListBox_SelectionChanged">
+                    <ListBoxItem IsSelected="True" Tag="Dashboard">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ViewDashboardOutline" Margin="0,0,13,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                            <TextBlock Text="Dashboard" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="Background">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ImageEditOutline" Margin="0,0,13,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                            <TextBlock Text="Visual design" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="EventRules">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Cogs" Margin="0,0,13,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                            <TextBlock Text="Event mapping" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="Translations">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Translate" Margin="0,0,13,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                            <TextBlock Text="Dictionary" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="Settings">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="SettingsOutline" Margin="0,0,13,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                            <TextBlock Text="Settings" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
             </Grid>
         </Border>
 
-        <!-- Main Content Area -->
-        <Border Grid.Row="0" Grid.Column="1" 
-                Background="{StaticResource PrimaryBackgroundBrush}"
-                BorderThickness="0"
-                Margin="8,24,16,2">
-            <ContentControl x:Name="ContentArea" Margin="0" />
+        <!-- Main content area docked seamlessly -->
+        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource AppShellContent}" Padding="24,20">
+            <ContentControl x:Name="ContentArea"/>
         </Border>
 
-        <!-- Global Status & Progress Footer -->
-        <Border Grid.Row="1" Grid.Column="1"
-                Background="{StaticResource SecondaryBackgroundBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="16,6"
-                Height="40"
-                Margin="8,2,16,16"
-                VerticalAlignment="Center">
+        <!-- The activity rail makes task state readable without taking focus away from the workspace. -->
+        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource AppShellStatusBar}" Margin="0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="340"/> <!-- Status Icon & Text Group (Fixed to prevent shifting) -->
-                    <ColumnDefinition Width="*"/>    <!-- Progress Bar -->
-                    <ColumnDefinition Width="Auto"/> <!-- Progress Percentage -->
-                    <ColumnDefinition Width="Auto"/> <!-- Cancel Button -->
+                    <ColumnDefinition Width="310"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
-                <!-- Left: Status Icon and Label -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0">
-                    <!-- Status Icon -->
-                    <materialDesign:PackIcon x:Name="StatusIcon" Width="16" Height="16" Margin="0,0,10,0" VerticalAlignment="Center">
+
+                <Grid Grid.Column="0" VerticalAlignment="Center" Margin="12,0,20,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="28"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <materialDesign:PackIcon Grid.Column="0" Width="16" Height="16" VerticalAlignment="Center" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5">
+                        <materialDesign:PackIcon.RenderTransform>
+                            <RotateTransform Angle="0"/>
+                        </materialDesign:PackIcon.RenderTransform>
                         <materialDesign:PackIcon.Style>
                             <Style TargetType="materialDesign:PackIcon">
                                 <Setter Property="Kind" Value="CheckCircleOutline"/>
@@ -149,6 +126,12 @@
                                     <DataTrigger Binding="{Binding Progress.IsBusy}" Value="True">
                                         <Setter Property="Kind" Value="Sync"/>
                                         <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="SpinAnimationBegin" Storyboard="{StaticResource SpinAnimation}"/>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="SpinAnimationBegin"/>
+                                        </DataTrigger.ExitActions>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Progress.StatusText}" Value="CANCELED - TASK ANNULLED">
                                         <Setter Property="Kind" Value="AlertCircleOutline"/>
@@ -158,60 +141,61 @@
                             </Style>
                         </materialDesign:PackIcon.Style>
                     </materialDesign:PackIcon>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="SYSTEM STATUS" FontSize="10" FontWeight="Black">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Progress.IsBusy}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Progress.StatusText}" Value="CANCELED - TASK ANNULLED">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{Binding Progress.StatusText}" ToolTip="{Binding Progress.StatusText}" FontSize="10" FontWeight="Black"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="260" Margin="0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Progress.IsBusy}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Progress.StatusText}" Value="CANCELED - TASK ANNULLED">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Setter Property="Foreground" Value="{StaticResource CancelBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
 
-                    <!-- Status Label -->
-                    <TextBlock Text="{Binding Progress.StatusText}" 
-                               ToolTip="{Binding Progress.StatusText}"
-                               FontSize="11" 
-                               FontWeight="Bold" 
-                               VerticalAlignment="Center" 
-                               TextTrimming="CharacterEllipsis"
-                               MaxWidth="300">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Progress.IsBusy}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Progress.StatusText}" Value="CANCELED - TASK ANNULLED">
-                                        <Setter Property="Foreground" Value="{StaticResource CancelBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
+                <Grid Grid.Column="1" VerticalAlignment="Center" Margin="0,0,18,0">
+                    <local:ModernProgressBar Value="{Binding Progress.Value, Mode=OneWay}"
+                                             IsIndeterminate="{Binding Progress.IsIndeterminate, Mode=OneWay}"
+                                             Visibility="{Binding Progress.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                             Height="7"/>
+                </Grid>
 
-                <!-- Middle: Modern Progress Bar -->
-                <local:ModernProgressBar Grid.Column="1" 
-                                         Value="{Binding Progress.Value, Mode=OneWay}"
-                                         IsIndeterminate="{Binding Progress.IsIndeterminate, Mode=OneWay}"
-                                         Visibility="{Binding Progress.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         VerticalAlignment="Center"
-                                         Height="6"
-                                         Margin="0,0,16,0"/>
+                <Border Grid.Column="2" Style="{StaticResource StatusPill}" Padding="10,6" Margin="0,0,12,0"
+                        Visibility="{Binding Progress.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding Progress.Value, StringFormat={}{0:F0}%}" Style="{StaticResource MonoValueText}"/>
+                </Border>
 
-                <!-- Right: Progress Percentage Text -->
-                <TextBlock Grid.Column="2" 
-                           Text="{Binding Progress.Value, StringFormat={}{0:F1}%}"
-                           FontSize="11" 
-                           FontWeight="Bold" 
-                           Foreground="{StaticResource AccentBrushLight}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,16,0"
-                           Visibility="{Binding Progress.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                <!-- Far Right: Cancel Button -->
-                <Button Grid.Column="3" 
-                        Click="CancelProcessing_Click"
-                        Style="{StaticResource ModernCancelButton}"
-                        Height="28" Padding="12,0"
-                        VerticalAlignment="Center"
+                <Button Grid.Column="3" Click="CancelProcessing_Click" Style="{StaticResource ModernCancelButton}" Height="28" Padding="12,0"
                         Visibility="{Binding Progress.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="CloseCircleOutline" Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="CANCEL (ESC)" FontSize="9" FontWeight="Black" VerticalAlignment="Center"/>
+                        <materialDesign:PackIcon Kind="CloseCircleOutline" Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="CANCEL" FontSize="10" FontWeight="Black" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </Grid>

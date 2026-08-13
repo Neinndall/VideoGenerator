@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Controls;
 using VideoGenerator.Services;
 using UserControl = System.Windows.Controls.UserControl;
@@ -34,8 +35,8 @@ namespace VideoGenerator.Views
             InitializeComponent();
             DataContext = this;
 
-            // Load available languages for the dropdown
-            LanguageOptions.Add("ALL");
+            // Load concrete dictionary languages for the application-wide language selector.
+            LanguageOptions.Add("EN");
             try 
             {
                 var raw = translationService.GetRawJson();
@@ -43,7 +44,13 @@ namespace VideoGenerator.Views
                 if (data != null)
                 {
                     foreach (var lang in data.Keys)
-                        LanguageOptions.Add(lang);
+                    {
+                        if (!lang.Equals("ALL", System.StringComparison.OrdinalIgnoreCase) &&
+                            !LanguageOptions.Contains(lang, System.StringComparer.OrdinalIgnoreCase))
+                        {
+                            LanguageOptions.Add(lang);
+                        }
+                    }
                 }
             } catch { }
         }

@@ -3,18 +3,19 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
  
     <Style x:Key="ModernNavItem" TargetType="ListBoxItem">
-        <Setter Property="Height" Value="54"/>
+        <Setter Property="Height" Value="46"/>
         <Setter Property="Margin" Value="0,2"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
                     <Border x:Name="RootBorder" 
                             Background="{TemplateBinding Background}"
-                            CornerRadius="8"
+                            CornerRadius="11"
                             BorderThickness="1"
                             BorderBrush="Transparent"
                             SnapsToDevicePixels="True"
@@ -30,28 +31,28 @@
                                     Background="{StaticResource AccentBrush}" 
                                     CornerRadius="2"
                                     Width="3"
-                                    Height="20"
+                                    Height="22"
                                     VerticalAlignment="Center"
-                                    Margin="6,0,0,0"
+                                    Margin="7,0,0,0"
                                     Opacity="0"/>
                             
                             <ContentPresenter Grid.Column="1" 
                                               HorizontalAlignment="Left" 
                                               VerticalAlignment="Center"
-                                              Margin="12,0,0,0"/>
+                                              Margin="13,0,8,0"/>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <!-- HOVER STATE -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#0DFFFFFF"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource HoverSurfaceBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
                         
                         <!-- SELECTED STATE -->
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#1A8B5CF6"/>
-                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#408B5CF6"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#268B5CF6"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#668B5CF6"/>
                             <Setter TargetName="Indicator" Property="Opacity" Value="1"/>
                             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                         </Trigger>
@@ -62,7 +63,7 @@
                                 <Condition Property="IsSelected" Value="True"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="RootBorder" Property="Background" Value="#268B5CF6"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#338B5CF6"/>
                             <Setter Property="Foreground" Value="#E9D5FF"/>
                         </MultiTrigger>
                     </ControlTemplate.Triggers>

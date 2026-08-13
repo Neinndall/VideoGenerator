@@ -1,13 +1,14 @@
 using System.Windows;
 using System.IO;
 using System;
-using System.Reflection;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using VideoGenerator.Models;
 using VideoGenerator.Services;
+using VideoGenerator.Utils;
 using VideoGenerator.Views;
+using VideoGenerator.Views.Dialogs;
 
 namespace VideoGenerator
 {
@@ -17,27 +18,6 @@ namespace VideoGenerator
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // 0. Clean AppData Directory ONCE for version v1.2.5.1 upgrade
-            try
-            {
-                string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoGenerator");
-                string migrationFlagFile = Path.Combine(appDataPath, "Config", ".migrated_v1.2.5.1");
-
-                if (!File.Exists(migrationFlagFile))
-                {
-                    if (Directory.Exists(appDataPath))
-                    {
-                        Directory.Delete(appDataPath, true);
-                    }
-                    Directory.CreateDirectory(Path.Combine(appDataPath, "Config"));
-                    File.WriteAllText(migrationFlagFile, "migrated");
-                }
-            }
-            catch (Exception)
-            {
-                // Silently ignore access violations or locks
-            }
-
             // 1. Global Exception Handling
             AppDomain.CurrentDomain.UnhandledException += (s, ev) => LogException(ev.ExceptionObject as Exception);
             DispatcherUnhandledException += (s, ev) => { LogException(ev.Exception); ev.Handled = true; };
@@ -47,29 +27,30 @@ namespace VideoGenerator
             ConfigureServices(serviceCollection);
             ServiceProvider = serviceCollection.BuildServiceProvider();
 
+            // Initialize WPF before starting background work so services can safely
+            // resolve the application dispatcher when they publish UI notifications.
+            base.OnStartup(e);
+
             // 3. Auto-Sync Databases in background (Fire and forget)
-            Task.Run(async () => 
+            _ = Task.Run(async () =>
             {
-                try 
+                try
                 {
                     var dbBuilder = ServiceProvider.GetRequiredService<DatabaseBuilder>();
                     var dataFetcher = ServiceProvider.GetRequiredService<DataFetcher>();
                     string version = await dataFetcher.GetLatestLolVersionAsync();
                     await dbBuilder.InitializeDatabasesAsync(version);
-                    var logger = ServiceProvider.GetService<LogService>();
-                    logger.LogInfo("Local databases synchronized successfully.");
+                    ServiceProvider.GetRequiredService<LogService>()
+                        .LogInfo("Database synchronization finished. Existing local caches remain available when a source could not be refreshed.");
                 }
                 catch (Exception ex)
                 {
-                    var logger = ServiceProvider.GetService<LogService>();
-                    logger.LogError("Failed to synchronize local databases", ex);
+                    ServiceProvider.GetRequiredService<LogService>()
+                        .LogError("Failed to synchronize local databases", ex);
                 }
             });
 
-            // 4. WPF Startup
-            base.OnStartup(e);
-
-            // 5. Show Main Window
+            // 4. Show Main Window
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
             mainWindow.Activate();
@@ -79,7 +60,8 @@ namespace VideoGenerator
         private void ConfigureServices(IServiceCollection services)
         {
             // --- Core Services (Singletons) ---
-            services.AddSingleton<HttpClient>();
+            services.AddSingleton(_ => AppSettings.Instance);
+            services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromMinutes(15) });
             services.AddSingleton<LogService>();
             services.AddSingleton<DatabaseBuilder>();
             services.AddSingleton<DataFetcher>();
@@ -89,14 +71,22 @@ namespace VideoGenerator
             services.AddSingleton<GroupManager>();
             services.AddSingleton<AliasManager>();
             services.AddSingleton<IconManager>();
-            services.AddSingleton<NameParser>();
+            services.AddSingleton<IEventNameParser, EventNameParser>();
             services.AddSingleton<ImageGenerator>();
             services.AddSingleton<VideoService>();
             services.AddSingleton<TranscriptionService>();
             services.AddSingleton<DialogueService>();
+            services.AddSingleton<IDialogueStore>(provider => provider.GetRequiredService<DialogueService>());
             services.AddSingleton<TaskCancellationService>();
             services.AddSingleton<ProgressService>();
             services.AddSingleton<EventFilterService>();
+            services.AddSingleton<AudioFolderDiscoveryService>();
+            services.AddSingleton<EventAnalysisService>();
+            services.AddSingleton<EventIconResolutionService>();
+            services.AddSingleton<PreviewImageService>();
+            services.AddSingleton<AudioFamilyMergeService>();
+            services.AddSingleton<HudImagePreparationService>();
+            services.AddSingleton<ProductionWorkPlanningService>();
 
             // --- Views (Singletons for state preservation) ---
             services.AddSingleton<MainWindow>();
@@ -124,11 +114,19 @@ namespace VideoGenerator
             else
             {
                 // Fallback if DI is not ready
-                string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app_errors.log");
+                string logPath = AppConfig.ApplicationErrorsPath;
+                DirectoriesCreator.CreateParentDirectory(logPath);
                 File.AppendAllText(logPath, $"[CRITICAL] {DateTime.Now}: {ex.Message}\n{ex.StackTrace}\n\n");
             }
             
-            System.Windows.MessageBox.Show($"Critical error: {ex.Message}\n\nPlease check app_errors.log for more details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            try
+            {
+                ModernMessageBox.Show($"Critical error: {ex.Message}\n\nPlease check logs/application_errors.log for more details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch
+            {
+                System.Windows.MessageBox.Show($"Critical error: {ex.Message}\n\nPlease check logs/application_errors.log for more details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

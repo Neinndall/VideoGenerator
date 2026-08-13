@@ -10,19 +10,35 @@
         <Setter Property="BorderThickness" Value="1"/>
     </Style>
 
-    <!-- Accent Tag Border -->
-    <Style x:Key="AccentTagBorder" TargetType="Border" BasedOn="{StaticResource HUDBorder}">
-        <Setter Property="Background" Value="#1A8B5CF6"/> <!-- Low opacity accent -->
-        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-    </Style>
-
-    <!-- Modern Card Container -->
-    <Style x:Key="ModernContainer" TargetType="Border">
+    <!-- Canonical card surface for application content. -->
+    <Style x:Key="SurfaceContainer" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SecondaryBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="12"/>
         <Setter Property="Padding" Value="20"/>
+    </Style>
+
+    <!-- Inner surface for toolbars, forms, and grouped controls. -->
+    <Style x:Key="InsetContainer" TargetType="Border" BasedOn="{StaticResource SurfaceContainer}">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
+        <Setter Property="Padding" Value="16"/>
+    </Style>
+
+    <Style x:Key="StatusPill" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource AccentSoftBrush}"/>
+        <Setter Property="BorderBrush" Value="#558B5CF6"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="10,6"/>
+    </Style>
+
+    <Style x:Key="SectionHeaderBorder" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource ElevatedSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding" Value="16,10"/>
     </Style>
 
 </ResourceDictionary>

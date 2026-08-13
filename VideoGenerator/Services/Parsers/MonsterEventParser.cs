@@ -19,8 +19,9 @@ namespace VideoGenerator.Services.Parsers
         {
             if (string.IsNullOrEmpty(folderName)) return false;
             string targetPart = StripOwnerPrefix(folderName);
-            return folderName.Contains("Attack2D", StringComparison.OrdinalIgnoreCase) && 
-                  !targetPart.Contains("Skin", StringComparison.OrdinalIgnoreCase);
+            return (folderName.Contains("Attack2D", StringComparison.OrdinalIgnoreCase) ||
+                    folderName.Contains("Attack3D", StringComparison.OrdinalIgnoreCase)) &&
+                   !targetPart.Contains("Skin", StringComparison.OrdinalIgnoreCase);
         }
 
         private string StripOwnerPrefix(string folderName)
@@ -37,7 +38,7 @@ namespace VideoGenerator.Services.Parsers
         public Task<ParsedEvent> ParseAsync(string folderName, string language)
         {
             string cleanTarget = StripOwnerPrefix(folderName);
-            var match = Regex.Match(cleanTarget, @"Attack2D_?([A-Za-z0-9_]+)", RegexOptions.IgnoreCase);
+            var match = Regex.Match(cleanTarget, @"Attack(?:2D|3D)_?([A-Za-z0-9_]+)", RegexOptions.IgnoreCase);
             if (!match.Success) return Task.FromResult<ParsedEvent>(null);
 
             string monsterNameRaw = match.Groups[1].Value.Trim('_');
