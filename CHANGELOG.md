@@ -23,6 +23,9 @@ New Features
   - UI / Semantic Design Tokens: Added reusable tokens for page hierarchy, status pills, hero surfaces, inset panels, ghost actions, and compact icon buttons.
 
 Improvements
+  - UI / Header Metrics: Standardized the `EVENTS`, `SELECTED`, and `PIPELINE STATUS` metrics with shared typography, sizing, spacing, and pill formatting.
+  - UI / Accent Action Feedback: Reused the exact light-violet render hover tone for the icon and text hover state of the `CREATE RULE` and `SELECT/DESELECT VISIBLE` actions, without adding a hover surface.
+  - UI / Pipeline Header: Expanded the detected pipeline panel and moved the visible-event selection action beside the selection counter for a cleaner toolbar layout.
   - UI / Secondary Button Language: Standardized secondary actions on a borderless surface with shared hover feedback across Dashboard and Dialogue Editor controls.
   - UI / Dialogue Editor Layout: Replaced the floating event-action card with a flat separated toolbar to keep event edits and batch approval visually distinct.
   - UI / Dialogue Editor Events Queue: Added a complete rounded panel frame with a compact event counter and a restrained validation indicator.

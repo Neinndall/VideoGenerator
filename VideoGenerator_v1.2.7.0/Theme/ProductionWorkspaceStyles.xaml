@@ -60,18 +60,44 @@
         <Setter Property="CornerRadius" Value="7"/>
     </Style>
 
-    <Style x:Key="EventSelectionActionButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+    <Style x:Key="AccentActionButton" TargetType="Button">
         <Setter Property="Height" Value="28"/>
         <Setter Property="Padding" Value="8,4"/>
-        <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
         <Setter Property="FontSize" Value="9"/>
         <Setter Property="FontWeight" Value="Black"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
-        <Style.Triggers>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.35"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="7"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.72"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.35"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="WorkflowStepButton" TargetType="Button" BasedOn="{StaticResource ModernSecondaryButton}">
