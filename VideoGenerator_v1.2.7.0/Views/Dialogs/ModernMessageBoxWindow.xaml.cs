@@ -6,7 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using MaterialDesignThemes.Wpf;
 
-namespace VideoGenerator.Views
+namespace VideoGenerator.Views.Dialogs
 {
     public partial class ModernMessageBoxWindow : Window
     {

@@ -6,6 +6,7 @@ using System.Windows;
 using System.Text.RegularExpressions;
 using VideoGenerator.Models;
 using VideoGenerator.Views.Models;
+using VideoGenerator.Views.Dialogs;
 using VideoGenerator.Services;
 using VideoGenerator.Utils;
 using UserControl = System.Windows.Controls.UserControl;

@@ -8,6 +8,7 @@ using VideoGenerator.Models;
 using VideoGenerator.Services;
 using VideoGenerator.Utils;
 using VideoGenerator.Views;
+using VideoGenerator.Views.Dialogs;
 
 namespace VideoGenerator
 {
@@ -120,7 +121,7 @@ namespace VideoGenerator
             
             try
             {
-                Views.ModernMessageBox.Show($"Critical error: {ex.Message}\n\nPlease check logs/application_errors.log for more details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show($"Critical error: {ex.Message}\n\nPlease check logs/application_errors.log for more details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch
             {

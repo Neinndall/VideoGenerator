@@ -8,6 +8,7 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
+using VideoGenerator.Views.Dialogs;
 using UserControl = System.Windows.Controls.UserControl;
 
 namespace VideoGenerator.Views

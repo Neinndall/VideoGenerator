@@ -9,6 +9,7 @@ using VideoGenerator.Models;
 using VideoGenerator.Services;
 using VideoGenerator.Utils;
 using VideoGenerator.Views.Models;
+using VideoGenerator.Views.Dialogs;
 using System.Collections.Generic;
 
 namespace VideoGenerator.Views

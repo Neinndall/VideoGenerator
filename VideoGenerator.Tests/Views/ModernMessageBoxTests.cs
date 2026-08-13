@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Windows;
 using VideoGenerator.Views;
+using VideoGenerator.Views.Dialogs;
 using Xunit;
 
 namespace VideoGenerator.Tests.Views;

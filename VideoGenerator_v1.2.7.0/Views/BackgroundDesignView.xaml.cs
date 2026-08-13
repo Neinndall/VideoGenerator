@@ -9,6 +9,7 @@ using System.Threading;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
+using VideoGenerator.Views.Dialogs;
 using VideoGenerator.Models;
 using VideoGenerator.Utils;
 using SixLabors.ImageSharp;

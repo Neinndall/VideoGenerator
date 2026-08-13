@@ -14,7 +14,7 @@ using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
 using MaterialDesignThemes.Wpf;
 
-namespace VideoGenerator.Views
+namespace VideoGenerator.Views.Dialogs
 {
     public class DialoguePartItem : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
     {
