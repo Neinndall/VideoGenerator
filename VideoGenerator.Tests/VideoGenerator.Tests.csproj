@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VideoGenerator_v1.2.7.0\VideoGenerator.csproj" />
+    <ProjectReference Include="..\VideoGenerator\VideoGenerator.csproj" />
   </ItemGroup>
 
 </Project>

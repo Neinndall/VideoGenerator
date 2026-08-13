@@ -1,7 +1,7 @@
-VideoGenerator - Patch Notes | v1.2.7.0
+VideoGenerator - Patch Notes | v1.3.0.0
 
-MEDIUM UPDATE
-This version consolidates the application shell refresh, physical organization of services by domain, production pipeline refactoring, recursive event discovery, official data readiness, and a fully polished, pixel-perfect user interface.
+MAJOR UPDATE
+This version consolidates the application shell refresh, physical organization of services by domain, modal dialog architectural isolation in Views/Dialogs, production pipeline refactoring, recursive event discovery, modern obsidian dialogs replacing win32 popups, official data readiness, and a fully polished, pixel-perfect user interface.
 
 New Features
   - Architecture / Service Domains: Reorganized `Services/` into `Core`, `Data`, `Pipeline`, `Media`, `Audio`, `Configuration`, and `Parsers` folders while keeping DI-facing namespaces stable.
