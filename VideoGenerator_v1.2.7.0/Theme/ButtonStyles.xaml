@@ -165,7 +165,7 @@
                             <Setter TargetName="Root" Property="Background" Value="Transparent"/>
                             <Setter TargetName="Root" Property="BorderBrush" Value="Transparent"/>
                             <Setter TargetName="Root" Property="BorderThickness" Value="0"/>
-                            <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource ErrorBrushLight}"/>
                         </MultiTrigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Root" Property="Opacity" Value="0.72"/>
@@ -181,7 +181,7 @@
 
     <Style x:Key="DangerIconButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignIconButton}">
         <Setter Property="Tag" Value="Danger"/>
-        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
     </Style>
 
     <Style x:Key="MaterialDesignFlatButton" TargetType="Button">

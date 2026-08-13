@@ -30,7 +30,7 @@ Improvements
   - UI / Workflow Controls: Removed the static border from `PREPARE DIALOGUES` and `REVIEW`, preserving the shared hover surface with keyboard-focus feedback.
   - UI / Event Selection: Added per-event selection checkboxes, a visible-selection counter, and a `SELECT ALL VISIBLE` toggle so preparation, review, and rendering can target only the selected visible events.
   - UI / Event Selection Layout: Aligned the checkbox with the left edge of the event queue and removed the duplicated selection counter from the action row.
-  - UI / Destructive Actions: Added a dedicated `DangerIconButton` style, replacing the generic violet hover with a subtle red icon hover and no surrounding border while keeping Dashboard XAML semantic and compact.
+  - UI / Destructive Actions: Added a dedicated `DangerIconButton` style with a red icon at rest, a brighter red hover state, and no surrounding border while keeping Dashboard XAML semantic and compact.
   - UI / Workflow Availability: Disabled batch actions when the active filters show no events or when no visible event is selected.
   - UI / Dashboard Toolbar Alignment: Matched the `PROCESS FOLDERS` button height to the directory, search, and character filter controls.
   - Configuration / Dictionary Language: Set English (`EN`) as the default application language, removed `ALL` from the Settings language selector, and normalized legacy `ALL` settings to `EN` during application use.
