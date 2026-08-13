@@ -13,6 +13,7 @@ namespace VideoGenerator.Views
         private readonly IServiceProvider _serviceProvider;
         private readonly TaskCancellationService _cancellationService;
         private readonly Dictionary<string, UserControl> _viewCache = new();
+        private bool _isSynchronizingNavigationSelection;
 
         public string AppVersion => AssemblyVersion.Version;
 
@@ -36,6 +37,11 @@ namespace VideoGenerator.Views
 
         private void NavListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (_isSynchronizingNavigationSelection)
+            {
+                return;
+            }
+
             if (NavListBox.SelectedItem is ListBoxItem item && item.Tag is string viewName)
             {
                 NavigateTo(viewName);
@@ -65,6 +71,32 @@ namespace VideoGenerator.Views
             if (_viewCache.TryGetValue(viewName, out var view))
             {
                 ContentArea.Content = view;
+                SynchronizeNavigationSelection(viewName);
+            }
+        }
+
+        private void SynchronizeNavigationSelection(string viewName)
+        {
+            foreach (object item in NavListBox.Items)
+            {
+                if (item is not ListBoxItem navItem ||
+                    !string.Equals(navItem.Tag as string, viewName, StringComparison.OrdinalIgnoreCase) ||
+                    ReferenceEquals(NavListBox.SelectedItem, navItem))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    _isSynchronizingNavigationSelection = true;
+                    NavListBox.SelectedItem = navItem;
+                }
+                finally
+                {
+                    _isSynchronizingNavigationSelection = false;
+                }
+
+                break;
             }
         }
 
