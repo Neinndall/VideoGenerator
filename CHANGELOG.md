@@ -78,6 +78,7 @@ Bug Fixes
   - UI / Button Style Trigger: Replaced the invalid property-based `MultiDataTrigger` with a `MultiTrigger`, preventing the WPF resource-loading crash on startup.
   - UI / Dashboard Startup: Removed the unresolved global checkbox style base and kept the standard Material Design checkbox lookup at view scope, preventing a StaticResource startup crash.
   - Pipeline / Joke Outcome Events: Recognize failed and successful joke variants, including their `End` folders, instead of showing raw folder names in the HUD.
+  - Pipeline / General Assist Events: Use a dedicated localized label for `Assist3DGeneral`, preventing the `{0}` target placeholder from appearing in the HUD.
   - Pipeline / Ultimate-Ready Movement Events: Recognize `Move2DRReady` audio folders and display their localized movement label instead of the raw folder name.
   - UI / Dashboard Filter Reset: Reset the character, status, and search filters when selecting a new source or processing folders, ensuring the full detected pipeline is visible and available for preparation and rendering.
   - Pipeline / Icon Resolution Cancellation: Propagate cancellation after concurrent icon hydration so an interrupted analysis is reported as canceled instead of completing silently.
