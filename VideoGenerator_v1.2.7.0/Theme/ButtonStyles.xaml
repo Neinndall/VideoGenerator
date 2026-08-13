@@ -157,15 +157,16 @@
                             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                         </Trigger>
                         <!-- Destructive icon actions use a semantic danger hover state. -->
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
                                 <Condition Property="IsMouseOver" Value="True"/>
                                 <Condition Property="Tag" Value="Danger"/>
-                            </MultiDataTrigger.Conditions>
-                            <Setter TargetName="Root" Property="Background" Value="{StaticResource ErrorPillBgBrush}"/>
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource ErrorPillBorderBrush}"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Root" Property="Background" Value="Transparent"/>
+                            <Setter TargetName="Root" Property="BorderBrush" Value="Transparent"/>
+                            <Setter TargetName="Root" Property="BorderThickness" Value="0"/>
                             <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
-                        </MultiDataTrigger>
+                        </MultiTrigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Root" Property="Opacity" Value="0.72"/>
                         </Trigger>
@@ -180,7 +181,7 @@
 
     <Style x:Key="DangerIconButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignIconButton}">
         <Setter Property="Tag" Value="Danger"/>
-        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
     </Style>
 
     <Style x:Key="MaterialDesignFlatButton" TargetType="Button">

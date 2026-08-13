@@ -30,7 +30,7 @@ Improvements
   - UI / Workflow Controls: Removed the static border from `PREPARE DIALOGUES` and `REVIEW`, preserving the shared hover surface with keyboard-focus feedback.
   - UI / Event Selection: Added per-event selection checkboxes, a visible-selection counter, and a `SELECT ALL VISIBLE` toggle so preparation, review, and rendering can target only the selected visible events.
   - UI / Event Selection Layout: Aligned the checkbox with the left edge of the event queue and removed the duplicated selection counter from the action row.
-  - UI / Destructive Actions: Added a dedicated `DangerIconButton` style, replacing the generic violet hover with a restrained red surface and border while keeping Dashboard XAML semantic and compact.
+  - UI / Destructive Actions: Added a dedicated `DangerIconButton` style, replacing the generic violet hover with a subtle red icon hover and no surrounding border while keeping Dashboard XAML semantic and compact.
   - UI / Workflow Availability: Disabled batch actions when the active filters show no events or when no visible event is selected.
   - UI / Dashboard Toolbar Alignment: Matched the `PROCESS FOLDERS` button height to the directory, search, and character filter controls.
   - Configuration / Dictionary Language: Set English (`EN`) as the default application language, removed `ALL` from the Settings language selector, and normalized legacy `ALL` settings to `EN` during application use.
@@ -69,6 +69,7 @@ Improvements
   - Pipeline / Completion Delay: Introduced a `500ms` completion delay in `ProgressService.cs` so that the `100.0%` completed state is visible before returning to idle.
 
 Bug Fixes
+  - UI / Button Style Trigger: Replaced the invalid property-based `MultiDataTrigger` with a `MultiTrigger`, preventing the WPF resource-loading crash on startup.
   - UI / Dashboard Startup: Removed the unresolved global checkbox style base and kept the standard Material Design checkbox lookup at view scope, preventing a StaticResource startup crash.
   - Pipeline / Joke Outcome Events: Recognize failed and successful joke variants, including their `End` folders, instead of showing raw folder names in the HUD.
   - Pipeline / Ultimate-Ready Movement Events: Recognize `Move2DRReady` audio folders and display their localized movement label instead of the raw folder name.
