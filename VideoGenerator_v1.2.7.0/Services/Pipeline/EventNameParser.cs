@@ -29,7 +29,7 @@ namespace VideoGenerator.Services
                 new MonsterEventParser(translationService),
                 new SkinInteractionParser(translationService, dataFetcher, aliasManager),
                 new SpellOrAttackParser(translationService),
-                new DynamicRuleParser(translationService, ruleManager, groupManager, aliasManager, skinlineManager)
+                new DynamicRuleParser(translationService, dataFetcher, ruleManager, groupManager, aliasManager, skinlineManager)
             };
         }
 

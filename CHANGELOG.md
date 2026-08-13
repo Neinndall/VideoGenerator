@@ -26,6 +26,7 @@ Improvements
   - UI / Header Metrics: Standardized the `EVENTS`, `SELECTED`, and `PIPELINE STATUS` metrics with shared typography, sizing, spacing, and pill formatting.
   - UI / Accent Action Feedback: Reused the exact light-violet render hover tone for the icon and text hover state of the `CREATE RULE` and `SELECT/DESELECT VISIBLE` actions, without adding a hover surface.
   - UI / Icon Action Consistency: Centralized non-destructive icon actions under `IconActionButton` with transparent hover feedback, while `DangerIconButton` is the single red variant for destructive actions.
+  - UI / Icon Hover Overrides: Removed local foreground overrides that prevented edit, search, folder, playback, and clear actions from reaching the shared light-violet hover state.
   - UI / Pipeline Header: Expanded the detected pipeline panel and moved the visible-event selection action beside the selection counter for a cleaner toolbar layout.
   - UI / Secondary Button Language: Standardized secondary actions on a borderless surface with shared hover feedback across Dashboard and Dialogue Editor controls.
   - UI / Dialogue Editor Layout: Replaced the floating event-action card with a flat separated toolbar to keep event edits and batch approval visually distinct.
@@ -169,6 +170,7 @@ Improvements & Visual Polish
   - Translation / Clean Spanish Templates: Cleaned up the Spanish translation strings for `event_use_item` and `event_buy_item` in `translations.json` to remove the redundant word "objeto", resulting in cleaner HUD outputs like "Usar Guardián invisible" or "Comprar Filo Infinito". Added an automatic migration routine in `TranslationService` to sync this change to the user's local AppData config.
 
 Bug Fixes & Refinements
+  - Core / Generic Target Item Resolution: Dynamic combat targets now reuse the item resolver before falling back to `generic`, so `Kill3DWard` is classified as an item and receives its Ward icon automatically.
   - Core / Parser Execution Reordering: Reordered event parser registration in `NameParser` to evaluate specialized parsers (like `ItemEventParser`, `MonsterEventParser`, and `SkinInteractionParser`) before the catch-all `DynamicRuleParser`. This prevents generic rules from hijacking and displaying un-localized item names (e.g., "Ward") instead of their database-resolved names (e.g., "Guardián invisible").
   - Core / Item Map Language Unification: Forced `GetCommunityItemNameToIdMapAsync` in `DataFetcher` to construct its name-to-id cache using the English ("EN") items catalog, ensuring that English keywords parsed from folder names successfully resolve to their official IDs even when the user runs the app in Spanish/Turkish.
   - Core / Explicit Ward Translation Mapping: Added an explicit mapping override for the generic `"Ward"` keyword to the official Warding Totem ID `3340` in `DataFetcher` to guarantee correct resolution and download of the modern yellow ward icon.

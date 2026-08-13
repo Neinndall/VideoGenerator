@@ -19,16 +19,19 @@ namespace VideoGenerator.Services.Parsers
         private readonly GroupManager _groupManager;
         private readonly AliasManager _aliasManager;
         private readonly SkinlineManager _skinlineManager;
+        private readonly DataFetcher _dataFetcher;
         private static readonly Random _random = new();
 
         public DynamicRuleParser(
             TranslationService translationService,
+            DataFetcher dataFetcher,
             RuleManager ruleManager,
             GroupManager groupManager,
             AliasManager aliasManager,
             SkinlineManager skinlineManager)
         {
             _translationService = translationService;
+            _dataFetcher = dataFetcher;
             _ruleManager = ruleManager;
             _groupManager = groupManager;
             _aliasManager = aliasManager;
@@ -264,6 +267,12 @@ namespace VideoGenerator.Services.Parsers
                             iconTarget = GetStructureLookupName(iconTarget);
                             displayTargetName = iconTarget;
                         }
+                        else if (iconType != "system" &&
+                                 iconType != "item" &&
+                                 await IsKnownItemAsync(iconTarget))
+                        {
+                            iconType = "item";
+                        }
                         else if (iconType != "system" && iconType != "item")
                         {
                             iconType = "generic";
@@ -303,6 +312,14 @@ namespace VideoGenerator.Services.Parsers
             }
 
             return new ParsedEvent { OriginalFolder = folderName, DisplayText = displayText, IconLookupName = iconTarget, IconType = iconType };
+        }
+
+        private async Task<bool> IsKnownItemAsync(string target)
+        {
+            if (string.IsNullOrWhiteSpace(target)) return false;
+
+            string resolvedItemId = await _dataFetcher.ResolveItemNameToIdAsync(target);
+            return !string.IsNullOrEmpty(resolvedItemId);
         }
 
         private List<StructureMapping> _cachedStructures;

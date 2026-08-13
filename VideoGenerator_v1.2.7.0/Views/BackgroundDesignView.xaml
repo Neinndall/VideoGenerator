@@ -95,7 +95,7 @@
                                                      Height="40"
                                                      Padding="10,6,36,6"
                                                      KeyDown="SplashSearchBox_KeyDown"/>
-                                            <Button Click="SearchSplash_Click" HorizontalAlignment="Right" Style="{StaticResource IconActionButton}" Foreground="{StaticResource AccentBrush}" Width="32" Height="32" Margin="0,0,4,0" VerticalAlignment="Center" ToolTip="Search Riot API">
+                                            <Button Click="SearchSplash_Click" HorizontalAlignment="Right" Style="{StaticResource IconActionButton}" Width="32" Height="32" Margin="0,0,4,0" VerticalAlignment="Center" ToolTip="Search Riot API">
                                                 <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/>
                                             </Button>
                                         </Grid>
@@ -528,7 +528,6 @@
                              <Button Click="ResetDefaults_Click"
                                      Style="{StaticResource IconActionButton}"
                                      ToolTip="Reset Layout Defaults"
-                                     Foreground="{StaticResource ErrorBrush}"
                                      Width="36" Height="36">
                                  <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18"/>
                              </Button>

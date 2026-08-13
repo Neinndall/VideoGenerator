@@ -188,6 +188,42 @@ public sealed class EventNameParserIntegrationTests
     }
 
     [Fact]
+    public async Task RoutesWardKillEventsThroughTheItemResolver()
+    {
+        string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
+
+        try
+        {
+            string cachePath = Path.Combine(root, "Cache", "items_data_default.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+            await File.WriteAllTextAsync(cachePath, """
+                [
+                  { "id": 3340, "name": "Stealth Ward", "nameSlug": "StealthWard" }
+                ]
+                """);
+
+            using var httpClient = new HttpClient();
+            var parser = CreateParser(root, httpClient);
+
+            ParsedEvent parsed = await parser.ParseFolderNameAsync(
+                "Play_vo_SeraphineSkin69_Kill3DWard",
+                "EN");
+
+            Assert.Equal("item", parsed.IconType);
+            Assert.Equal("Ward", parsed.IconLookupName);
+            Assert.Contains("Kill Ward", parsed.DisplayText, StringComparison.OrdinalIgnoreCase);
+            Assert.True(parsed.IsMapped);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task RoutesSkinInteractionsThroughTheTemporarySkinCache()
     {
         string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
