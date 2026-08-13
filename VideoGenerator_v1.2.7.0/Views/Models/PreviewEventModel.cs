@@ -82,6 +82,13 @@ namespace VideoGenerator.Views.Models
             set => SetProperty(ref _dialogue, value);
         }
 
+        private bool _isDialogueValidated;
+        public bool IsDialogueValidated
+        {
+            get => _isDialogueValidated;
+            set => SetProperty(ref _isDialogueValidated, value);
+        }
+
         private bool _imagesNeedRegeneration = true;
         public bool ImagesNeedRegeneration
         {

@@ -12,15 +12,19 @@ namespace VideoGenerator.Services
     public class DialogueService : IDialogueStore
     {
         private Dictionary<string, Dictionary<string, string>> _dialogues = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, Dictionary<string, bool>> _validations = new(StringComparer.OrdinalIgnoreCase);
         private readonly string _filePath;
+        private readonly string _validationsFilePath;
         private readonly object _lock = new();
         private readonly LogService _logger;
 
-        public DialogueService(LogService logger)
+        public DialogueService(LogService logger, string filePath = null, string validationsFilePath = null)
         {
             _logger = logger;
-            _filePath = AppConfig.DialoguesPath;
+            _filePath = filePath ?? AppConfig.DialoguesPath;
+            _validationsFilePath = validationsFilePath ?? AppConfig.DialogueValidationsPath;
             LoadDialogues();
+            LoadValidations();
         }
 
         public static string CleanDialogue(string text)
@@ -54,7 +58,16 @@ namespace VideoGenerator.Services
                 {
                     _dialogues[language] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 }
-                _dialogues[language][folderName] = text;
+
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    _dialogues[language].Remove(folderName);
+                }
+                else
+                {
+                    _dialogues[language][folderName] = text.Trim();
+                }
+
                 SaveDialogues();
             }
         }
@@ -68,6 +81,34 @@ namespace VideoGenerator.Services
                     return langDict.ContainsKey(folderName);
                 }
                 return false;
+            }
+        }
+
+        public bool IsDialogueValidated(string language, string folderName)
+        {
+            lock (_lock)
+            {
+                if (_validations.TryGetValue(language, out var langDict))
+                {
+                    if (langDict.TryGetValue(folderName, out var isValidated))
+                    {
+                        return isValidated;
+                    }
+                }
+                return false;
+            }
+        }
+
+        public void SetDialogueValidation(string language, string folderName, bool isValidated)
+        {
+            lock (_lock)
+            {
+                if (!_validations.ContainsKey(language))
+                {
+                    _validations[language] = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+                }
+                _validations[language][folderName] = isValidated;
+                SaveValidations();
             }
         }
 
@@ -153,6 +194,55 @@ namespace VideoGenerator.Services
             catch (Exception ex)
             {
                 _logger.LogError("Failed to save dialogues.", ex);
+            }
+        }
+
+        private void LoadValidations()
+        {
+            try
+            {
+                if (File.Exists(_validationsFilePath))
+                {
+                    string json = File.ReadAllText(_validationsFilePath);
+                    var data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, bool>>>(json);
+                    if (data != null)
+                    {
+                        var normalized = new Dictionary<string, Dictionary<string, bool>>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var kvp in data)
+                        {
+                            normalized[kvp.Key] = new Dictionary<string, bool>(kvp.Value, StringComparer.OrdinalIgnoreCase);
+                        }
+                        _validations = normalized;
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to load dialogue validations.", ex);
+            }
+
+            if (_validations == null)
+            {
+                _validations = new Dictionary<string, Dictionary<string, bool>>(StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        private void SaveValidations()
+        {
+            try
+            {
+                DirectoriesCreator.CreateParentDirectory(_validationsFilePath);
+                string json = JsonSerializer.Serialize(_validations, new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
+                File.WriteAllText(_validationsFilePath, json, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to save dialogue validations.", ex);
             }
         }
     }

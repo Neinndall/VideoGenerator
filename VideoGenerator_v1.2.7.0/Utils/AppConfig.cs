@@ -28,6 +28,7 @@ namespace VideoGenerator.Models
         public static readonly string BackgroundPath = Path.Combine(ResourcesDir, "DefaultBackground.png");
         public static readonly string TranslationsPath = Path.Combine(ConfigDir, "translations.json");
         public static readonly string DialoguesPath = Path.Combine(ConfigDir, "dialogues.json");
+        public static readonly string DialogueValidationsPath = Path.Combine(ConfigDir, "dialogue_validations.json");
         public static readonly string GroupsPath = Path.Combine(ConfigDir, "groups.json");
         public static readonly string MonstersPath = Path.Combine(ConfigDir, "monsters.json");
         public static readonly string StructuresPath = Path.Combine(ConfigDir, "structures.json");
@@ -51,6 +52,12 @@ namespace VideoGenerator.Models
 
         public static string GetIconCacheDirectory(string storageRoot = null) =>
             Path.Combine(GetCacheDirectory(storageRoot), "IconCache");
+
+        public static string GetDialoguesFilePath(string storageRoot = null) =>
+            Path.Combine(GetConfigDirectory(storageRoot), "dialogues.json");
+
+        public static string GetDialogueValidationsFilePath(string storageRoot = null) =>
+            Path.Combine(GetConfigDirectory(storageRoot), "dialogue_validations.json");
 
         public static string GetChampionsFilePath(string storageRoot = null) =>
             Path.Combine(GetConfigDirectory(storageRoot), "champions.json");

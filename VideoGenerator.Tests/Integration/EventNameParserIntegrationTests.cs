@@ -387,6 +387,7 @@ public sealed class EventNameParserIntegrationTests
                 "event_joke_success": "Joke (Successful)",
                 "interaction_attack_monster": "Attack {monster}",
                 "interaction_first_encounter_one": "First Encounter with {0}",
+                "interaction_kill_one": "Kill {0}",
                 "suffix_in_general": " in General"
               }
             }

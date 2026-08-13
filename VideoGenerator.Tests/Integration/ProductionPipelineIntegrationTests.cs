@@ -157,6 +157,7 @@ public sealed class ProductionPipelineIntegrationTests
     private sealed class InMemoryDialogueStore : IDialogueStore
     {
         private readonly Dictionary<string, string> _dialogues = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, bool> _validations = new(StringComparer.OrdinalIgnoreCase);
 
         public string GetDialogue(string language, string folderName)
         {
@@ -168,6 +169,16 @@ public sealed class ProductionPipelineIntegrationTests
         public void SetDialogue(string language, string folderName, string text)
         {
             _dialogues[BuildKey(language, folderName)] = text;
+        }
+
+        public bool IsDialogueValidated(string language, string folderName)
+        {
+            return _validations.TryGetValue(BuildKey(language, folderName), out bool isValidated) && isValidated;
+        }
+
+        public void SetDialogueValidation(string language, string folderName, bool isValidated)
+        {
+            _validations[BuildKey(language, folderName)] = isValidated;
         }
 
         private static string BuildKey(string language, string folderName) => $"{language}|{folderName}";

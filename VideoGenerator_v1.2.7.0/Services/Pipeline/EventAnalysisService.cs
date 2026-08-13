@@ -117,6 +117,7 @@ namespace VideoGenerator.Services
 
             string characterName = GetCharacterName(folderName);
             string dialogue = GetStoredDialogue(language, folderName);
+            bool isDialogueValidated = _dialogueService.IsDialogueValidated(language, folderName);
             var eventData = parsedEvent ?? new ParsedEvent
             {
                 OriginalFolder = folderName,
@@ -136,7 +137,8 @@ namespace VideoGenerator.Services
                 AudioFamilies = audioFamilies,
                 AreAudioFamiliesMerged = familiesMerged,
                 Status = GetInitialStatus(parsedEvent, folderName),
-                Dialogue = dialogue
+                Dialogue = dialogue,
+                IsDialogueValidated = isDialogueValidated
             };
         }
 

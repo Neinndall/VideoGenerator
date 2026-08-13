@@ -23,6 +23,9 @@ New Features
   - UI / Semantic Design Tokens: Added reusable tokens for page hierarchy, status pills, hero surfaces, inset panels, ghost actions, and compact icon buttons.
 
 Improvements
+  - UI / Dialogue Editor Validation Workflow: Replaced disconnected per-part validation checkboxes with a real-time reactive validation system featuring a header progress badge (`X/Y VALIDATED`), live green/clock event status indicators, filter tabs (`ALL (X)` vs `PENDING (Y)`), quick event-level validation toggle (`MARK VALIDATED`), and pending navigation (`⚡ NEXT PENDING`).
+  - UI / Dialogue Editor Batch Protection: Added confirmation safeguards on `DONE` when unvalidated segments remain, offering to validate all, proceed as-is, or jump directly to the remaining pending items.
+  - Storage / Dialogue Validation Persistence: Created isolated `dialogue_validations.json` persistent storage in `DialogueService` with full backward compatibility, hydrating validation state directly into pipeline event models.
   - UI / Header Metrics: Standardized the `EVENTS`, `SELECTED`, and `PIPELINE STATUS` metrics with shared typography, sizing, spacing, and pill formatting.
   - UI / Accent Action Feedback: Reused the exact light-violet render hover tone for the icon and text hover state of the `CREATE RULE` and `SELECT/DESELECT VISIBLE` actions, without adding a hover surface.
   - UI / Icon Action Consistency: Centralized non-destructive icon actions under `IconActionButton` with transparent hover feedback, while `DangerIconButton` is the single red variant for destructive actions.

@@ -9,7 +9,8 @@
         xmlns:converters="clr-namespace:VideoGenerator.Views.Converters"
         mc:Ignorable="d"
         Title="Dialogue Editor" 
-        Height="700" Width="1050"
+        Height="730" Width="1080"
+        MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource PrimaryBackgroundBrush}"
         TextElement.FontFamily="{StaticResource AppFontFamily}"
@@ -29,7 +30,7 @@
         <!-- Main Workspace -->
         <Grid Grid.Row="0" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="320" MinWidth="250" MaxWidth="500"/>
+                <ColumnDefinition Width="340" MinWidth="260" MaxWidth="520"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
@@ -46,6 +47,7 @@
                     SnapsToDevicePixels="True">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
@@ -64,7 +66,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <StackPanel Grid.Column="0">
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="FormatListBulleted"
                                                               Width="16"
@@ -77,29 +79,89 @@
                                                Foreground="{StaticResource TextHighlightBrush}"
                                                FontSize="12"/>
                                 </StackPanel>
-                                <TextBlock Text="Select an event to edit segments"
+                                <TextBlock Text="Review &amp; validate event transcriptions"
                                            FontSize="10"
                                            Foreground="{StaticResource TextMutedBrush}"
-                                           Margin="24,3,0,0"/>
+                                           Margin="0,3,0,0"
+                                           TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
 
+                            <!-- Validation Batch Badge -->
                             <Border Grid.Column="1"
-                                    Background="{StaticResource ElevatedSurfaceBrush}"
                                     CornerRadius="6"
-                                    Padding="8,4"
-                                    VerticalAlignment="Top">
-                                <TextBlock FontSize="8"
-                                           FontWeight="Black"
-                                           Foreground="{StaticResource TextSecondaryBrush}">
-                                    <Run Text="{Binding Events.Count, Mode=OneWay}"/>
-                                    <Run Text=" EVENTS"/>
-                                </TextBlock>
+                                    Padding="10,5"
+                                    VerticalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{StaticResource ElevatedSurfaceBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsAllBatchValidated}" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource SuccessPillBgBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{StaticResource SuccessPillBorderBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="CheckCircleOutline" 
+                                                             Width="12" Height="12" 
+                                                             VerticalAlignment="Center" 
+                                                             Margin="0,0,5,0"
+                                                             Foreground="{StaticResource SuccessBrush}"
+                                                             Visibility="{Binding IsAllBatchValidated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <TextBlock FontSize="9"
+                                               FontWeight="Black">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsAllBatchValidated}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                        <Run Text="{Binding ValidationProgressText, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </StackPanel>
                             </Border>
                         </Grid>
                     </Border>
 
+                    <!-- Filter Bar: All vs Pending -->
+                    <Border Grid.Row="1" 
+                            Background="{StaticResource PrimaryBackgroundBrush}" 
+                            BorderBrush="{StaticResource BorderBrush}" 
+                            BorderThickness="0,0,0,1" 
+                            Padding="12,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <RadioButton Grid.Column="0" 
+                                         Content="{Binding AllFilterLabel}"
+                                         IsChecked="{Binding IsAllFilterSelected, Mode=TwoWay}"
+                                         Click="FilterRadioButton_Click"
+                                         Style="{StaticResource MaterialDesignTabRadioButton}"
+                                         Height="28" FontSize="10" FontWeight="Bold"
+                                         HorizontalAlignment="Stretch" Margin="0,0,4,0"/>
+
+                            <RadioButton Grid.Column="1" 
+                                         Content="{Binding PendingFilterLabel}"
+                                         IsChecked="{Binding IsPendingFilterSelected, Mode=TwoWay}"
+                                         Click="FilterRadioButton_Click"
+                                         Style="{StaticResource MaterialDesignTabRadioButton}"
+                                         Height="28" FontSize="10" FontWeight="Bold"
+                                         HorizontalAlignment="Stretch" Margin="4,0,0,0"/>
+                        </Grid>
+                    </Border>
+
                     <!-- ListBox of Events -->
-                    <ListBox x:Name="EventsListBox" Grid.Row="1"
+                    <ListBox x:Name="EventsListBox" Grid.Row="2"
                              Style="{StaticResource VirtualizedListBoxStyle}"
                              SelectionChanged="EventsListBox_SelectionChanged">
                         <ListBox.ItemTemplate>
@@ -119,24 +181,37 @@
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <!-- Validation indicator -->
-                                        <materialDesign:PackIcon x:Name="CheckIcon"
-                                                                  Grid.Column="1"
-                                                                  Kind="CheckCircleOutline"
-                                                                  Width="16"
-                                                                  Height="16"
-                                                                  Foreground="{StaticResource SuccessBrush}"
-                                                                  Visibility="Collapsed"
-                                                                  VerticalAlignment="Center"
-                                                                  Margin="8,0,0,0"
-                                                                  ToolTip="{Binding Status}"/>
+                                        <!-- Validation indicator icon -->
+                                        <Grid Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+                                            <!-- Validated icon -->
+                                            <materialDesign:PackIcon Kind="CheckCircleOutline"
+                                                                      Width="16"
+                                                                      Height="16"
+                                                                      Foreground="{StaticResource SuccessBrush}"
+                                                                      ToolTip="Dialogue validated"
+                                                                      Visibility="{Binding IsDialogueValidated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            
+                                            <!-- Pending icon -->
+                                            <materialDesign:PackIcon Kind="ClockOutline"
+                                                                      Width="14"
+                                                                      Height="14"
+                                                                      Foreground="{StaticResource TextMutedBrush}"
+                                                                      ToolTip="Pending validation"
+                                                                      Opacity="0.6">
+                                                <materialDesign:PackIcon.Style>
+                                                    <Style TargetType="materialDesign:PackIcon">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDialogueValidated}" Value="False">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </materialDesign:PackIcon.Style>
+                                            </materialDesign:PackIcon>
+                                        </Grid>
                                     </Grid>
                                 </Border>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding Status}" Value="Ready">
-                                        <Setter TargetName="CheckIcon" Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
@@ -157,6 +232,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Resolved Icon -->
@@ -175,6 +251,44 @@
                                 <TextBlock Text="{Binding SelectedEvent.CharacterName, RelativeSource={RelativeSource AncestorType=Window}}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
+
+                        <!-- Quick Event Validation Toggle -->
+                        <Button Grid.Column="2"
+                                Click="ValidateCurrentEvent_Click"
+                                Style="{StaticResource ModernSecondaryButton}"
+                                Height="34"
+                                Padding="12,0"
+                                VerticalAlignment="Center"
+                                ToolTip="Toggle validation for all segments of this event">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CheckCircleOutline" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedEvent.IsDialogueValidated, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock FontSize="10" FontWeight="Black" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="VALIDATE EVENT"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedEvent.IsDialogueValidated, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                    <Setter Property="Text" Value="EVENT VALIDATED"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Button>
                     </Grid>
                 </Border>
 
@@ -236,7 +350,10 @@
                                         <!-- Validated Toggle -->
                                         <StackPanel Grid.Column="2" Margin="20,0,0,0" VerticalAlignment="Center">
                                             <TextBlock Text="VALIDATE" FontSize="8" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                                            <CheckBox IsChecked="{Binding IsValidated, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MaterialDesignCheckBox}" HorizontalAlignment="Center"/>
+                                            <CheckBox IsChecked="{Binding IsValidated, UpdateSourceTrigger=PropertyChanged}" 
+                                                      Click="PartValidatedCheckBox_Click"
+                                                      Style="{StaticResource MaterialDesignCheckBox}" 
+                                                      HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -245,56 +362,89 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- Selected Event Actions -->
+                <!-- Selected Event Navigation & Actions -->
                 <Grid Grid.Row="2" Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
-                            <TextBlock Text="CURRENT EVENT"
-                                       FontSize="9"
-                                       FontWeight="Black"
-                                       Foreground="{StaticResource TextMutedBrush}"/>
-                            <TextBlock Text="Transcribe or apply edits before continuing"
-                                       FontSize="10"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       Margin="0,3,0,0"/>
-                        </StackPanel>
-
-                        <Button Grid.Column="1"
-                                Click="TranscribeCurrentEvent_Click"
+                    <!-- Navigation controls (Prev, Next, Next Pending) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Click="PrevEvent_Click"
                                 Style="{StaticResource ModernSecondaryButton}"
-                                Height="40"
-                                Padding="14,0"
-                                Margin="0,0,8,0"
-                                ToolTip="Run Whisper transcription for the selected event"
-                                IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}">
+                                Height="36"
+                                Padding="12,0"
+                                Margin="0,0,6,0"
+                                ToolTip="Previous Event"
+                                IsEnabled="{Binding HasPreviousEvent}">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Microphone" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
-                                <TextBlock Text="AUTO-TRANSCRIBE" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
+                                <materialDesign:PackIcon Kind="ChevronLeft" Margin="0,0,4,0" VerticalAlignment="Center" Width="16" Height="16"/>
+                                <TextBlock Text="PREV" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
                             </StackPanel>
                         </Button>
 
-                        <Button Grid.Column="2"
-                                Click="ApplyEventChanges_Click"
-                                Style="{StaticResource ModernPrimaryButton}"
-                                Height="40"
-                                Padding="16,0"
-                                ToolTip="Save and regenerate the selected event frames">
+                        <Button Click="NextEvent_Click"
+                                Style="{StaticResource ModernSecondaryButton}"
+                                Height="36"
+                                Padding="12,0"
+                                Margin="0,0,6,0"
+                                ToolTip="Next Event"
+                                IsEnabled="{Binding HasNextEvent}">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Check" Margin="0,0,8,0" VerticalAlignment="Center" Width="16" Height="16"/>
-                                <TextBlock Text="APPLY EVENT CHANGES" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
-                                </StackPanel>
+                                <TextBlock Text="NEXT" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
+                                <materialDesign:PackIcon Kind="ChevronRight" Margin="4,0,0,0" VerticalAlignment="Center" Width="16" Height="16"/>
+                            </StackPanel>
                         </Button>
-                    </Grid>
+
+                        <Button Click="NextPending_Click"
+                                Style="{StaticResource ModernSecondaryButton}"
+                                Height="36"
+                                Padding="12,0"
+                                Margin="0,0,6,0"
+                                ToolTip="Jump to the next unvalidated event"
+                                IsEnabled="{Binding HasPendingEvent}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="LightningBolt" Margin="0,0,4,0" VerticalAlignment="Center" Width="15" Height="15" Foreground="{StaticResource HextechGoldBrush}"/>
+                                <TextBlock Text="NEXT PENDING" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Action buttons -->
+                    <Button Grid.Column="2"
+                            Click="TranscribeCurrentEvent_Click"
+                            Style="{StaticResource ModernSecondaryButton}"
+                            Height="36"
+                            Padding="14,0"
+                            Margin="0,0,8,0"
+                            ToolTip="Run Whisper transcription for the selected event"
+                            IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Microphone" Margin="0,0,8,0" VerticalAlignment="Center" Width="15" Height="15"/>
+                            <TextBlock Text="AUTO-TRANSCRIBE" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="3"
+                            Click="ApplyEventChanges_Click"
+                            Style="{StaticResource ModernPrimaryButton}"
+                            Height="36"
+                            Padding="16,0"
+                            ToolTip="Save dialogue edits and regenerate preview frames">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Check" Margin="0,0,8,0" VerticalAlignment="Center" Width="15" Height="15"/>
+                            <TextBlock Text="APPLY CHANGES" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
+                        </StackPanel>
+                    </Button>
                 </Grid>
             </Grid>
+        </Grid>
 
         <!-- Bottom Window Bar -->
-        <Border Grid.Row="1" Background="{StaticResource PrimaryBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="24,16">
+        <Border Grid.Row="1" Background="{StaticResource PrimaryBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,16,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -307,7 +457,7 @@
                                FontSize="9"
                                FontWeight="Black"
                                Foreground="{StaticResource TextMutedBrush}"/>
-                    <TextBlock Text="Finish the review when all events are ready."
+                    <TextBlock Text="{Binding BatchReviewStatusText}"
                                VerticalAlignment="Center"
                                FontSize="10"
                                Foreground="{StaticResource TextSecondaryBrush}"

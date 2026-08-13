@@ -34,6 +34,7 @@ public sealed class EventAnalysisServiceTests
             });
             var dialogues = new InMemoryDialogueStore();
             dialogues.SetDialogue("EN", "Play_vo_Aatrox_Kill3DGeneral", "Stored dialogue");
+            dialogues.SetDialogueValidation("EN", "Play_vo_Aatrox_Kill3DGeneral", true);
             var statuses = new List<string>();
             var progress = new List<double>();
             var logger = new LogService();
@@ -57,6 +58,7 @@ public sealed class EventAnalysisServiceTests
             Assert.Equal("Aatrox", analyzedEvent.CharacterName);
             Assert.Equal("Stored dialogue", analyzedEvent.Dialogue);
             Assert.Equal("Stored dialogue", analyzedEvent.ParsedData.Dialogue);
+            Assert.True(analyzedEvent.IsDialogueValidated);
             Assert.Equal("Ready", analyzedEvent.Status);
             Assert.Single(analyzedEvent.DirectAudioFiles);
             Assert.Single(analyzedEvent.AudioFamilies);
@@ -130,6 +132,7 @@ public sealed class EventAnalysisServiceTests
     private sealed class InMemoryDialogueStore : IDialogueStore
     {
         private readonly Dictionary<string, string> _dialogues = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, bool> _validations = new(StringComparer.OrdinalIgnoreCase);
 
         public string GetDialogue(string language, string folderName)
         {
@@ -141,6 +144,16 @@ public sealed class EventAnalysisServiceTests
         public void SetDialogue(string language, string folderName, string text)
         {
             _dialogues[BuildKey(language, folderName)] = text;
+        }
+
+        public bool IsDialogueValidated(string language, string folderName)
+        {
+            return _validations.TryGetValue(BuildKey(language, folderName), out bool isValidated) && isValidated;
+        }
+
+        public void SetDialogueValidation(string language, string folderName, bool isValidated)
+        {
+            _validations[BuildKey(language, folderName)] = isValidated;
         }
 
         private static string BuildKey(string language, string folderName) => $"{language}|{folderName}";
