@@ -60,6 +60,20 @@
         <Setter Property="CornerRadius" Value="7"/>
     </Style>
 
+    <Style x:Key="EventSelectionActionButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+        <Setter Property="FontSize" Value="9"/>
+        <Setter Property="FontWeight" Value="Black"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.35"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="WorkflowStepButton" TargetType="Button" BasedOn="{StaticResource ModernSecondaryButton}">
         <Setter Property="Height" Value="52"/>
         <Setter Property="Padding" Value="14,0"/>

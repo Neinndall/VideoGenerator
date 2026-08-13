@@ -57,6 +57,13 @@ namespace VideoGenerator.Views.Models
             set => SetProperty(ref _status, value);
         }
 
+        private bool _isSelected = true;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set => SetProperty(ref _isSelected, value);
+        }
+
         private string _characterName;
         public string CharacterName
         {

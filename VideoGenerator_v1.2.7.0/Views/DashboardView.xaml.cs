@@ -287,6 +287,14 @@ namespace VideoGenerator.Views
                 _model.SelectedFilter = rb.Tag.ToString();
         }
 
+        private void SelectAllVisible_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_model.HasVisibleEvents) return;
+
+            bool shouldSelect = !_model.AreAllVisibleEventsSelected;
+            _model.SetVisibleEventsSelection(shouldSelect);
+        }
+
         private void DeleteEvent_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.DataContext is PreviewEventModel ev)
@@ -443,14 +451,16 @@ namespace VideoGenerator.Views
 
         private async void PrepareTranscription_Click(object sender, RoutedEventArgs e)
         {
-            if (!_model.IsAnalyzed || _model.FilteredProcessedEvents.Count == 0) return;
+            if (!_model.CanRunWorkflow) return;
+
+            var eventsToPrepare = _model.GetSelectedVisibleEvents().ToList();
+            if (eventsToPrepare.Count == 0) return;
             
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
             _logger.LogInfo(">>> STARTING BATCH PREPARATION (STAGE 1)...");
             try {
-                var eventsToPrepare = _model.FilteredProcessedEvents.ToList();
                 string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
 
                 await Task.Run(async () => {
@@ -606,7 +616,9 @@ namespace VideoGenerator.Views
 
         private async void ReviewDialogues_Click(object sender, RoutedEventArgs e)
         {
-            var events = _model.FilteredProcessedEvents.ToList();
+            if (!_model.IsAnalyzed) return;
+
+            var events = _model.GetSelectedVisibleEvents().ToList();
             if (events.Count == 0) return;
 
             bool hasPendingFamilies = events.Any(ev =>
@@ -686,15 +698,16 @@ namespace VideoGenerator.Views
 
         private async void Generate_Click(object sender, RoutedEventArgs e)
         {
-            if (!_model.IsAnalyzed || _model.FilteredProcessedEvents.Count == 0) return;
+            if (!_model.CanRunWorkflow) return;
+
+            var eventsToRender = _model.GetSelectedVisibleEvents().ToList();
+            if (eventsToRender.Count == 0) return;
             
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
             _logger.LogInfo(">>> STARTING BATCH VIDEO RENDERING (STAGE 2)...");
             try {
-                var eventsToRender = _model.FilteredProcessedEvents.ToList();
-
                 await Task.Run(async () => {
                     double silenceDuration = AppSettings.Instance.SilenceDuration;
                     RenderWorkPlan workPlan = _productionWorkPlanningService.CreateRenderPlan(eventsToRender);

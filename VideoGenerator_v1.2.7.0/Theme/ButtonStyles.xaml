@@ -156,6 +156,16 @@
                             <Setter TargetName="Root" Property="BorderBrush" Value="#668B5CF6"/>
                             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                         </Trigger>
+                        <!-- Destructive icon actions use a semantic danger hover state. -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="Tag" Value="Danger"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource ErrorPillBgBrush}"/>
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource ErrorPillBorderBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+                        </MultiDataTrigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Root" Property="Opacity" Value="0.72"/>
                         </Trigger>
@@ -166,6 +176,11 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style x:Key="DangerIconButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignIconButton}">
+        <Setter Property="Tag" Value="Danger"/>
+        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
     </Style>
 
     <Style x:Key="MaterialDesignFlatButton" TargetType="Button">

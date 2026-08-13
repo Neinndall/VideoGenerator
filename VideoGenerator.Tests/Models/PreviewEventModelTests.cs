@@ -11,6 +11,7 @@ public sealed class PreviewEventModelTests
         var model = new PreviewEventModel();
 
         Assert.True(model.ImagesNeedRegeneration);
+        Assert.True(model.IsSelected);
 
         model.MarkImagesReady();
         Assert.False(model.ImagesNeedRegeneration);
