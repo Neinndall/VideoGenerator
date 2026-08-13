@@ -243,13 +243,13 @@ namespace VideoGenerator.Views
 
             if (string.IsNullOrEmpty(keyword))
             {
-                MessageBox.Show("Keyword is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Keyword is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (string.IsNullOrEmpty(formRule.TranslationKey))
             {
-                MessageBox.Show("Dict key is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Dict key is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -257,7 +257,7 @@ namespace VideoGenerator.Views
             if (_ruleManager.Rules.Any(rule => !ReferenceEquals(rule, _editingRule) &&
                                                rule.Keyword.Equals(keyword, StringComparison.OrdinalIgnoreCase)))
             {
-                MessageBox.Show($"A rule with the keyword '{keyword}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show($"A rule with the keyword '{keyword}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -375,14 +375,14 @@ namespace VideoGenerator.Views
 
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(champions))
             {
-                MessageBox.Show("Group Name and Champions are required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Group Name and Champions are required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             // Duplicate Prevention
             if (_groupManager.Groups.Any(g => g.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
             {
-                MessageBox.Show($"A group named '{name}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show($"A group named '{name}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -423,7 +423,7 @@ namespace VideoGenerator.Views
             {
                 if (group.IsOfficial)
                 {
-                    var result = MessageBox.Show($"'{group.Name}' is an official group. Are you sure you want to delete it?", "Delete Official Group", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    var result = ModernMessageBox.Show($"'{group.Name}' is an official group. Are you sure you want to delete it?", "Delete Official Group", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
 
@@ -441,7 +441,7 @@ namespace VideoGenerator.Views
 
             if (string.IsNullOrEmpty(display))
             {
-                MessageBox.Show("Champion Name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Champion Name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
  
@@ -453,7 +453,7 @@ namespace VideoGenerator.Views
             // Duplicate Prevention
             if (_aliasManager.Aliases.Any(a => a.InternalName.Equals(internalName, StringComparison.OrdinalIgnoreCase)))
             {
-                MessageBox.Show($"An alias with the Internal Name '{internalName}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show($"An alias with the Internal Name '{internalName}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -482,7 +482,7 @@ namespace VideoGenerator.Views
             {
                 if (alias.IsOfficial)
                 {
-                    var result = MessageBox.Show($"'{alias.DisplayName}' is an official mapping. Delete anyway?", "Confirm", MessageBoxButton.YesNo);
+                    var result = ModernMessageBox.Show($"'{alias.DisplayName}' is an official mapping. Delete anyway?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 _aliasManager.Aliases.Remove(alias);
@@ -561,13 +561,13 @@ namespace VideoGenerator.Views
             string name = NewMonsterBox.Text.Trim();
             if (string.IsNullOrEmpty(name))
             {
-                MessageBox.Show("Monster name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Monster name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (MonsterList.Contains(name, StringComparer.OrdinalIgnoreCase))
             {
-                MessageBox.Show($"'{name}' is already in the monster list.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show($"'{name}' is already in the monster list.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -654,13 +654,13 @@ namespace VideoGenerator.Views
 
             if (string.IsNullOrEmpty(keyword))
             {
-                MessageBox.Show("Structure keyword is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Structure keyword is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (StructureList.Any(s => s.Keyword.Equals(keyword, StringComparison.OrdinalIgnoreCase)))
             {
-                MessageBox.Show($"A structure mapping with keyword '{keyword}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show($"A structure mapping with keyword '{keyword}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 

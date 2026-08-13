@@ -118,7 +118,14 @@ namespace VideoGenerator
                 File.AppendAllText(logPath, $"[CRITICAL] {DateTime.Now}: {ex.Message}\n{ex.StackTrace}\n\n");
             }
             
-            System.Windows.MessageBox.Show($"Critical error: {ex.Message}\n\nPlease check logs/application_errors.log for more details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            try
+            {
+                Views.ModernMessageBox.Show($"Critical error: {ex.Message}\n\nPlease check logs/application_errors.log for more details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch
+            {
+                System.Windows.MessageBox.Show($"Critical error: {ex.Message}\n\nPlease check logs/application_errors.log for more details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

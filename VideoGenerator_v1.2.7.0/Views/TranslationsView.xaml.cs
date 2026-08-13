@@ -151,7 +151,7 @@ namespace VideoGenerator.Views
                     string comboKey = $"{entry.Language.ToUpper()}_{entry.Key.ToLower()}";
                     if (seenKeys.Contains(comboKey))
                     {
-                        MessageBox.Show($"Duplicate entry detected: The key '{entry.Key}' is defined multiple times for language '{entry.Language}'.", "Duplicate Entry", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        ModernMessageBox.Show($"Duplicate entry detected: The key '{entry.Key}' is defined multiple times for language '{entry.Language}'.", "Duplicate Entry", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
                     seenKeys.Add(comboKey);

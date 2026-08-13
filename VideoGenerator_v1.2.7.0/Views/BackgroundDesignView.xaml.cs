@@ -243,7 +243,7 @@ namespace VideoGenerator.Views
 
         private void ResetDefaults_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("Are you sure you want to reset all visual layout parameters to their default values?", "Reset Defaults", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (ModernMessageBox.Show("Are you sure you want to reset all visual layout parameters to their default values?", "Reset Defaults", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 AppSettings.Instance.TextVerticalOffset = -8f;
                 AppSettings.Instance.BackgroundBrightness = 1.0f;

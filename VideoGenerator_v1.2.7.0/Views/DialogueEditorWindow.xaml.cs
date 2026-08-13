@@ -480,7 +480,7 @@ namespace VideoGenerator.Views
             }
             else
             {
-                MessageBox.Show("All events in the queue have been validated!", "Review Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("All events in the queue have been validated!", "Review Complete", MessageBoxButton.OK, MessageBoxImage.Information, owner: this);
             }
         }
 
@@ -544,7 +544,7 @@ namespace VideoGenerator.Views
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Failed to play audio: {ex.Message}", "Playback Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ModernMessageBox.Show($"Failed to play audio: {ex.Message}", "Playback Error", MessageBoxButton.OK, MessageBoxImage.Error, owner: this);
                     }
                     finally
                     {
@@ -598,7 +598,7 @@ namespace VideoGenerator.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Transcription failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show($"Transcription failed: {ex.Message}", "Transcription Error", MessageBoxButton.OK, MessageBoxImage.Error, owner: this);
             }
             finally
             {
@@ -611,7 +611,7 @@ namespace VideoGenerator.Views
             if (SelectedEvent == null) return;
 
             await SaveEventEditsInternalAsync(SelectedEvent, regenerateImages: true);
-            MessageBox.Show("Event dialogue updated and frames generated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            ModernMessageBox.Show("Event dialogue updated and frames generated successfully!", "Changes Applied", MessageBoxButton.OK, MessageBoxImage.Information, owner: this);
         }
 
         private void SaveEventEditsInternal(PreviewEventModel ev, bool regenerateImages)
@@ -676,7 +676,7 @@ namespace VideoGenerator.Views
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Failed to regenerate preview frames: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ModernMessageBox.Show($"Failed to regenerate preview frames: {ex.Message}", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, owner: this);
                 }
             }
 
@@ -699,14 +699,18 @@ namespace VideoGenerator.Views
             int unvalidatedCount = Events.Count(ev => !ev.IsDialogueValidated);
             if (unvalidatedCount > 0)
             {
-                var result = MessageBox.Show(
+                var result = ModernMessageBox.ShowCustom(
                     $"There are {unvalidatedCount} event(s) with unvalidated segments in this batch.\n\n" +
-                    "• Select 'Yes' to mark ALL events as validated and finish.\n" +
-                    "• Select 'No' to save and finish keeping current unvalidated statuses.\n" +
-                    "• Select 'Cancel' to continue reviewing pending events.",
+                    "• Validate All: Mark all remaining events as validated and finish.\n" +
+                    "• Keep Unvalidated: Save and finish keeping current unvalidated statuses.\n" +
+                    "• Review Pending: Return to editor and navigate to next pending event.",
                     "Unvalidated Events Warning",
                     MessageBoxButton.YesNoCancel,
-                    MessageBoxImage.Question);
+                    MessageBoxImage.Question,
+                    primaryButtonText: "VALIDATE ALL",
+                    secondaryButtonText: "KEEP UNVALIDATED",
+                    tertiaryButtonText: "REVIEW PENDING",
+                    owner: this);
 
                 if (result == MessageBoxResult.Yes)
                 {
