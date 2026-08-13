@@ -95,7 +95,7 @@
                                                      Height="40"
                                                      Padding="10,6,36,6"
                                                      KeyDown="SplashSearchBox_KeyDown"/>
-                                            <Button Click="SearchSplash_Click" HorizontalAlignment="Right" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="32" Height="32" Margin="0,0,4,0" VerticalAlignment="Center" ToolTip="Search Riot API">
+                                            <Button Click="SearchSplash_Click" HorizontalAlignment="Right" Style="{StaticResource IconActionButton}" Foreground="{StaticResource AccentBrush}" Width="32" Height="32" Margin="0,0,4,0" VerticalAlignment="Center" ToolTip="Search Riot API">
                                                 <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/>
                                             </Button>
                                         </Grid>
@@ -124,7 +124,7 @@
                                                 <TextBlock Grid.Column="1" 
                                                            Text="{Binding Source={x:Static services:AppSettings.Instance}, Path=CustomBackgroundPath, Converter={StaticResource FileNameConverter}}" 
                                                            FontSize="10" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                <Button Grid.Column="2" Click="RemoveBackground_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="20" Height="20" Padding="0">
+                                                <Button Grid.Column="2" Click="RemoveBackground_Click" Style="{StaticResource DangerIconButton}" Width="20" Height="20" Padding="0">
                                                     <materialDesign:PackIcon Kind="Close" Width="12" Height="12"/>
                                                 </Button>
                                             </Grid>
@@ -526,7 +526,7 @@
 
                              <!-- Reset Defaults Button -->
                              <Button Click="ResetDefaults_Click"
-                                     Style="{StaticResource MaterialDesignIconButton}"
+                                     Style="{StaticResource IconActionButton}"
                                      ToolTip="Reset Layout Defaults"
                                      Foreground="{StaticResource ErrorBrush}"
                                      Width="36" Height="36">

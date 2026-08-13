@@ -91,11 +91,17 @@ namespace VideoGenerator.Services
                     if (r.Type == RuleType.Simple)
                     {
                         string cleaned = Regex.Replace(normFolder, @"(2D|3D)", "", RegexOptions.IgnoreCase);
+                        bool isNumberedGeneralMatch = Regex.IsMatch(
+                            cleaned,
+                            $@"^{Regex.Escape(normKeyword)}(?:General|inGeneral)\d+$",
+                            RegexOptions.IgnoreCase);
+
                         return cleaned.Equals(normKeyword, StringComparison.OrdinalIgnoreCase) ||
                                cleaned.Equals(normKeyword + "General", StringComparison.OrdinalIgnoreCase) ||
                                cleaned.Equals(normKeyword + "inGeneral", StringComparison.OrdinalIgnoreCase) ||
                                normFolder.Equals(normKeyword + "3DGeneral", StringComparison.OrdinalIgnoreCase) ||
                                normFolder.Equals(normKeyword + "2DGeneral", StringComparison.OrdinalIgnoreCase) ||
+                               isNumberedGeneralMatch ||
                                (cleaned.EndsWith("General", StringComparison.OrdinalIgnoreCase) && 
                                 Regex.IsMatch(cleaned, $@"(^|_){Regex.Escape(normKeyword)}(?=_|$|General|inGeneral)", RegexOptions.IgnoreCase));
                     }

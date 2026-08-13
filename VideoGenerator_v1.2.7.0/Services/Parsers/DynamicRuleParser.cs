@@ -54,12 +54,17 @@ namespace VideoGenerator.Services.Parsers
                 {
                     // Strip 2D/3D infixes for matching (e.g. Kill3DBaronSteal -> KillBaronSteal)
                     string cleanedFolder = Regex.Replace(normalizedFolder, @"(2D|3D)", "", RegexOptions.IgnoreCase);
+                    bool isNumberedGeneralMatch = Regex.IsMatch(
+                        cleanedFolder,
+                        $@"^{Regex.Escape(normalizedKeyword)}(?:General|inGeneral)\d+$",
+                        RegexOptions.IgnoreCase);
 
                     bool isExactMatch = cleanedFolder.Equals(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
                     bool isGeneralMatch = cleanedFolder.Equals(normalizedKeyword + "General", StringComparison.OrdinalIgnoreCase) ||
                                           cleanedFolder.Equals(normalizedKeyword + "inGeneral", StringComparison.OrdinalIgnoreCase) ||
                                           normalizedFolder.Equals(normalizedKeyword + "3DGeneral", StringComparison.OrdinalIgnoreCase) ||
-                                          normalizedFolder.Equals(normalizedKeyword + "2DGeneral", StringComparison.OrdinalIgnoreCase);
+                                          normalizedFolder.Equals(normalizedKeyword + "2DGeneral", StringComparison.OrdinalIgnoreCase) ||
+                                          isNumberedGeneralMatch;
 
                     bool isPrefixedGeneralMatch = !isExactMatch && !isGeneralMatch &&
                         (cleanedFolder.EndsWith("General", StringComparison.OrdinalIgnoreCase) ||
@@ -139,10 +144,7 @@ namespace VideoGenerator.Services.Parsers
                 iconTarget = string.IsNullOrEmpty(targetName) ? "General" : targetName;
             }
 
-            if (iconTarget.Equals("inGeneral", StringComparison.OrdinalIgnoreCase) || 
-                iconTarget.Equals("3DGeneral", StringComparison.OrdinalIgnoreCase) || 
-                iconTarget.Equals("2DGeneral", StringComparison.OrdinalIgnoreCase) ||
-                iconTarget.Equals("General", StringComparison.OrdinalIgnoreCase))
+            if (Regex.IsMatch(iconTarget, @"^(?:in)?General\d*$", RegexOptions.IgnoreCase))
             {
                 iconTarget = "General";
             }

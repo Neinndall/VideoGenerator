@@ -135,12 +135,12 @@
         </Setter>
     </Style>
 
-    <!-- Overrides the library icon action so every existing icon button inherits the new system. -->
-    <Style x:Key="MaterialDesignIconButton" TargetType="Button">
+    <!-- Shared icon-only action. Keep all non-destructive icon buttons visually consistent. -->
+    <Style x:Key="IconActionButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Padding" Value="0"/>
         <Setter Property="Template">
@@ -152,8 +152,15 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
-                            <Setter TargetName="Root" Property="BorderBrush" Value="#668B5CF6"/>
+                            <Setter TargetName="Root" Property="Background" Value="Transparent"/>
+                            <Setter TargetName="Root" Property="BorderBrush" Value="Transparent"/>
+                            <Setter TargetName="Root" Property="BorderThickness" Value="0"/>
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="Transparent"/>
+                            <Setter TargetName="Root" Property="BorderBrush" Value="Transparent"/>
+                            <Setter TargetName="Root" Property="BorderThickness" Value="0"/>
                             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                         </Trigger>
                         <!-- Destructive icon actions use a semantic danger hover state. -->
@@ -165,6 +172,13 @@
                             <Setter TargetName="Root" Property="Background" Value="Transparent"/>
                             <Setter TargetName="Root" Property="BorderBrush" Value="Transparent"/>
                             <Setter TargetName="Root" Property="BorderThickness" Value="0"/>
+                            <Setter Property="Foreground" Value="{StaticResource ErrorBrushLight}"/>
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsKeyboardFocused" Value="True"/>
+                                <Condition Property="Tag" Value="Danger"/>
+                            </MultiTrigger.Conditions>
                             <Setter Property="Foreground" Value="{StaticResource ErrorBrushLight}"/>
                         </MultiTrigger>
                         <Trigger Property="IsPressed" Value="True">
@@ -179,7 +193,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DangerIconButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignIconButton}">
+    <Style x:Key="DangerIconButton" TargetType="Button" BasedOn="{StaticResource IconActionButton}">
         <Setter Property="Tag" Value="Danger"/>
         <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
     </Style>

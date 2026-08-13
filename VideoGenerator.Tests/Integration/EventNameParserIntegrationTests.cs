@@ -95,6 +95,35 @@ public sealed class EventNameParserIntegrationTests
         }
     }
 
+    [Theory]
+    [InlineData("Play_vo_SeraphineSkin69_Joke3DGeneral")]
+    [InlineData("Play_vo_SeraphineSkin69_Joke3DGeneral01")]
+    [InlineData("Play_vo_SeraphineSkin69_Joke3DGeneral02")]
+    public async Task ParsesNumberedGeneralJokeVariants(string folderName)
+    {
+        string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            var parser = CreateParser(root, httpClient);
+
+            ParsedEvent parsed = await parser.ParseFolderNameAsync(folderName, "EN");
+
+            Assert.Equal("generic", parsed.IconType);
+            Assert.Equal("Generic", parsed.IconLookupName);
+            Assert.Equal("Joke in General", parsed.DisplayText);
+            Assert.True(parsed.IsMapped);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     [Fact]
     public async Task RoutesThreeDimensionalMonsterAttacksToMonsterParser()
     {
@@ -315,6 +344,7 @@ public sealed class EventNameParserIntegrationTests
                 "event_buy_item": "Buy Item {item_name}",
                 "event_assist_general": "Assist in General",
                 "event_idle": "Idle",
+                "event_joke": "Joke",
                 "event_joke_fail": "Joke (Failed)",
                 "event_kill_general": "Kill in General",
                 "event_move_r_ready": "Movement (Ultimate Ready)",

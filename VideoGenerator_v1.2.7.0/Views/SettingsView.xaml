@@ -75,7 +75,7 @@
                                                   Width="250" IsReadOnly="True" Margin="0,0,8,0"
                                                   materialDesign:HintAssist.Hint="No directory selected"/>
                                         <Button Click="SelectMediaDirectory_Click" 
-                                                Style="{StaticResource MaterialDesignIconButton}" 
+                                                Style="{StaticResource IconActionButton}"
                                                 Foreground="{StaticResource AccentBrush}" Width="36" Height="36">
                                             <materialDesign:PackIcon Kind="FolderSearchOutline" Width="18" Height="18"/>
                                         </Button>

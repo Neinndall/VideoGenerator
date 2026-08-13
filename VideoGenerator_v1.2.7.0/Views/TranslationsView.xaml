@@ -177,7 +177,7 @@
                                                   Margin="4"
                                                   HorizontalAlignment="Stretch"/>
 
-                                         <Button Grid.Column="3" Click="Delete_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="30" Height="30" Opacity="0.7" HorizontalAlignment="Right">
+                                         <Button Grid.Column="3" Click="Delete_Click" Style="{StaticResource DangerIconButton}" Width="30" Height="30" HorizontalAlignment="Right">
                                             <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                         </Button>
                                     </Grid>

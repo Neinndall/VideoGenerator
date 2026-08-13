@@ -25,6 +25,7 @@ New Features
 Improvements
   - UI / Header Metrics: Standardized the `EVENTS`, `SELECTED`, and `PIPELINE STATUS` metrics with shared typography, sizing, spacing, and pill formatting.
   - UI / Accent Action Feedback: Reused the exact light-violet render hover tone for the icon and text hover state of the `CREATE RULE` and `SELECT/DESELECT VISIBLE` actions, without adding a hover surface.
+  - UI / Icon Action Consistency: Centralized non-destructive icon actions under `IconActionButton` with transparent hover feedback, while `DangerIconButton` is the single red variant for destructive actions.
   - UI / Pipeline Header: Expanded the detected pipeline panel and moved the visible-event selection action beside the selection counter for a cleaner toolbar layout.
   - UI / Secondary Button Language: Standardized secondary actions on a borderless surface with shared hover feedback across Dashboard and Dialogue Editor controls.
   - UI / Dialogue Editor Layout: Replaced the floating event-action card with a flat separated toolbar to keep event edits and batch approval visually distinct.
@@ -80,6 +81,7 @@ Bug Fixes
   - Pipeline / Joke Outcome Events: Recognize failed and successful joke variants, including their `End` folders, instead of showing raw folder names in the HUD.
   - Pipeline / General Assist Events: Use a dedicated localized label for `Assist3DGeneral`, preventing the `{0}` target placeholder from appearing in the HUD.
   - Pipeline / Idle Events: Added the `Idle` rule so `Idle3DGeneral` is mapped as a localized general event instead of falling back to the raw folder name.
+  - Pipeline / Numbered Joke Variants: Recognize `Joke3DGeneral01` and `Joke3DGeneral02` as numbered variants of the existing general joke event.
   - UI / Mapping Navigation: Synchronize the Event Mapping sidebar selection when `CREATE RULE` navigates from a `Needs Mapping` event.
   - Pipeline / Ultimate-Ready Movement Events: Recognize `Move2DRReady` audio folders and display their localized movement label instead of the raw folder name.
   - UI / Dashboard Filter Reset: Reset the character, status, and search filters when selecting a new source or processing folders, ensuring the full detected pipeline is visible and available for preparation and rendering.
