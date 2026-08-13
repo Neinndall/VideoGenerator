@@ -20,6 +20,7 @@ New Features
   - Core / Explicit Dependency Registration: Kept the singleton service registrations directly in the WPF composition root so the application's dependencies remain visible and easy to audit.
   - Audio / Folder Event Detection: Folder scanning identifies event directories recursively, keeps parent folders for bracketed audio families, and excludes technical `_cast3D` folders.
   - Database / Official Data Readiness: Added startup synchronization coordination so folder processing waits for the official-data check before parsing.
+  - Architecture / Dialog Organization: Grouped modal window dialogs (`DialogueEditorWindow`, `ModernMessageBoxWindow`) into a dedicated `Views/Dialogs/` folder.
   - UI / Modern Message Box System: Replaced classic Win32 / Windows modal popups with a custom frameless, dark Obsidian/Hextech styled `ModernMessageBox` dialog supporting dynamic status icons (Success, Info, Question, Warning, Error), custom button layouts/labels, keyboard shortcuts (<kbd>Enter</kbd>/<kbd>Esc</kbd>), and seamless drop-in API compatibility across all views.
   - UI / Semantic Design Tokens: Added reusable tokens for page hierarchy, status pills, hero surfaces, inset panels, ghost actions, and compact icon buttons.
 
