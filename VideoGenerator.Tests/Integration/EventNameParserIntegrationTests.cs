@@ -68,6 +68,34 @@ public sealed class EventNameParserIntegrationTests
     }
 
     [Fact]
+    public async Task ParsesGeneralIdleEvent()
+    {
+        string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            var parser = CreateParser(root, httpClient);
+
+            ParsedEvent parsed = await parser.ParseFolderNameAsync(
+                "Play_vo_SeraphineSkin69_Idle3DGeneral",
+                "EN");
+
+            Assert.Equal("generic", parsed.IconType);
+            Assert.Equal("Generic", parsed.IconLookupName);
+            Assert.Equal("Idle in General", parsed.DisplayText);
+            Assert.True(parsed.IsMapped);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task RoutesThreeDimensionalMonsterAttacksToMonsterParser()
     {
         string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
@@ -286,6 +314,7 @@ public sealed class EventNameParserIntegrationTests
               "EN": {
                 "event_buy_item": "Buy Item {item_name}",
                 "event_assist_general": "Assist in General",
+                "event_idle": "Idle",
                 "event_joke_fail": "Joke (Failed)",
                 "event_kill_general": "Kill in General",
                 "event_move_r_ready": "Movement (Ultimate Ready)",
