@@ -77,4 +77,29 @@ public sealed class EventFilterServiceTests
         Assert.Contains(result, pipelineEvent => pipelineEvent.FolderName == "missing-icon");
         Assert.Contains(result, pipelineEvent => pipelineEvent.FolderName == "no-audio");
     }
+
+    [Fact]
+    public void MappingFilterReturnsOnlyUnmappedEvents()
+    {
+        var events = new[]
+        {
+            new PreviewEventModel
+            {
+                FolderName = "unmapped",
+                Status = EventStatuses.NeedsMapping,
+                ParsedData = new ParsedEvent { IsMapped = false }
+            },
+            new PreviewEventModel
+            {
+                FolderName = "mapped",
+                Status = EventStatuses.Ready,
+                ParsedData = new ParsedEvent { IsMapped = true }
+            }
+        };
+
+        var result = new EventFilterService().FilterEvents(events, "ALL", "NEEDS_MAPPING", string.Empty);
+
+        var selected = Assert.Single(result);
+        Assert.Equal("unmapped", selected.FolderName);
+    }
 }

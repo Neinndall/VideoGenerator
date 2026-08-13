@@ -167,7 +167,7 @@ namespace VideoGenerator.Views
                 {
                     AudioFilePath = audioPath,
                     Dialogue = dialoguePart,
-                    IsValidated = ev.Status == "Ready" || !string.IsNullOrEmpty(dialoguePart)
+                    IsValidated = ev.Status == EventStatuses.Ready || !string.IsNullOrEmpty(dialoguePart)
                 });
             }
         }
@@ -328,7 +328,7 @@ namespace VideoGenerator.Views
                     await _imageGenerator.CreateImageAsync(SelectedEvent.ParsedData, AppSettings.Instance.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset, "", SelectedEvent.CharacterName);
                 }
 
-                SelectedEvent.Status = "Ready";
+                SelectedEvent.MarkReadyAfterProcessing();
                 SelectedEvent.MarkImagesReady();
                 
                 // Refresh listbox trigger

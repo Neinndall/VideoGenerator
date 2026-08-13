@@ -56,7 +56,7 @@
                             <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="PlusCircleOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
-                                    <TextBlock Text="NEW BEHAVIOR" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="RuleFormTitle" Text="NEW BEHAVIOR" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -165,7 +165,14 @@
                             </ScrollViewer>
 
                             <Border x:Name="RegisterButtonBar" Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8">
-                                <Button Content="REGISTER EVENT" Click="AddRule_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="SaveRuleButton" Content="REGISTER EVENT" Click="AddRule_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
+                                    <Button x:Name="CancelEditButton" Grid.Column="1" Content="CANCEL" Click="CancelEdit_Click" Visibility="Collapsed" Style="{StaticResource ModernSecondaryButton}" Height="52" FontWeight="Black" Padding="18,0" Margin="8,0,0,0"/>
+                                </Grid>
                             </Border>
                         </Grid>
                     </Border>
@@ -195,7 +202,8 @@
                                         <ColumnDefinition Width="1.8*"/>
                                         <ColumnDefinition Width="1*"/>
                                         <ColumnDefinition Width="80"/>
-                                        <ColumnDefinition Width="50"/>
+                                        <ColumnDefinition Width="40"/>
+                                        <ColumnDefinition Width="40"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="KEYWORD" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="9" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" Text="DICT KEY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="9" VerticalAlignment="Center"/>
@@ -216,7 +224,8 @@
                                                     <ColumnDefinition Width="1.8*"/>
                                                     <ColumnDefinition Width="1*"/>
                                                     <ColumnDefinition Width="80"/>
-                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                    <ColumnDefinition Width="40"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding Keyword}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding TranslationKey}" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
@@ -240,7 +249,10 @@
                                                 <Border Grid.Column="3" Style="{StaticResource HUDBorder}" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Type}" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextSecondaryBrush}"/>
                                                 </Border>
-                                                <Button Grid.Column="4" Click="DeleteRule_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource ErrorBrush}" Width="30" Height="30" Opacity="0.7">
+                                                <Button Grid.Column="4" Click="EditRule_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{StaticResource AccentBrush}" Width="30" Height="30" ToolTip="Edit rule">
+                                                    <materialDesign:PackIcon Kind="PencilOutline" Width="16" Height="16"/>
+                                                </Button>
+                                                <Button Grid.Column="5" Click="DeleteRule_Click" Style="{StaticResource DangerIconButton}" Width="30" Height="30" ToolTip="Delete rule">
                                                     <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                                 </Button>
                                             </Grid>

@@ -21,6 +21,8 @@ namespace VideoGenerator.Views
         private readonly GroupManager _groupManager;
         private readonly AliasManager _aliasManager;
         private readonly TranslationService _translationService;
+        private EventRule _editingRule;
+        private bool _isPopulatingRule;
 
         public EventRulesView(RuleManager ruleManager, GroupManager groupManager, AliasManager aliasManager, TranslationService translationService)
         {
@@ -52,6 +54,11 @@ namespace VideoGenerator.Views
 
         private void SyncDictKey()
         {
+            if (_isPopulatingRule || _editingRule != null)
+            {
+                return;
+            }
+
             string keyword = KeywordBox.Text.Trim();
             string type = RuleTypeBox.SelectedItem?.ToString() ?? "Simple";
             if (string.IsNullOrEmpty(keyword))
@@ -129,31 +136,110 @@ namespace VideoGenerator.Views
 
         public void PreFillFromDashboard(string folderName)
         {
+            ExitEditMode();
+
             // Simple logic: remove prefixes to guess the keyword
-            string clean = folderName;
-            if (clean.StartsWith("_")) clean = clean.Substring(1);
-            if (clean.StartsWith("Play_vo_")) clean = clean.Replace("Play_vo_", "");
+            string clean = folderName ?? string.Empty;
+            clean = Regex.Replace(
+                clean,
+                @"^(_)?(Play_vo_|Play_|vo_)([A-Za-z0-9]+?)(Skin\d+)?_",
+                "",
+                RegexOptions.IgnoreCase);
             
             // Try to separate the action (e.g., Teleport3DGeneral -> Teleport)
-            var match = Regex.Match(clean, @"^([A-Za-z]+?)(2D|3D|General|inGeneral|Skin\d+)");
-            KeywordBox.Text = match.Success ? match.Groups[1].Value : clean;
+            var match = Regex.Match(clean, @"^([A-Za-z][A-Za-z0-9_]*?)(2D|3D|General|inGeneral|Skin\d+|$)", RegexOptions.IgnoreCase);
+            KeywordBox.Text = match.Success ? match.Groups[1].Value.Trim('_') : clean.Trim('_');
             
-            string suggested = DetectCategory(KeywordBox.Text);
             SuggestCategoryFromKeyword();
             IconTypeBox.SelectedIndex = 0; // Default to generic
         }
 
-        private void AddRule_Click(object sender, RoutedEventArgs e)
+        private void EditRule_Click(object sender, RoutedEventArgs e)
         {
-            string keyword = KeywordBox.Text.Trim();
+            if (sender is not Button button || button.DataContext is not EventRule rule)
+            {
+                return;
+            }
+
+            _editingRule = rule;
+            _isPopulatingRule = true;
+            try
+            {
+                KeywordBox.Text = rule.Keyword;
+                DictKeyBox.Text = rule.TranslationKey;
+                IconLookupBox.Text = rule.IconLookup ?? string.Empty;
+                SelectComboBoxValue(RuleSectionBox, rule.Section);
+                SelectComboBoxValue(IconTypeBox, rule.IconType);
+                SelectComboBoxValue(RuleTypeBox, rule.Type.ToString());
+            }
+            finally
+            {
+                _isPopulatingRule = false;
+            }
+
+            RuleFormTitle.Text = "EDIT BEHAVIOR";
+            SaveRuleButton.Content = "SAVE CHANGES";
+            CancelEditButton.Visibility = Visibility.Visible;
+            TranslationComposer.Visibility = Visibility.Collapsed;
+            FormFieldsPanel.Visibility = Visibility.Visible;
+            RegisterButtonBar.Visibility = Visibility.Visible;
+        }
+
+        private static void SelectComboBoxValue(System.Windows.Controls.ComboBox comboBox, string value)
+        {
+            for (int index = 0; index < comboBox.Items.Count; index++)
+            {
+                object item = comboBox.Items[index];
+                string itemValue = item is ComboBoxItem comboBoxItem
+                    ? comboBoxItem.Content?.ToString()
+                    : item?.ToString();
+
+                if (string.Equals(itemValue, value, StringComparison.OrdinalIgnoreCase))
+                {
+                    comboBox.SelectedIndex = index;
+                    return;
+                }
+            }
+
+            comboBox.SelectedIndex = -1;
+        }
+
+        private EventRule ReadRuleFromForm()
+        {
             string section = (RuleSectionBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "OTHER";
-            string iconLookup = IconLookupBox.Text.Trim();
             string iconType = IconTypeBox.SelectedItem?.ToString() ?? "generic";
-            
-            if (!Enum.TryParse<RuleType>(RuleTypeBox.SelectedItem?.ToString(), out var ruleType))
+            if (!Enum.TryParse<RuleType>(RuleTypeBox.SelectedItem?.ToString(), out RuleType ruleType))
             {
                 ruleType = RuleType.Simple;
             }
+
+            return new EventRule
+            {
+                Keyword = KeywordBox.Text.Trim(),
+                Section = section,
+                TranslationKey = DictKeyBox.Text.Trim(),
+                IconType = iconType,
+                IconLookup = IconLookupBox.Text.Trim(),
+                Type = ruleType,
+                ExtractsTarget = ruleType != RuleType.Simple
+            };
+        }
+
+        private static void ApplyRuleValues(EventRule source, EventRule target)
+        {
+            target.Keyword = source.Keyword;
+            target.Section = source.Section;
+            target.TranslationKey = source.TranslationKey;
+            target.IconType = source.IconType;
+            target.IconLookup = source.IconLookup;
+            target.Type = source.Type;
+            target.ExtractsTarget = source.ExtractsTarget;
+        }
+
+        private void AddRule_Click(object sender, RoutedEventArgs e)
+        {
+            EventRule formRule = ReadRuleFromForm();
+            string keyword = formRule.Keyword;
 
             if (string.IsNullOrEmpty(keyword))
             {
@@ -161,50 +247,80 @@ namespace VideoGenerator.Views
                 return;
             }
 
-            string transKey = DictKeyBox.Text.Trim();
-            if (string.IsNullOrEmpty(transKey))
+            if (string.IsNullOrEmpty(formRule.TranslationKey))
             {
                 MessageBox.Show("Dict key is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             // Duplicate Prevention
-            if (_ruleManager.Rules.Any(r => r.Keyword.Equals(keyword, StringComparison.OrdinalIgnoreCase)))
+            if (_ruleManager.Rules.Any(rule => !ReferenceEquals(rule, _editingRule) &&
+                                               rule.Keyword.Equals(keyword, StringComparison.OrdinalIgnoreCase)))
             {
                 MessageBox.Show($"A rule with the keyword '{keyword}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            var newRule = new EventRule
+            if (_editingRule != null)
             {
-                Keyword = keyword,
-                Section = section,
-                TranslationKey = transKey,
-                IconType = iconType,
-                IconLookup = iconLookup,
-                Type = ruleType,
-                ExtractsTarget = ruleType != RuleType.Simple
-            };
+                ApplyRuleValues(formRule, _editingRule);
+                _ruleManager.SaveRules();
+                _rulesView.Refresh();
+                ExitEditMode();
+                return;
+            }
 
             int insertIndex = 0;
-            while (insertIndex < _ruleManager.Rules.Count && string.Compare(_ruleManager.Rules[insertIndex].Keyword, keyword, StringComparison.OrdinalIgnoreCase) < 0)
+            while (insertIndex < _ruleManager.Rules.Count &&
+                   string.Compare(_ruleManager.Rules[insertIndex].Keyword, keyword, StringComparison.OrdinalIgnoreCase) < 0)
             {
                 insertIndex++;
             }
-            _ruleManager.Rules.Insert(insertIndex, newRule);
+            _ruleManager.Rules.Insert(insertIndex, formRule);
             _ruleManager.SaveRules();
 
             // Fill composer context and show it
             ComposerKeywordText.Text = keyword;
-            ComposerSectionText.Text = section;
-            ComposerTypeText.Text = $"{iconType} · {ruleType}";
-            TransKeyBox.Text = transKey;
+            ComposerSectionText.Text = formRule.Section;
+            ComposerTypeText.Text = $"{formRule.IconType} \u00B7 {formRule.Type}";
+            TransKeyBox.Text = formRule.TranslationKey;
             TransENBox.Text = "";
             TransESBox.Text = "";
             TransTRBox.Text = "";
             FormFieldsPanel.Visibility = Visibility.Collapsed;
             RegisterButtonBar.Visibility = Visibility.Collapsed;
             TranslationComposer.Visibility = Visibility.Visible;
+        }
+
+        private void CancelEdit_Click(object sender, RoutedEventArgs e)
+        {
+            ExitEditMode();
+        }
+
+        private void ExitEditMode()
+        {
+            _editingRule = null;
+            _isPopulatingRule = true;
+            try
+            {
+                KeywordBox.Text = string.Empty;
+                DictKeyBox.Text = string.Empty;
+                IconLookupBox.Text = string.Empty;
+                RuleSectionBox.SelectedIndex = -1;
+                SelectComboBoxValue(IconTypeBox, "generic");
+                SelectComboBoxValue(RuleTypeBox, RuleType.Simple.ToString());
+            }
+            finally
+            {
+                _isPopulatingRule = false;
+            }
+
+            RuleFormTitle.Text = "NEW BEHAVIOR";
+            SaveRuleButton.Content = "REGISTER EVENT";
+            CancelEditButton.Visibility = Visibility.Collapsed;
+            TranslationComposer.Visibility = Visibility.Collapsed;
+            FormFieldsPanel.Visibility = Visibility.Visible;
+            RegisterButtonBar.Visibility = Visibility.Visible;
         }
 
         private void SaveTranslation_Click(object sender, RoutedEventArgs e)
@@ -221,22 +337,18 @@ namespace VideoGenerator.Views
                 _translationService.UpdateTranslations(key, enVal, esVal, trVal);
             }
 
-            TranslationComposer.Visibility = Visibility.Collapsed;
-            FormFieldsPanel.Visibility = Visibility.Visible;
-            RegisterButtonBar.Visibility = Visibility.Visible;
             TransENBox.Text = "";
             TransESBox.Text = "";
             TransTRBox.Text = "";
+            ExitEditMode();
         }
 
         private void SkipTranslation_Click(object sender, RoutedEventArgs e)
         {
-            TranslationComposer.Visibility = Visibility.Collapsed;
-            FormFieldsPanel.Visibility = Visibility.Visible;
-            RegisterButtonBar.Visibility = Visibility.Visible;
             TransENBox.Text = "";
             TransESBox.Text = "";
             TransTRBox.Text = "";
+            ExitEditMode();
         }
 
         private void DeleteRule_Click(object sender, RoutedEventArgs e)
@@ -245,6 +357,11 @@ namespace VideoGenerator.Views
             {
                 _ruleManager.Rules.Remove(rule);
                 _ruleManager.SaveRules();
+
+                if (ReferenceEquals(rule, _editingRule))
+                {
+                    ExitEditMode();
+                }
             }
         }
 

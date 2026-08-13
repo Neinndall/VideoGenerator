@@ -168,10 +168,12 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Column="0" Content="ALL" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=ALL, Mode=TwoWay}" Checked="Filter_Checked" Tag="ALL" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
                                 <RadioButton Grid.Column="1" Content="ERRORS" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=ERRORS, Mode=TwoWay}" Checked="Filter_Checked" Tag="ERRORS" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
                                 <RadioButton Grid.Column="2" Content="PENDING" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=PENDING, Mode=TwoWay}" Checked="Filter_Checked" Tag="PENDING" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                                <RadioButton Grid.Column="3" Content="MAPPING" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=NEEDS_MAPPING, Mode=TwoWay}" Checked="Filter_Checked" Tag="NEEDS_MAPPING" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
                             </Grid>
 
                             <Grid Margin="0,6,0,0">
@@ -206,6 +208,7 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
                                         <CheckBox Grid.Column="0"
@@ -225,8 +228,23 @@
                                             <TextBlock x:Name="StatusText" FontSize="8" FontWeight="Black"/>
                                         </Border>
 
+                                        <Button x:Name="CreateRuleButton"
+                                                Grid.Column="3"
+                                                Click="CreateRule_Click"
+                                                Visibility="Collapsed"
+                                                Style="{StaticResource EventSelectionActionButton}"
+                                                Height="28"
+                                                Padding="4,3"
+                                                Margin="8,0,0,0"
+                                                ToolTip="Open the rule editor with this unmapped event pre-filled">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="FilePlusOutline" Width="12" Height="12" Margin="0,0,4,0"/>
+                                                <TextBlock Text="CREATE RULE" FontSize="8" FontWeight="Black" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+
                                         <!-- Delete Button -->
-                                        <Button Grid.Column="3"
+                                        <Button Grid.Column="4"
                                                 Click="DeleteEvent_Click"
                                                 Style="{StaticResource DangerIconButton}"
                                                 Width="28" Height="28"
@@ -243,6 +261,14 @@
                                         <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
                                         <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource SuccessBrush}"/>
                                         <Setter TargetName="StatusText" Property="Text" Value="READY"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="Needs Mapping">
+                                        <Setter TargetName="StatusBadge" Property="Background" Value="{StaticResource WarningPillBgBrush}"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderBrush" Value="{StaticResource WarningPillBorderBrush}"/>
+                                        <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
+                                        <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource WarningBrush}"/>
+                                        <Setter TargetName="StatusText" Property="Text" Value="NEEDS MAPPING"/>
+                                        <Setter TargetName="CreateRuleButton" Property="Visibility" Value="Visible"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Status}" Value="Missing Icon">
                                         <Setter TargetName="StatusBadge" Property="Background" Value="{StaticResource WarningPillBgBrush}"/>

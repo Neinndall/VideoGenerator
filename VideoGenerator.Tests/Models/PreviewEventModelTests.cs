@@ -1,3 +1,4 @@
+using VideoGenerator.Models;
 using VideoGenerator.Views.Models;
 using Xunit;
 
@@ -18,5 +19,30 @@ public sealed class PreviewEventModelTests
 
         model.MarkImagesDirty();
         Assert.True(model.ImagesNeedRegeneration);
+    }
+
+    [Fact]
+    public void MappingAndAudioStatusesSurviveWorkflowStateUpdates()
+    {
+        var unmapped = new PreviewEventModel
+        {
+            Status = EventStatuses.NeedsMapping,
+            ParsedData = new ParsedEvent { IsMapped = false, IconType = "champion" }
+        };
+
+        unmapped.UpdateStatusAfterIconResolution("champion.png");
+        unmapped.MarkReadyAfterProcessing();
+
+        Assert.Equal(EventStatuses.NeedsMapping, unmapped.Status);
+
+        var noAudio = new PreviewEventModel
+        {
+            Status = EventStatuses.NoAudio,
+            ParsedData = new ParsedEvent { IconType = "champion" }
+        };
+
+        noAudio.UpdateStatusAfterIconResolution("champion.png");
+
+        Assert.Equal(EventStatuses.NoAudio, noAudio.Status);
     }
 }

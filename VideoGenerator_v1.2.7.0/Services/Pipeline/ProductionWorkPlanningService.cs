@@ -21,13 +21,15 @@ namespace VideoGenerator.Services
         {
             var plan = new PreparationWorkPlan();
             plan.MergeWork = pipelineEvents
-                .Where(HasPendingAudioFamilies)
+                .Where(pipelineEvent => !pipelineEvent.NeedsMapping && HasPendingAudioFamilies(pipelineEvent))
                 .SelectMany(pipelineEvent => pipelineEvent.AudioFamilies)
                 .Sum(family => family.AudioFiles.Count);
 
             foreach (PreviewEventModel pipelineEvent in pipelineEvents)
             {
-                bool canPrepare = pipelineEvent.Status != "No Audio" && pipelineEvent.ParsedData != null;
+                bool canPrepare = pipelineEvent.Status != EventStatuses.NoAudio &&
+                                  pipelineEvent.ParsedData != null &&
+                                  !pipelineEvent.NeedsMapping;
                 int plannedAudioCount = GetPlannedAudioCount(pipelineEvent);
                 bool shouldTranscribe = canPrepare && _settings.EnableTranscriptions && plannedAudioCount > 0 &&
                     (string.IsNullOrEmpty(pipelineEvent.Dialogue) || _settings.ForceBatchRetranscribe);
@@ -58,16 +60,17 @@ namespace VideoGenerator.Services
             var plan = new RenderWorkPlan
             {
                 MergeWork = pipelineEvents
-                    .Where(HasPendingAudioFamilies)
+                    .Where(pipelineEvent => !pipelineEvent.NeedsMapping && HasPendingAudioFamilies(pipelineEvent))
                     .SelectMany(pipelineEvent => pipelineEvent.AudioFamilies)
                     .Sum(family => family.AudioFiles.Count)
             };
 
             foreach (PreviewEventModel pipelineEvent in pipelineEvents)
             {
-                bool canRender = pipelineEvent.Status != "No Audio" &&
-                                 pipelineEvent.Status != "Missing Icon" &&
-                                 pipelineEvent.ParsedData != null;
+                bool canRender = pipelineEvent.Status != EventStatuses.NoAudio &&
+                                 pipelineEvent.Status != EventStatuses.MissingIcon &&
+                                 pipelineEvent.ParsedData != null &&
+                                 !pipelineEvent.NeedsMapping;
                 int plannedAudioCount = GetPlannedAudioCount(pipelineEvent);
                 int dialogueParts = GetDialoguePartCount(pipelineEvent.Dialogue);
                 int imageWork = canRender && plannedAudioCount > 0

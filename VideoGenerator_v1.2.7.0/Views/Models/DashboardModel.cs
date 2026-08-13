@@ -35,11 +35,14 @@ namespace VideoGenerator.Views.Models
         [ObservableProperty]
         private bool _isAnalyzed = false;
 
-        public bool CanRunWorkflow => IsAnalyzed && !IsProcessing && SelectedVisibleEventCount > 0;
+        public bool CanRunWorkflow => IsAnalyzed && !IsProcessing && RunnableSelectedVisibleEventCount > 0;
 
         public int VisibleEventCount => FilteredProcessedEvents.Count;
 
         public int SelectedVisibleEventCount => FilteredProcessedEvents.Count(ev => ev.IsSelected);
+
+        public int RunnableSelectedVisibleEventCount => FilteredProcessedEvents.Count(
+            ev => ev.IsSelected && !ev.NeedsMapping);
 
         public bool HasVisibleEvents => VisibleEventCount > 0;
 
@@ -51,10 +54,10 @@ namespace VideoGenerator.Views.Models
 
         public string SelectionSummary => $"SELECTED: {SelectedVisibleEventCount}/{VisibleEventCount}";
 
-        public IReadOnlyList<PreviewEventModel> GetSelectedVisibleEvents()
+        public IReadOnlyList<PreviewEventModel> GetSelectedVisibleWorkflowEvents()
         {
             return FilteredProcessedEvents
-                .Where(ev => ev.IsSelected)
+                .Where(ev => ev.IsSelected && !ev.NeedsMapping)
                 .ToList();
         }
 
@@ -92,7 +95,7 @@ namespace VideoGenerator.Views.Models
         private ImageSource _previewImageSource;
 
         [ObservableProperty]
-        private string _selectedFilter = "ALL"; // ALL, ERRORS, PENDING
+        private string _selectedFilter = "ALL"; // ALL, ERRORS, PENDING, NEEDS_MAPPING
 
         [ObservableProperty]
         private string _selectedCharacter = "ALL"; // ALL, Ahri, Lucian, etc.
@@ -157,7 +160,9 @@ namespace VideoGenerator.Views.Models
 
         private void PreviewEvent_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(PreviewEventModel.IsSelected) && !_isUpdatingSelection)
+            if ((e.PropertyName == nameof(PreviewEventModel.IsSelected) ||
+                 e.PropertyName == nameof(PreviewEventModel.Status) ||
+                 e.PropertyName == nameof(PreviewEventModel.ParsedData)) && !_isUpdatingSelection)
             {
                 RefreshSelectionState();
             }
@@ -167,6 +172,7 @@ namespace VideoGenerator.Views.Models
         {
             OnPropertyChanged(nameof(VisibleEventCount));
             OnPropertyChanged(nameof(SelectedVisibleEventCount));
+            OnPropertyChanged(nameof(RunnableSelectedVisibleEventCount));
             OnPropertyChanged(nameof(HasVisibleEvents));
             OnPropertyChanged(nameof(AreAllVisibleEventsSelected));
             OnPropertyChanged(nameof(SelectionActionLabel));

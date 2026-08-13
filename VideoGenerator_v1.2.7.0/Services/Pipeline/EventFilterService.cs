@@ -22,29 +22,59 @@ namespace VideoGenerator.Services
             var status = statusFilter ?? "ALL";
             var query = searchQuery ?? "";
 
-            return events.Where(ev => 
+            return events.Where(ev => MatchesEventCore(ev, charFilter, status, query)).ToList();
+        }
+
+        public bool MatchesEvent(
+            PreviewEventModel pipelineEvent,
+            string characterFilter,
+            string statusFilter,
+            string searchQuery)
+        {
+            return MatchesEventCore(
+                pipelineEvent,
+                characterFilter ?? "ALL",
+                statusFilter ?? "ALL",
+                searchQuery ?? string.Empty);
+        }
+
+        private static bool MatchesEventCore(
+            PreviewEventModel pipelineEvent,
+            string characterFilter,
+            string statusFilter,
+            string searchQuery)
+        {
+            if (pipelineEvent == null)
             {
-                // 1. Character Filter
-                bool matchesChar = charFilter.Equals("ALL", StringComparison.OrdinalIgnoreCase) || 
-                                   string.Equals(ev.CharacterName, charFilter, StringComparison.OrdinalIgnoreCase);
-                if (!matchesChar) return false;
+                return false;
+            }
 
-                // 2. Search Query (Matches folder name or parsed display text)
-                if (!string.IsNullOrEmpty(query))
+            bool matchesCharacter = characterFilter.Equals("ALL", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(pipelineEvent.CharacterName, characterFilter, StringComparison.OrdinalIgnoreCase);
+            if (!matchesCharacter)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                bool matchesSearch = (pipelineEvent.FolderName != null &&
+                                      pipelineEvent.FolderName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
+                                     (pipelineEvent.ParsedData?.DisplayText != null &&
+                                      pipelineEvent.ParsedData.DisplayText.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+                if (!matchesSearch)
                 {
-                    bool matchesSearch = (ev.FolderName != null && ev.FolderName.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
-                                         (ev.ParsedData != null && ev.ParsedData.DisplayText != null && ev.ParsedData.DisplayText.Contains(query, StringComparison.OrdinalIgnoreCase));
-                    if (!matchesSearch) return false;
+                    return false;
                 }
+            }
 
-                // 3. Status Filter (ALL / ERRORS / PENDING)
-                return status switch
-                {
-                    "ERRORS" => ev.Status == "Missing Icon" || ev.Status == "No Audio",
-                    "PENDING" => ev.Status == "Pending" || ev.Status == "Pending Icon",
-                    _ => true
-                };
-            }).ToList();
+            return statusFilter switch
+            {
+                "ERRORS" => pipelineEvent.Status == EventStatuses.MissingIcon || pipelineEvent.Status == EventStatuses.NoAudio,
+                "PENDING" => pipelineEvent.Status == EventStatuses.Pending || pipelineEvent.Status == EventStatuses.PendingIcon,
+                "NEEDS_MAPPING" => pipelineEvent.NeedsMapping,
+                _ => true
+            };
         }
     }
 }

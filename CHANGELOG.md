@@ -32,6 +32,9 @@ Improvements
   - UI / Event Selection Layout: Aligned the checkbox with the left edge of the event queue and removed the duplicated selection counter from the action row.
   - UI / Destructive Actions: Added a dedicated `DangerIconButton` style with a red icon at rest, a brighter red hover state, and no surrounding border while keeping Dashboard XAML semantic and compact.
   - UI / Workflow Availability: Disabled batch actions when the active filters show no events or when no visible event is selected.
+  - Pipeline / Unmapped Event Detection: Added explicit mapping metadata and a `Needs Mapping` state so generic parser fallbacks cannot appear as `Ready`.
+  - UI / Mapping Workflow: Added a dedicated `MAPPING` filter and an inline `CREATE RULE` action that opens the rule editor pre-filled with the raw event name.
+  - UI / Rule Repository Editing: Added direct edit, save, and cancel actions for existing event rules alongside the existing add/delete workflow.
   - UI / Dashboard Toolbar Alignment: Matched the `PROCESS FOLDERS` button height to the directory, search, and character filter controls.
   - Configuration / Dictionary Language: Set English (`EN`) as the default application language, removed `ALL` from the Settings language selector, and normalized legacy `ALL` settings to `EN` during application use.
   - UI / Dictionary and Dashboard Filters: Preserved `ALL` as a filter for dictionary entries, statuses, and characters without treating it as a processing language.
@@ -75,6 +78,8 @@ Bug Fixes
   - Pipeline / Ultimate-Ready Movement Events: Recognize `Move2DRReady` audio folders and display their localized movement label instead of the raw folder name.
   - UI / Dashboard Filter Reset: Reset the character, status, and search filters when selecting a new source or processing folders, ensuring the full detected pipeline is visible and available for preparation and rendering.
   - Pipeline / Icon Resolution Cancellation: Propagate cancellation after concurrent icon hydration so an interrupted analysis is reported as canceled instead of completing silently.
+  - Pipeline / Mapping Workflow Guard: Keep `Needs Mapping` visible after icon resolution, image preparation, quick edits, and dialogue review, while excluding unmapped events from preparation, review, rendering, and work budgets.
+  - Pipeline / Status Preservation: Keep `No Audio` from being overwritten by a successful icon resolution and normalize mapped events without a pending icon lookup to `Ready`.
   - Core / Progress Completion Race: Made delayed progress completion awaitable and operation-aware, preventing an earlier workflow from resetting the progress state of a newer one.
   - Media / Failed Render Cleanup: Remove temporary segmented render files when FFmpeg fails or a render is canceled.
   - UI / Dialogue Editor Queue Counter: Made the read-only event count binding explicitly one-way to prevent a startup binding error.

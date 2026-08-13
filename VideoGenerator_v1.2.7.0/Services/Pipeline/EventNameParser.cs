@@ -54,7 +54,7 @@ namespace VideoGenerator.Services
                 if (itemParser != null)
                 {
                     var result = await itemParser.ParseAsync(folderName, language);
-                    if (result != null) return result;
+                    if (result != null) return MarkMapped(result);
                 }
             }
 
@@ -65,7 +65,7 @@ namespace VideoGenerator.Services
                 if (skinParser != null)
                 {
                     var result = await skinParser.ParseAsync(folderName, language);
-                    if (result != null) return result;
+                    if (result != null) return MarkMapped(result);
                 }
             }
 
@@ -77,7 +77,7 @@ namespace VideoGenerator.Services
                 if (monsterParser != null && monsterParser.CanParse(folderName))
                 {
                     var result = await monsterParser.ParseAsync(folderName, language);
-                    if (result != null) return result;
+                    if (result != null) return MarkMapped(result);
                 }
             }
 
@@ -111,7 +111,7 @@ namespace VideoGenerator.Services
                 if (dynamicParser != null)
                 {
                     var result = await dynamicParser.ParseAsync(folderName, language);
-                    if (result != null) return result;
+                    if (result != null) return MarkMapped(result);
                 }
             }
 
@@ -120,7 +120,7 @@ namespace VideoGenerator.Services
             if (spellParser != null && spellParser.CanParse(folderName))
             {
                 var result = await spellParser.ParseAsync(folderName, language);
-                if (result != null) return result;
+                if (result != null) return MarkMapped(result);
             }
 
             // 6. Final Fallback to DynamicRuleParser
@@ -128,7 +128,7 @@ namespace VideoGenerator.Services
             if (finalParser != null)
             {
                 var result = await finalParser.ParseAsync(folderName, language);
-                if (result != null) return result;
+                if (result != null) return MarkMapped(result);
             }
 
             return CreateGenericEvent(folderName, folderName);
@@ -161,9 +161,16 @@ namespace VideoGenerator.Services
             {
                 OriginalFolder = folderName,
                 DisplayText = displayText,
+                IsMapped = false,
                 IconLookupName = "Generic",
                 IconType = "generic"
             };
+        }
+
+        private static ParsedEvent MarkMapped(ParsedEvent parsedEvent)
+        {
+            parsedEvent.IsMapped = true;
+            return parsedEvent;
         }
     }
 }

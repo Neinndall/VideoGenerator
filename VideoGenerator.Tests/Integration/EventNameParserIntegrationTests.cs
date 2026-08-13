@@ -168,6 +168,32 @@ public sealed class EventNameParserIntegrationTests
     }
 
     [Fact]
+    public async Task FlagsUnknownFolderNamesAsUnmapped()
+    {
+        string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            var parser = CreateParser(root, httpClient);
+            const string folderName = "Play_vo_Aatrox_UnknownEvent3D";
+
+            ParsedEvent parsed = await parser.ParseFolderNameAsync(folderName, "EN");
+
+            Assert.False(parsed.IsMapped);
+            Assert.Equal(folderName, parsed.DisplayText);
+            Assert.Equal("generic", parsed.IconType);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ParsesUltimateReadyMovementVariant()
     {
         string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;

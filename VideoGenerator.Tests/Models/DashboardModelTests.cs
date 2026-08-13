@@ -1,5 +1,6 @@
 using Xunit;
 
+using VideoGenerator.Models;
 using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Tests;
@@ -66,5 +67,28 @@ public sealed class DashboardModelTests
         Assert.Equal(2, model.SelectedVisibleEventCount);
         Assert.True(model.AreAllVisibleEventsSelected);
         Assert.Equal("DESELECT VISIBLE", model.SelectionActionLabel);
+    }
+
+    [Fact]
+    public void WorkflowIsDisabledWhenOnlyUnmappedEventsAreSelected()
+    {
+        var model = new DashboardModel
+        {
+            IsAnalyzed = true
+        };
+        model.FilteredProcessedEvents.Add(new PreviewEventModel
+        {
+            Status = EventStatuses.NeedsMapping,
+            ParsedData = new ParsedEvent { IsMapped = false }
+        });
+
+        Assert.False(model.CanRunWorkflow);
+        Assert.Equal(1, model.SelectedVisibleEventCount);
+
+        model.FilteredProcessedEvents[0].ParsedData.IsMapped = true;
+        model.FilteredProcessedEvents[0].Status = EventStatuses.Ready;
+
+        Assert.True(model.CanRunWorkflow);
+        Assert.Single(model.GetSelectedVisibleWorkflowEvents());
     }
 }

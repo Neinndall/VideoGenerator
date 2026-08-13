@@ -120,7 +120,8 @@ namespace VideoGenerator.Services
             var eventData = parsedEvent ?? new ParsedEvent
             {
                 OriginalFolder = folderName,
-                DisplayText = folderName
+                DisplayText = folderName,
+                IsMapped = false
             };
             eventData.Dialogue = dialogue;
 
@@ -202,21 +203,25 @@ namespace VideoGenerator.Services
 
         private static string GetInitialStatus(ParsedEvent parsedEvent, string folderName)
         {
-            if (parsedEvent == null ||
-                string.IsNullOrEmpty(parsedEvent.DisplayText) ||
+            if (parsedEvent == null || !parsedEvent.IsMapped)
+            {
+                return EventStatuses.NeedsMapping;
+            }
+
+            if (string.IsNullOrEmpty(parsedEvent.DisplayText) ||
                 parsedEvent.DisplayText.Contains("event_") ||
                 parsedEvent.DisplayText.Contains("interaction_") ||
                 parsedEvent.DisplayText.Equals(folderName))
             {
-                return "Pending";
+                return EventStatuses.Pending;
             }
 
             if (parsedEvent.IconType == "generic")
             {
-                return "Ready";
+                return EventStatuses.Ready;
             }
 
-            return !string.IsNullOrEmpty(parsedEvent.IconLookupName) ? "Pending Icon" : "Validated";
+            return !string.IsNullOrEmpty(parsedEvent.IconLookupName) ? EventStatuses.PendingIcon : EventStatuses.Ready;
         }
     }
 }

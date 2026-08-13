@@ -49,6 +49,25 @@ public sealed class ProductionWorkPlanningServiceTests
     }
 
     [Fact]
+    public void PreparationPlanSkipsUnmappedEvents()
+    {
+        var settings = new AppSettings();
+        var pipelineEvent = new PreviewEventModel
+        {
+            Status = EventStatuses.NeedsMapping,
+            AudioFiles = new List<string> { "unknown.ogg" },
+            ParsedData = new ParsedEvent { IsMapped = false, IconType = "generic" }
+        };
+
+        var plan = new ProductionWorkPlanningService(settings)
+            .CreatePreparationPlan(new[] { pipelineEvent });
+
+        Assert.Equal(0, plan.TranscriptionWork);
+        Assert.Equal(0, plan.ImageWork);
+        Assert.Equal(0, plan.TotalWork);
+    }
+
+    [Fact]
     public void RenderPlanAccountsForSegmentedAudioVideoWork()
     {
         var settings = new AppSettings();

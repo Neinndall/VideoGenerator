@@ -76,7 +76,7 @@ namespace VideoGenerator.Views
 
             string iconPath = await _eventIconResolutionService.ResolveAsync(pipelineEvent.ParsedData);
             pipelineEvent.ParsedData.IconPath = string.IsNullOrEmpty(iconPath) ? "MISSING" : iconPath;
-            pipelineEvent.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
+            pipelineEvent.UpdateStatusAfterIconResolution(iconPath);
         }
 
         private async Task ResolvePendingIconsAsync(CancellationToken cancellationToken)
@@ -108,7 +108,7 @@ namespace VideoGenerator.Views
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         pipelineEvent.ParsedData.IconPath = iconPath;
-                        pipelineEvent.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
+                        pipelineEvent.UpdateStatusAfterIconResolution(iconPath);
                     });
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

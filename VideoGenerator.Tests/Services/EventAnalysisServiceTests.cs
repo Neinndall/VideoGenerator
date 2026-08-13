@@ -29,7 +29,8 @@ public sealed class EventAnalysisServiceTests
             var parser = new StubEventNameParser(new ParsedEvent
             {
                 DisplayText = "Kill in General",
-                IconType = "generic"
+                IconType = "generic",
+                IsMapped = true
             });
             var dialogues = new InMemoryDialogueStore();
             dialogues.SetDialogue("EN", "Play_vo_Aatrox_Kill3DGeneral", "Stored dialogue");

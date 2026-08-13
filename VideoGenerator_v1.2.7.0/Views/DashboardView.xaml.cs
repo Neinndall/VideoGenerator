@@ -208,19 +208,13 @@ namespace VideoGenerator.Views
                                 _model.CharactersList.Add(ev.CharacterName);
                         }
 
-                        var filter = _model.SelectedFilter;
-                        var characterFilter = _model.SelectedCharacter ?? "ALL";
-
-                        if (characterFilter == "ALL" || string.Equals(ev.CharacterName, characterFilter, StringComparison.OrdinalIgnoreCase))
+                        if (_eventFilterService.MatchesEvent(
+                            ev,
+                            _model.SelectedCharacter,
+                            _model.SelectedFilter,
+                            _model.SearchQuery))
                         {
-                            bool include = filter switch
-                            {
-                                "ERRORS" => ev.Status == "Missing Icon" || ev.Status == "No Audio",
-                                "PENDING" => ev.Status == "Pending",
-                                _ => true
-                            };
-
-                            if (include) _model.FilteredProcessedEvents.Add(ev);
+                            _model.FilteredProcessedEvents.Add(ev);
                         }
                     }
                     if (_model.SelectedEvent == null && _model.FilteredProcessedEvents.Count > 0)
@@ -331,7 +325,7 @@ namespace VideoGenerator.Views
             string iconPath = await _eventIconResolutionService.ResolveAsync(ev.ParsedData);
 
             ev.ParsedData.IconPath = iconPath;
-            ev.Status = string.IsNullOrEmpty(iconPath) && iconType != "generic" ? "Missing Icon" : "Ready";
+            ev.UpdateStatusAfterIconResolution(iconPath);
 
             string dialogue = QuickEditDialogue.Text;
             ev.Dialogue = dialogue;
@@ -348,13 +342,17 @@ namespace VideoGenerator.Views
             await UpdatePreviewAsync();
         }
 
-        private void QuickMap_Click(object sender, RoutedEventArgs e)
+        private void CreateRule_Click(object sender, RoutedEventArgs e)
         {
-            if (_model.SelectedEvent == null) return;
-            _eventRulesView.PreFillFromDashboard(_model.SelectedEvent.FolderName);
+            if (sender is not Button button || button.DataContext is not PreviewEventModel pipelineEvent)
+            {
+                return;
+            }
 
-            var mainWindow = Application.Current.MainWindow as MainWindow;
-            if (mainWindow != null)
+            _model.SelectedEvent = pipelineEvent;
+            _eventRulesView.PreFillFromDashboard(pipelineEvent.FolderName);
+
+            if (Application.Current.MainWindow is MainWindow mainWindow)
             {
                 mainWindow.NavigateTo("EventRules");
             }
@@ -453,7 +451,7 @@ namespace VideoGenerator.Views
         {
             if (!_model.CanRunWorkflow) return;
 
-            var eventsToPrepare = _model.GetSelectedVisibleEvents().ToList();
+            var eventsToPrepare = _model.GetSelectedVisibleWorkflowEvents().ToList();
             if (eventsToPrepare.Count == 0) return;
             
             var token = _cancellationService.CreateNewToken();
@@ -499,12 +497,15 @@ namespace VideoGenerator.Views
                             token.ThrowIfCancellationRequested();
                             Application.Current.Dispatcher.Invoke(() => {
                                 ev.ParsedData.IconPath = string.IsNullOrEmpty(iconPath) ? "MISSING" : iconPath;
-                                ev.Status = string.IsNullOrEmpty(iconPath) ? "Missing Icon" : "Ready";
+                                ev.UpdateStatusAfterIconResolution(iconPath);
                             });
                             _progressService.Advance(1, $"Resolved icon: {ev.FolderName}");
                         }
 
-                        if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null)
+                        if (ev.Status == EventStatuses.NoAudio ||
+                            ev.Status == EventStatuses.MissingIcon ||
+                            ev.NeedsMapping ||
+                            ev.ParsedData == null)
                         {
                             int skippedWork = workPlan.TranscriptionWorkByEvent[ev] + workPlan.ImageWorkByEvent[ev];
                             if (skippedWork > 0)
@@ -590,7 +591,7 @@ namespace VideoGenerator.Views
 
                         token.ThrowIfCancellationRequested();
                         Application.Current.Dispatcher.Invoke(() => {
-                            ev.Status = "Ready";
+                            ev.MarkReadyAfterProcessing();
                         });
 
                     }
@@ -618,7 +619,7 @@ namespace VideoGenerator.Views
         {
             if (!_model.IsAnalyzed) return;
 
-            var events = _model.GetSelectedVisibleEvents().ToList();
+            var events = _model.GetSelectedVisibleWorkflowEvents().ToList();
             if (events.Count == 0) return;
 
             bool hasPendingFamilies = events.Any(ev =>
@@ -700,7 +701,7 @@ namespace VideoGenerator.Views
         {
             if (!_model.CanRunWorkflow) return;
 
-            var eventsToRender = _model.GetSelectedVisibleEvents().ToList();
+            var eventsToRender = _model.GetSelectedVisibleWorkflowEvents().ToList();
             if (eventsToRender.Count == 0) return;
             
             var token = _cancellationService.CreateNewToken();
@@ -722,7 +723,11 @@ namespace VideoGenerator.Views
                         token.ThrowIfCancellationRequested();
                         _progressService.SetStatus($"Rendering video: {ev.FolderName}");
 
-                        if (ev.Status == "No Audio" || ev.Status == "Missing Icon" || ev.ParsedData == null || ev.AudioFiles.Count == 0)
+                        if (ev.Status == EventStatuses.NoAudio ||
+                            ev.Status == EventStatuses.MissingIcon ||
+                            ev.NeedsMapping ||
+                            ev.ParsedData == null ||
+                            ev.AudioFiles.Count == 0)
                             continue;
 
                         string dialogue = ev.Dialogue;
