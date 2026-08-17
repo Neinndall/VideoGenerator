@@ -1,3 +1,13 @@
+VideoGenerator - Patch Notes | v1.3.0.1
+
+HOTFIX UPDATE
+This hotfix ensures that `_cast2D` and `_cast3D` folders with supported audio are included in the processing pipeline instead of being discarded during discovery.
+
+Changes
+  - Audio / Cast Folder Discovery: Removed the technical-folder exclusion so `_cast2D` and `_cast3D` directories with supported audio are processed like any other event folder.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.3.0.0
 
 MAJOR UPDATE
