@@ -1,6 +1,6 @@
 ## VideoGenerator
 
-[![Version](https://img.shields.io/badge/version-1.3.0.0-blue?logo=github&logoColor=white&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0.1-blue?logo=github&logoColor=white&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![Latest Release](https://img.shields.io/github/v/release/Neinndall/VideoGenerator?color=yellow&logo=github&logoColor=white&label=Release&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![Downloads](https://img.shields.io/github/downloads/Neinndall/VideoGenerator/total?color=blue&logo=github&logoColor=white&label=Downloads&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![License](https://img.shields.io/github/license/Neinndall/VideoGenerator)](https://github.com/Neinndall/VideoGenerator/blob/main/LICENSE)
@@ -9,7 +9,7 @@ VideoGenerator is a Windows desktop application for converting League of Legends
 
 ## Production workflow
 
-1. **Process Folders** scans the selected media directory, parses event names, associates audio files and families, and builds the event pipeline. Technical `_cast3D` events are excluded.
+1. **Process Folders** scans the selected media directory, parses event names, associates audio files and families, and builds the event pipeline. All folders with supported audio are eligible, including `_cast2D` and `_cast3D` events.
 2. **Prepare Dialogues** resolves icons, transcribes pending audio with Whisper, stores dialogue segments, and prepares HUD images.
 3. **Review Dialogues** opens the segment editor for playback, correction, validation, retranscription, and vertically resizable transcript fields.
 4. **Render Videos** assembles the prepared images and audio into final MP4 files without repeating transcription.
@@ -45,7 +45,7 @@ FFmpeg binaries are embedded and extracted automatically when required. Whisper 
 From the application project directory:
 
 ```powershell
-cd VideoGenerator_v1.3.0.0
+cd VideoGenerator_v1.3.0.1
 dotnet restore
 dotnet build -c Release
 dotnet run -c Release

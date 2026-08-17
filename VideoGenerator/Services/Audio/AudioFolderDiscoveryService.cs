@@ -38,9 +38,7 @@ namespace VideoGenerator.Services
 
             foreach (string directory in candidates)
             {
-                string directoryName = Path.GetFileName(directory);
-                if (directoryName.Contains("_cast3D", StringComparison.OrdinalIgnoreCase) ||
-                    IsAudioFamilyDirectory(directory))
+                if (IsAudioFamilyDirectory(directory))
                 {
                     continue;
                 }
