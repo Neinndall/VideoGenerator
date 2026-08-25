@@ -1,6 +1,5 @@
 ## VideoGenerator
 
-[![Version](https://img.shields.io/badge/version-1.3.0.1-blue?logo=github&logoColor=white&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![Latest Release](https://img.shields.io/github/v/release/Neinndall/VideoGenerator?color=yellow&logo=github&logoColor=white&label=Release&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![Downloads](https://img.shields.io/github/downloads/Neinndall/VideoGenerator/total?color=blue&logo=github&logoColor=white&label=Downloads&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![License](https://img.shields.io/github/license/Neinndall/VideoGenerator)](https://github.com/Neinndall/VideoGenerator/blob/main/LICENSE)

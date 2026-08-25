@@ -26,8 +26,8 @@ namespace VideoGenerator.Services
         public async Task<IReadOnlyList<string>> PrepareAsync(
             PreviewEventModel pipelineEvent,
             string dialogue,
-            bool reuseExistingImages,
-            CancellationToken cancellationToken,
+            bool reuseExistingImages = false,
+            CancellationToken cancellationToken = default,
             Action<string> reportStatus = null,
             Action<int, string> reportProgress = null)
         {

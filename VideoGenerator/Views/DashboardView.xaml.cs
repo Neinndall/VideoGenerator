@@ -735,7 +735,7 @@ namespace VideoGenerator.Views
                         IReadOnlyList<string> imagePaths = await _hudImagePreparationService.PrepareAsync(
                             ev,
                             dialogue,
-                            reuseExistingImages: true,
+                            reuseExistingImages: false,
                             cancellationToken: token,
                             status => _progressService.SetStatus(status),
                             (work, status) => _progressService.Advance(work, status));

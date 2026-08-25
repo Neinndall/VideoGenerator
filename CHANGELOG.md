@@ -1,3 +1,13 @@
+VideoGenerator - Patch Notes | v1.3.0.2
+
+HOTFIX UPDATE
+This hotfix ensures that video rendering always regenerates and overwrites existing HUD images in the output folder so visual, background, typography, or dialogue updates are immediately reflected in newly generated videos without requiring manual file deletion.
+
+Bug Fixes
+  - Pipeline / HUD Image Overwrite: Set image reuse to false during video rendering and defaulted it in `HudImagePreparationService`, guaranteeing existing images in `Generated/Images/` are refreshed and overwritten upon re-rendering.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v1.3.0.1
 
 HOTFIX UPDATE

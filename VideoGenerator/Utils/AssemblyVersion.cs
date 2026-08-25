@@ -4,7 +4,7 @@ namespace VideoGenerator.Utils
 {
     public static class AssemblyVersion
     {
-        private const string FallbackVersion = "1.3.0.1";
+        private const string FallbackVersion = "1.3.0.2";
         public static string Version { get; }
 
         static AssemblyVersion()
