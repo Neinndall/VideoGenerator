@@ -324,11 +324,6 @@ namespace VideoGenerator.Views.Dialogs
                 string dialoguePart = i < parts.Count ? parts[i] : "";
 
                 bool isPartValidated = ev.IsDialogueValidated;
-                if (!isPartValidated && !string.IsNullOrEmpty(dialoguePart) && ev.Status == EventStatuses.Ready)
-                {
-                    // Default to validated if ready and has non-empty dialogue
-                    isPartValidated = true;
-                }
 
                 var partItem = new DialoguePartItem
                 {

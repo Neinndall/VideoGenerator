@@ -536,6 +536,7 @@ namespace VideoGenerator.Views
                             {
                                 dialogue = transcription;
                                 ev.Dialogue = transcription;
+                                ev.IsDialogueValidated = false;
                                 if (ev.ParsedData != null)
                                 {
                                     ev.ParsedData.Dialogue = transcription;
@@ -543,6 +544,7 @@ namespace VideoGenerator.Views
 
                                 string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
                                 _dialogueService.SetDialogue(selectedLang, ev.FolderName, transcription);
+                                _dialogueService.SetDialogueValidation(selectedLang, ev.FolderName, false);
 
                                 if (_model.SelectedEvent == ev)
                                 {
@@ -600,10 +602,6 @@ namespace VideoGenerator.Views
                 }, token);
                 _logger.LogInfo(">>> BATCH PREPARATION COMPLETE. You can now REVIEW DIALOGUES or RENDER VIDEOS.");
 
-                // Show DialogueEditor Window automatically once preparation completes
-                Application.Current.Dispatcher.Invoke(() => {
-                    ReviewDialogues_Click(null, null);
-                });
             } catch (OperationCanceledException) {
                 HandleCancellation();
             } catch (Exception ex) { 
@@ -613,6 +611,12 @@ namespace VideoGenerator.Views
             {
                 _model.IsProcessing = false;
                 await _progressService.CompleteAsync();
+            }
+
+            // Show DialogueEditor Window automatically once preparation completes and progress resets
+            if (!token.IsCancellationRequested)
+            {
+                ReviewDialogues_Click(null, null);
             }
         }
 
@@ -798,6 +802,7 @@ namespace VideoGenerator.Views
                     if (!string.IsNullOrEmpty(transcription))
                     {
                         ev.Dialogue = transcription;
+                        ev.IsDialogueValidated = false;
                         if (ev.ParsedData != null)
                         {
                             ev.ParsedData.Dialogue = transcription;
@@ -806,6 +811,7 @@ namespace VideoGenerator.Views
                         QuickEditDialogue.Text = transcription;
                         string selectedLang = AppSettings.Instance.DefaultDictionaryLanguage ?? "EN";
                         _dialogueService.SetDialogue(selectedLang, ev.FolderName, transcription);
+                        _dialogueService.SetDialogueValidation(selectedLang, ev.FolderName, false);
                         _logger.LogInfo($"Successfully transcribed: {transcription}");
                         await UpdatePreviewAsync();
                     }
