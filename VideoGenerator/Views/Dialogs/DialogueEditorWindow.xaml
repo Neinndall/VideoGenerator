@@ -307,8 +307,7 @@
 
                                         <!-- Play/Pause Control -->
                                         <Button Grid.Column="0" Click="PlayPartAudio_Click" 
-                                                Style="{StaticResource IconActionButton}"
-                                                Background="{StaticResource InputBackgroundBrush}"
+                                                Style="{StaticResource AudioPlayButton}"
                                                 Width="44" Height="44" Margin="0,0,16,0"
                                                 ToolTip="Play/Stop this audio segment">
                                             <materialDesign:PackIcon Kind="Play" Width="22" Height="22" x:Name="PlayIcon"/>

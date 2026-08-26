@@ -90,7 +90,7 @@ namespace VideoGenerator.Views
 
             int total = pendingEvents.Count;
             int resolved = 0;
-            _progressService.SetStatus($"Resolving icons: 0/{total} (0%)");
+            _progressService.Start($"Resolving icons: 0/{total} (0%)", indeterminate: false);
 
             using var semaphore = new SemaphoreSlim(3, 3);
             Task[] resolutionTasks = pendingEvents.Select(async pipelineEvent =>
@@ -123,7 +123,7 @@ namespace VideoGenerator.Views
                 {
                     int currentResolved = Interlocked.Increment(ref resolved);
                     double progressValue = (double)currentResolved / total * 100.0;
-                    _progressService.SetStatus($"Resolving icons: {currentResolved}/{total} ({progressValue:0}%)");
+                    _progressService.Report(progressValue, $"Resolving icons: {currentResolved}/{total} ({progressValue:0}%)");
                     semaphore.Release();
                 }
             }).ToArray();
