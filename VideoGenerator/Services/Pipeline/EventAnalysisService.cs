@@ -162,7 +162,8 @@ namespace VideoGenerator.Services
                     family.AudioFiles,
                     folderName,
                     family.Name,
-                    folderPath);
+                    folderPath,
+                    _settings.SilenceDuration);
                 if (string.IsNullOrEmpty(cachedPath) || !File.Exists(cachedPath) || new FileInfo(cachedPath).Length == 0)
                 {
                     return false;

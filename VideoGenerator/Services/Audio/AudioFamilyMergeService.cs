@@ -46,6 +46,7 @@ namespace VideoGenerator.Services
                     pipelineEvent.FolderName,
                     family.Name,
                     pipelineEvent.FolderPath,
+                    _settings.SilenceDuration,
                     cancellationToken);
                 mergedTracks.Add(mergedPath);
                 onFamilyMerged?.Invoke(family);
