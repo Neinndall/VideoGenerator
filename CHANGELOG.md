@@ -1,10 +1,17 @@
 VideoGenerator - Patch Notes | v1.3.0.2
 
 HOTFIX UPDATE
-This hotfix ensures that video rendering always regenerates and overwrites existing HUD images in the output folder so visual, background, typography, or dialogue updates are immediately reflected in newly generated videos without requiring manual file deletion.
+This hotfix resolves critical pipeline issues with video image overwriting, accurate audio silence padding, audio family silence handling, dialogue review modal lifecycle, icon resolution progress tracking, dialogue editor navigation validation state, and UI audio playback controls.
 
 Bug Fixes
   - Pipeline / HUD Image Overwrite: Set image reuse to false during video rendering and defaulted it in `HudImagePreparationService`, guaranteeing existing images in `Generated/Images/` are refreshed and overwritten upon re-rendering.
+  - Audio / Silence Duration Precision: Replaced FFmpeg concat demuxer silence WAV merging with native `apad` audio filter padding, eliminating sample rate / channel mismatch bugs and ensuring exact silence duration on any audio format (.ogg, .wav, mono, stereo).
+  - Audio / Trailing Silence Alignment: Applied configured silence padding to each audio track and single-track events, ensuring rendered clips connect seamlessly on external video editing timelines (e.g. Sony Vegas, Premiere).
+  - Audio / Family Merger Silence Handling: Configured audio family merging to join intra-family tracks seamlessly while applying the configured silence duration to the end of the family unit, and included silence duration in the cache fingerprint.
+  - UI / Progress Bar Lifecycle on Modal Open: Fixed `PrepareTranscription_Click` blocking progress completion while the modal was open, ensuring the dashboard status cleanly resets to `STABLE - READY` (0%) before the Dialogue Editor window opens.
+  - UI / Icon Resolution Progress Bar: Fixed background icon resolution inheriting a stuck 100% progress state from the folder analysis phase, properly resetting progress to 0% and reporting live progress as icons are resolved.
+  - UI / Dialogue Editor Navigation Validation: Removed rogue auto-validation in `LoadEventParts` that automatically marked events as validated upon navigation/selection, ensuring events remain in pending state until explicitly approved.
+  - UI / Audio Play Button Style: Added dedicated `AudioPlayButton` style with a persistent solid background, modern violet accent icon, and light violet hover state matching primary dashboard buttons, preventing the button box from vanishing on mouse hover.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
