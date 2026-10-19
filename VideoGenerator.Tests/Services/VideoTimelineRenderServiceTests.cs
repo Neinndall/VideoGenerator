@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using VideoGenerator.Views.Models;
 using VideoGenerator.Services;
 using Xunit;
@@ -71,5 +72,90 @@ public sealed class VideoTimelineRenderServiceTests
         Assert.DoesNotContain("[v{i}]", graph);
         Assert.Contains("[0:a:0]atrim=start=0:duration=5", graph);
         Assert.Contains("[v0][a0]concat=n=1:v=1:a=1", graph);
+    }
+
+    [Fact]
+    public void MutedVideoAndClipAudioAreAppliedToRenderedStreams()
+    {
+        var clips = new[]
+        {
+            new VideoTimelineRenderService.PreparedClip(
+                new VideoTimelineRenderService.RenderClip("source.mp4", 0, 3), true)
+        };
+        string graph = VideoTimelineRenderService.BuildFilterGraph(
+            clips, TimelineExportPreset.Presets[0], false, 0, 3,
+            muteVideo: true, muteClipAudio: true, clipAudioVolume: 0.45);
+        Assert.Contains("color=c=black:s=1920x1080", graph);
+        Assert.DoesNotContain("[0:v:0]trim=", graph);
+        Assert.Contains("volume=0,apad=", graph);
+        Assert.DoesNotContain("amix=", graph);
+    }
+
+    [Fact]
+    public void ClipAudioGainIsAppliedToExport()
+    {
+        var clips = new[]
+        {
+            new VideoTimelineRenderService.PreparedClip(
+                new VideoTimelineRenderService.RenderClip("source.mp4", 0, 2), true)
+        };
+        string graph = VideoTimelineRenderService.BuildFilterGraph(
+            clips, TimelineExportPreset.Presets[0], false, 0, 2,
+            clipAudioVolume: 0.35);
+        Assert.Contains("volume=0.35,apad=", graph);
+    }
+
+    [Fact]
+    public void NvencUsesVbrCqInsteadOfUnsupportedCrf()
+    {
+        var process = new ProcessStartInfo();
+        var preset = TimelineExportPreset.Presets[0] with { Encoder = "h264_nvenc", FfmpegPreset = "fast" };
+        VideoTimelineRenderService.AddVideoEncodingArgs(process, preset);
+        var args = process.ArgumentList.ToArray();
+        Assert.Contains("h264_nvenc", args);
+        Assert.Contains("-cq", args);
+        Assert.Contains("p3", args);
+        Assert.DoesNotContain("-crf", args);
+    }
+
+    [Fact]
+    public void X264RetainsCrfAndFastPreset()
+    {
+        var process = new ProcessStartInfo();
+        var preset = TimelineExportPreset.Presets[0] with { FfmpegPreset = "veryfast" };
+        VideoTimelineRenderService.AddVideoEncodingArgs(process, preset);
+        var args = process.ArgumentList.ToArray();
+        Assert.Contains("libx264", args);
+        Assert.Contains("veryfast", args);
+        Assert.Contains("-crf", args);
+        Assert.DoesNotContain("-cq", args);
+    }
+
+    [Fact]
+    public async Task MutedMusicSourceCannotBeOverwrittenByExport()
+    {
+        string dir = Directory.CreateTempSubdirectory("VG.SafeExport.").FullName;
+        try
+        {
+            string originalMusic = Path.Combine(dir, "music-source.mp4");
+            await File.WriteAllTextAsync(originalMusic, "original source remains intact");
+            var project = new VideoTimelineProject
+            {
+                Name = "Test montage",
+                MusicPath = originalMusic,
+                MuteMusic = true,
+                MusicVolume = 0,
+                Clips =
+                [
+                    new VideoTimelineClip { SourcePath = Path.Combine(dir, "clip.mp4"),
+                        DurationSeconds = 1, DisplayName = "Clip" }
+                ]
+            };
+            var renderer = new VideoTimelineRenderService(new VideoService(new LogService()));
+            await Assert.ThrowsAsync<IOException>(() => renderer.ExportAsync(
+                project, originalMusic, TimelineExportPreset.Presets[0]));
+            Assert.Equal("original source remains intact", await File.ReadAllTextAsync(originalMusic));
+        }
+        finally { Directory.Delete(dir, recursive: true); }
     }
 }

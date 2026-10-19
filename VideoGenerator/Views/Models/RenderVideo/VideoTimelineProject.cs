@@ -28,6 +28,18 @@ public sealed class VideoTimelineProject
     /// <summary>Background music gain: zero is silent, one is full original volume.</summary>
     public double MusicVolume { get; set; } = 0.25;
 
+    /// <summary>Hide the timeline video track in export (render a black video frame, retain audio).</summary>
+    public bool MuteVideo { get; set; }
+
+    /// <summary>Mute the audio of the ordered media clips in preview and export.</summary>
+    public bool MuteClipAudio { get; set; }
+
+    /// <summary>Linear clip-audio gain used for both monitor and exported audio.</summary>
+    public double ClipAudioVolume { get; set; } = 1.0;
+
+    /// <summary>Omit the background music track from export without losing its file selection.</summary>
+    public bool MuteMusic { get; set; }
+
     /// <summary>Path of the JSON project. Not serialized; relative media paths resolve from here.</summary>
     [JsonIgnore]
     public string? ProjectFilePath { get; private set; }
@@ -39,6 +51,8 @@ public sealed class VideoTimelineProject
             errors.Add("El proyecto necesita un nombre.");
         if (!double.IsFinite(MusicVolume) || MusicVolume < 0 || MusicVolume > 1)
             errors.Add("El volumen de música debe estar entre 0 y 1.");
+        if (!double.IsFinite(ClipAudioVolume) || ClipAudioVolume < 0 || ClipAudioVolume > 1)
+            errors.Add("El volumen de audio de los clips debe estar entre 0 y 1.");
         if (Clips is null)
         {
             errors.Add("Falta la lista de clips.");

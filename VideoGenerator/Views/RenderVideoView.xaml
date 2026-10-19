@@ -605,19 +605,17 @@
                                             <TextBlock Text="VIDEO" FontWeight="Bold" FontSize="10" Foreground="#DBEAFE"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                            <Button x:Name="VideoTrackMuteBtn" Click="VideoTrackMute_Click" ToolTip="Mute / Hide Video Track"
+                                            <Button x:Name="VideoTrackMuteBtn" Click="VideoTrackMute_Click" ToolTip="Hide video in preview and final MP4 (black frames)"
                                                     Style="{StaticResource IconActionButton}" Width="18" Height="18" Padding="0" Background="#16325C" Margin="0,0,2,0">
                                                 <TextBlock Text="M" FontWeight="Black" FontSize="9" Foreground="White"/>
-                                            </Button>
-                                            <Button ToolTip="Solo Track" Style="{StaticResource IconActionButton}" Width="18" Height="18" Padding="0" Background="#16325C">
-                                                <TextBlock Text="!S" FontWeight="Black" FontSize="8" Foreground="#FDE047"/>
                                             </Button>
                                         </StackPanel>
                                     </Grid>
                                     <!-- Controls -->
                                     <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,2,0,0">
-                                        <TextBlock x:Name="VideoTrackLevelText" Text="Nivel: 100 %" FontSize="9" Foreground="#93C5FD"/>
-                                        <Slider Minimum="0" Maximum="1" Value="1" SmallChange="0.05"
+                                        <TextBlock x:Name="VideoTrackLevelText" Text="Preview: 100%" FontSize="9" Foreground="#93C5FD"/>
+                                        <Slider x:Name="VideoPreviewOpacitySlider" Minimum="0" Maximum="1" Value="1" SmallChange="0.05"
+                                                ToolTip="Preview opacity only; it does not change exported picture"
                                                 ValueChanged="VideoTrackLevelSlider_ValueChanged" Height="18" Margin="0,-2,0,0"/>
                                     </StackPanel>
                                 </Grid>
@@ -642,9 +640,6 @@
                                                     Style="{StaticResource IconActionButton}" Width="18" Height="18" Padding="0" Background="#3D1722" Margin="0,0,2,0">
                                                 <TextBlock Text="M" FontWeight="Black" FontSize="9" Foreground="White"/>
                                             </Button>
-                                            <Button ToolTip="Solo Track" Style="{StaticResource IconActionButton}" Width="18" Height="18" Padding="0" Background="#3D1722">
-                                                <TextBlock Text="!S" FontWeight="Black" FontSize="8" Foreground="#FDE047"/>
-                                            </Button>
                                         </StackPanel>
                                     </Grid>
                                     <!-- Controls -->
@@ -657,7 +652,8 @@
                                             <TextBlock x:Name="AudioTrackVolText" Text="Vol.: 0,0 dB" FontSize="9" Foreground="#FCA5A5"/>
                                             <TextBlock Text="Pan: Centro" FontSize="8" Foreground="#94A3B8" HorizontalAlignment="Right"/>
                                         </Grid>
-                                        <Slider Grid.Row="1" Minimum="0" Maximum="1" Value="0.85" SmallChange="0.05"
+                                        <Slider x:Name="AudioTrackVolSlider" Grid.Row="1" Minimum="0" Maximum="1" Value="1" SmallChange="0.05"
+                                                ToolTip="Clip audio volume used in preview and final MP4"
                                                 ValueChanged="AudioTrackVolSlider_ValueChanged" Height="18" Margin="0,-2,0,0"/>
                                     </Grid>
                                 </Grid>
@@ -676,7 +672,7 @@
                                             <materialDesign:PackIcon Kind="Music" Width="12" Height="12" Foreground="#C084FC" Margin="0,0,4,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="BGM" FontWeight="Bold" FontSize="9" Foreground="#F3E8FF"/>
                                         </StackPanel>
-                                        <Button x:Name="MusicTrackMuteBtn" Click="MusicTrackMute_Click" ToolTip="Mute Background Music"
+                                        <Button x:Name="MusicTrackMuteBtn" Click="MusicTrackMute_Click" ToolTip="Mute background music in the final MP4"
                                                 HorizontalAlignment="Right" Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Background="#2A1338">
                                             <TextBlock Text="M" FontWeight="Black" FontSize="8" Foreground="White"/>
                                         </Button>
@@ -808,9 +804,9 @@
                                                                     </Grid>
                                                                 </Border>
 
-                                                                <!-- Video Footer: Duration -->
+                                                                <!-- Video Footer: avoid claiming a fixed input resolution. -->
                                                                 <Grid Grid.Row="2">
-                                                                    <TextBlock Text="VIDEO · 1080p" Foreground="#64748B" FontSize="9" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="VIDEO CLIP" Foreground="#64748B" FontSize="9" FontWeight="Bold" VerticalAlignment="Center"/>
                                                                     <TextBlock Text="{Binding TimeDisplay}" Foreground="#93C5FD" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                                                 </Grid>
                                                             </Grid>
@@ -872,7 +868,7 @@
                                                                     </StackPanel>
                                                                 </Grid>
 
-                                                                <!-- REALISTIC AUDIO WAVEFORM PEAKS -->
+                                                                <!-- Actual PCM amplitude peaks extracted from this source and trim. -->
                                                                 <Border Grid.Row="1" Background="#1F0B13" CornerRadius="3" Margin="0,2" BorderBrush="#3B1421" BorderThickness="1" ClipToBounds="True">
                                                                     <ItemsControl ItemsSource="{Binding WaveformPeaks}" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                                         <ItemsControl.ItemsPanel>
@@ -890,7 +886,7 @@
 
                                                                 <!-- Audio Footer -->
                                                                 <Grid Grid.Row="2">
-                                                                    <TextBlock Text="48 kHz · Stereo" Foreground="#94A3B8" FontSize="8" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="SOURCE AUDIO" Foreground="#94A3B8" FontSize="8" VerticalAlignment="Center"/>
                                                                     <TextBlock Text="{Binding AudioFooterStatus}" Foreground="#10B981" FontSize="9" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                                                 </Grid>
                                                             </Grid>

@@ -80,10 +80,11 @@ Design settings are saved and applied to subsequently generated HUD frames.
 Assemble generated MP4 clips into one finished montage without modifying the source videos.
 
 - **Media Library:** Import existing video files or scan `Generated/Media/` for clips rendered in Dashboard.
-- **Timeline:** Add, reorder, remove, and trim clips with a simple video track and an optional background music track.
-- **Program Monitor:** Play clips in sequence, seek through the edit, and navigate between clips.
-- **Editable Projects:** Save or reopen `.vgproject` files; the project records source paths, clip order, trims, and music settings.
-- **Quality Presets:** Export H.264/AAC MP4 at a selected resolution, frame rate, and quality using the bundled FFmpeg engine. Exported files are published only after rendering succeeds.
+- **Timeline:** Organize linked video/audio lanes and a background-music track, split or trim clips, reorder segments and inspect real audio waveforms.
+- **Program Monitor:** Play, loop, seek and navigate between clips with keyboard shortcuts.
+- **Editable Projects:** Save or reopen `.vgproject` files, including track mute, audio gain, clip trims and music settings (Ctrl+S, Ctrl+O, Ctrl+N).
+- **Render As:** Choose built-in or personal export presets, including H.264 CPU/NVIDIA encoder settings, resolution, frame rate and audio quality; preview track mute and mix settings are honored by the MP4 export.
+- **Safe Export:** Preserve original source files and ask before replacing an existing output; failed exports leave previous output intact.
 
 The initial timeline editor focuses on straightforward sequential montage assembly; it does not yet offer Sony Vegas-style multi-layer compositing, keyframes, or transition effects.
 

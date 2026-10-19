@@ -82,7 +82,11 @@ public partial class RenderExportWindow : Window
         string safeName = string.Join("_", _project.Name.Split(Path.GetInvalidFileNameChars()));
         if (string.IsNullOrWhiteSpace(safeName)) safeName = "Montage";
 
-        DestinationPathBox.Text = Path.Combine(baseDir, $"{safeName}.mp4");
+        string suggested = Path.Combine(baseDir, $"{safeName}.mp4");
+        int suffix = 2;
+        while (File.Exists(suggested))
+            suggested = Path.Combine(baseDir, $"{safeName} ({suffix++}).mp4");
+        DestinationPathBox.Text = suggested;
     }
 
     private void InitializeStandardResolutions()
@@ -373,7 +377,7 @@ public partial class RenderExportWindow : Window
             AudioBitrate: audioBitrate,
             AudioSampleRate: audioSampleRate,
             Encoder: encoder,
-            FfmpegPreset: "medium",
+            FfmpegPreset: _selectedPreset?.FfmpegPreset ?? "medium",
             IsBuiltIn: isBuiltIn,
             Description: desc
         );
@@ -505,6 +509,17 @@ public partial class RenderExportWindow : Window
                 "Render Video", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
+        try { outputPath = Path.GetFullPath(outputPath); }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            MessageBox.Show($"Invalid output path: {ex.Message}",
+                "Render Video", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        if (File.Exists(outputPath) &&
+            MessageBox.Show($"An MP4 already exists at:\n{outputPath}\n\nReplace it only after a successful render?",
+                "Confirm overwrite", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
 
         var preset = BuildCurrentPresetFromUi();
         var validationErrors = preset.Validate();
@@ -522,6 +537,10 @@ public partial class RenderExportWindow : Window
             MusicPath = string.IsNullOrWhiteSpace(_project.MusicPath)
                 ? null : _project.ResolveMediaPath(_project.MusicPath),
             MusicVolume = _project.MusicVolume,
+            MuteVideo = _project.MuteVideo,
+            MuteClipAudio = _project.MuteClipAudio,
+            ClipAudioVolume = _project.ClipAudioVolume,
+            MuteMusic = _project.MuteMusic,
             Clips = _project.Clips.Select(c => new VideoTimelineClip
             {
                 SourcePath = _project.ResolveMediaPath(c.SourcePath),

@@ -43,6 +43,7 @@ New Features
   - Assets / Local WAD Hashes: The virtual path → xxHash64 resolver remains; the earlier optional external hash dictionary downloader was removed after confirming that the normal icon pipeline never consumed those catalogs.
 
 Improvements
+  - Render Video / Timeline Reliability: Fixed clip reorder/playback races, replaced simulated audio waveforms with real FFmpeg peaks, made track mute and clip-audio gain affect exports, preserved render presets, and added safe output overwrite confirmation and project shortcuts.
   - Render Video / Media Library Quick Actions: Added instant search filtering by clip filename/path, one-click `+` buttons on library items to append directly to the timeline, and clear library actions.
   - Render Video / Theme & Chrome Uniformity: Integrated midnight-navy surface gradients, obsidian content wells, and electric-cyan accents across the timeline studio and export dialog matching the V2 design language.
   - UI / Dashboard & Engine Console Headers: Harmonized `ENGINE CONSOLE` and `DETECTED PIPELINE` panel headers with the shared `WorkspacePanelHeader` midnight-navy gradient (`#0C2248` to `#0C1B42`), and aligned terminal/pipeline icons and labels in semi-bold `AccentBrushLight`.

@@ -61,11 +61,13 @@ public sealed class VideoTimelineRenderService
         var clips = project.Clips!.Select(clip => new RenderClip(
             project.ResolveMediaPath(clip.SourcePath), clip.TrimStartSeconds, clip.DurationSeconds)).ToList();
 
-        string? musicPath = string.IsNullOrWhiteSpace(project.MusicPath) || project.MusicVolume == 0
-            ? null
-            : project.ResolveMediaPath(project.MusicPath);
+        // Check ALL project media against the destination, even muted or at 0%
+        // volume. Otherwise a selected source could be silently overwritten.
+        string? selectedMusicPath = string.IsNullOrWhiteSpace(project.MusicPath)
+            ? null : project.ResolveMediaPath(project.MusicPath);
+        string? musicPath = project.MuteMusic || project.MusicVolume == 0 ? null : selectedMusicPath;
         if (clips.Any(clip => PathsEqual(clip.Path, destination)) ||
-            (musicPath is not null && PathsEqual(musicPath, destination)))
+            (selectedMusicPath is not null && PathsEqual(selectedMusicPath, destination)))
             throw new IOException("El vídeo exportado no puede sobrescribir un clip o archivo de música del proyecto.");
 
         ct.ThrowIfCancellationRequested();
@@ -121,16 +123,14 @@ public sealed class VideoTimelineRenderService
 
             start.ArgumentList.Add("-filter_complex");
             start.ArgumentList.Add(BuildFilterGraph(preparedClips, preset, musicPath is not null,
-                project.MusicVolume, timelineDuration));
-            string videoEncoder = string.Equals(preset.Encoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
-                ? "h264_nvenc"
-                : "libx264";
-            string ffmpegPreset = string.IsNullOrWhiteSpace(preset.FfmpegPreset) ? "medium" : preset.FfmpegPreset;
+                project.MusicVolume, timelineDuration, project.MuteVideo, project.MuteClipAudio,
+                project.ClipAudioVolume));
             string audioBitrate = string.IsNullOrWhiteSpace(preset.AudioBitrate) ? "192k" : preset.AudioBitrate;
             string audioSampleRate = preset.AudioSampleRate > 0 ? preset.AudioSampleRate.ToString(NumberCulture) : "48000";
 
-            AddArgs(start, "-map", "[outv]", "-map", "[outa]", "-c:v", videoEncoder, "-preset", ffmpegPreset,
-                "-crf", preset.Crf.ToString(NumberCulture), "-pix_fmt", "yuv420p", "-r",
+            AddArgs(start, "-map", "[outv]", "-map", "[outa]");
+            AddVideoEncodingArgs(start, preset);
+            AddArgs(start, "-pix_fmt", "yuv420p", "-r",
                 preset.Fps.ToString(NumberCulture), "-c:a", "aac", "-b:a", audioBitrate, "-ar", audioSampleRate,
                 "-ac", "2", "-movflags", "+faststart", "-f", "mp4", partialPath);
 
@@ -145,9 +145,38 @@ public sealed class VideoTimelineRenderService
         }
     }
 
+    internal static void AddVideoEncodingArgs(ProcessStartInfo start, TimelineExportPreset preset)
+    {
+        string ffmpegPreset = string.IsNullOrWhiteSpace(preset.FfmpegPreset)
+            ? "medium" : preset.FfmpegPreset;
+        if (string.Equals(preset.Encoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase))
+        {
+            string nvencPreset = ffmpegPreset.ToLowerInvariant() switch
+            {
+                "ultrafast" => "p1",
+                "superfast" or "veryfast" => "p2",
+                "faster" or "fast" => "p3",
+                "medium" => "p4",
+                "slow" => "p5",
+                "slower" => "p6",
+                "veryslow" => "p7",
+                _ => ffmpegPreset
+            };
+            // NVENC does NOT accept x264's -crf. It uses VBR constant-quality -cq.
+            AddArgs(start, "-c:v", "h264_nvenc", "-preset", nvencPreset, "-rc", "vbr",
+                "-cq", preset.Crf.ToString(NumberCulture), "-b:v", "0");
+        }
+        else
+        {
+            AddArgs(start, "-c:v", "libx264", "-preset", ffmpegPreset,
+                "-crf", preset.Crf.ToString(NumberCulture));
+        }
+    }
+
     internal static string BuildFilterGraph(
         IReadOnlyList<PreparedClip> clips, TimelineExportPreset preset,
-        bool includeMusic, double musicVolume, double timelineDuration)
+        bool includeMusic, double musicVolume, double timelineDuration,
+        bool muteVideo = false, bool muteClipAudio = false, double clipAudioVolume = 1.0)
     {
         var graph = new StringBuilder();
         for (int i = 0; i < clips.Count; i++)
@@ -157,7 +186,7 @@ public sealed class VideoTimelineRenderService
             string duration = F(item.Clip.Duration);
             // All video streams share resolution, frame rate, sample aspect and pixel format.
             // User paths never enter the filter graph, only controlled numeric values do.
-            if (item.HasVideo)
+            if (item.HasVideo && !muteVideo)
             {
                 graph.Append($"[{i}:v:0]trim=start={start}:duration={duration},setpts=PTS-STARTPTS,")
                     .Append($"fps={preset.Fps},scale={preset.Width}:{preset.Height}:")
@@ -176,8 +205,10 @@ public sealed class VideoTimelineRenderService
             {
                 graph.Append($"[{i}:a:0]atrim=start={start}:duration={duration},")
                     .Append("asetpts=PTS-STARTPTS,aresample=48000,")
-                    .Append("aformat=sample_fmts=fltp:channel_layouts=stereo,")
-                    .Append($"apad=whole_dur={duration},atrim=duration={duration}[a{i}];");
+                    .Append("aformat=sample_fmts=fltp:channel_layouts=stereo,");
+                if (muteClipAudio || clipAudioVolume != 1.0)
+                    graph.Append($"volume={F(muteClipAudio ? 0 : clipAudioVolume)},");
+                graph.Append($"apad=whole_dur={duration},atrim=duration={duration}[a{i}];");
             }
             else
             {

@@ -17,6 +17,10 @@ public sealed class VideoTimelineProjectTests
                 Name = "Montaje: campeón",
                 MusicPath = @"media\música con espacios.ogg",
                 MusicVolume = 0.4,
+                MuteVideo = true,
+                MuteClipAudio = true,
+                ClipAudioVolume = 0.6,
+                MuteMusic = true,
                 Clips =
                 [
                     new VideoTimelineClip { SourcePath = @"media\apertura.mp4", TrimStartSeconds = 1.25,
@@ -31,6 +35,10 @@ public sealed class VideoTimelineProjectTests
 
             Assert.Equal("Montaje: campeón", loaded.Name);
             Assert.Equal(0.4, loaded.MusicVolume);
+            Assert.True(loaded.MuteVideo);
+            Assert.True(loaded.MuteClipAudio);
+            Assert.Equal(0.6, loaded.ClipAudioVolume);
+            Assert.True(loaded.MuteMusic);
             Assert.Equal(project.MusicPath, loaded.MusicPath);
             Assert.Equal(project.Clips.Select(clip => clip.SourcePath), loaded.Clips.Select(clip => clip.SourcePath));
             Assert.Equal(new[] { 1.25, 0d }, loaded.Clips.Select(clip => clip.TrimStartSeconds));
@@ -111,6 +119,17 @@ public sealed class VideoTimelineProjectTests
     {
         var project = new VideoTimelineProject { MusicVolume = volume };
         Assert.Contains(project.Validate(), message => message.Contains("volumen", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(-0.01)]
+    [InlineData(1.01)]
+    public void RejectsInvalidClipAudioVolumes(double volume)
+    {
+        var project = new VideoTimelineProject { ClipAudioVolume = volume };
+        Assert.Contains(project.Validate(), message => message.Contains("audio", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

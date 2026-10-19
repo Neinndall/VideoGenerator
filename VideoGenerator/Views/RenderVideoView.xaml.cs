@@ -36,6 +36,9 @@ public partial class RenderVideoView : UserControl
     private readonly ProgressService _progress;
     private readonly TaskCancellationService _cancellation;
     private readonly RenderPresetManager _presetManager;
+    private readonly TimelineWaveformService _waveformService;
+    private readonly SemaphoreSlim _waveformGate = new(2, 2);
+    private readonly Dictionary<string, Task<IReadOnlyList<double>>> _waveformTasks = new(StringComparer.OrdinalIgnoreCase);
     private readonly DispatcherTimer _playbackTimer;
 
     private VideoTimelineProject _project = new() { Name = "Untitled montage" };
@@ -49,6 +52,7 @@ public partial class RenderVideoView : UserControl
     private bool _exporting;
     private int _activeClipIndex = -1;
     private double _pendingClipSeek;
+    private long _previewRequestId;
 
     private readonly List<MediaEntry> _allLibraryEntries = new();
     public ObservableCollection<MediaEntry> Library { get; } = new();
@@ -68,17 +72,17 @@ public partial class RenderVideoView : UserControl
         _progress = progress ?? throw new ArgumentNullException(nameof(progress));
         _cancellation = cancellation ?? throw new ArgumentNullException(nameof(cancellation));
         _presetManager = presetManager ?? throw new ArgumentNullException(nameof(presetManager));
+        _waveformService = new TimelineWaveformService(_videoService);
 
         InitializeComponent();
         DataContext = this;
 
         _initializingUi = false;
-        if (MusicVolumeSlider != null)
-            MusicVolumeSlider.Value = _project.MusicVolume;
 
         _playbackTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
         _playbackTimer.Tick += PlaybackTimer_Tick;
 
+        SyncMixerFromProject();
         RefreshTimeline();
         UpdateProjectUi();
     }
@@ -123,7 +127,7 @@ public partial class RenderVideoView : UserControl
         public string TimeDisplay => FormatTime(Clip.DurationSeconds);
         public string TimecodeDisplay => FormatTimecode(Clip.DurationSeconds);
         public double PixelWidth => Math.Clamp(Clip.DurationSeconds * CurrentZoomFactor, 120d, 1800d);
-        public List<double> WaveformPeaks { get; init; } = new();
+        public ObservableCollection<double> WaveformPeaks { get; } = new();
 
         public bool HasVideo { get; init; } = true;
         public bool HasAudio { get; init; } = true;
@@ -135,21 +139,6 @@ public partial class RenderVideoView : UserControl
         public Visibility ConnectorVisibility => (HasVideo && HasAudio) ? Visibility.Visible : Visibility.Collapsed;
         public string AudioFooterStatus => IsAudioOnly ? "Audio Clip" : "Synced";
 
-        public static List<double> GenerateWaveform(string seedString, double duration)
-        {
-            var peaks = new List<double>();
-            int count = Math.Clamp((int)(duration * 7), 16, 90);
-            int seed = Math.Abs(seedString.GetHashCode());
-            var rnd = new Random(seed);
-            for (int i = 0; i < count; i++)
-            {
-                double phase = (double)i / count;
-                double envelope = 0.3 + 0.6 * Math.Sin(phase * Math.PI) * (0.35 + 0.65 * rnd.NextDouble());
-                double h = Math.Clamp(envelope * 30.0, 4.0, 32.0);
-                peaks.Add(h);
-            }
-            return peaks;
-        }
     }
 
     private static string FormatTime(double seconds)
@@ -219,8 +208,10 @@ public partial class RenderVideoView : UserControl
         {
             MusicLaneText.Text = string.IsNullOrWhiteSpace(_project.MusicPath)
                 ? "No background music · Select an audio file in the inspector"
-                : $"Music: {System.IO.Path.GetFileName(_project.MusicPath)} (Volume: {(int)Math.Round(_project.MusicVolume * 100)}%)";
+                : $"Music: {System.IO.Path.GetFileName(_project.MusicPath)} " +
+                  (_project.MuteMusic ? "(MUTED IN EXPORT)" : $"(Volume: {(int)Math.Round(_project.MusicVolume * 100)}%)");
         }
+        UpdateTrackMuteButtons();
     }
 
     public void RefreshTimeline()
@@ -248,19 +239,57 @@ public partial class RenderVideoView : UserControl
                 hasAudio = true;
             }
 
-            var peaks = TimelineEntry.GenerateWaveform(clip.SourcePath + i, clip.DurationSeconds);
-            TimelineItems.Add(new TimelineEntry
+            var entry = new TimelineEntry
             {
                 Clip = clip,
                 ClipIndex = i,
-                WaveformPeaks = peaks,
                 HasVideo = hasVideo,
                 HasAudio = hasAudio
-            });
+            };
+            TimelineItems.Add(entry);
+            if (hasAudio && File.Exists(fullPath))
+                ScheduleRealWaveform(entry, fullPath, clip.TrimStartSeconds, clip.DurationSeconds);
         }
         UpdateProjectUi();
         if (prevSelected >= 0 && prevSelected < TimelineItems.Count)
             TimelineList.SelectedIndex = prevSelected;
+    }
+
+    private void ScheduleRealWaveform(TimelineEntry entry, string path, double startSeconds, double durationSeconds)
+    {
+        if (!double.IsFinite(startSeconds) || !double.IsFinite(durationSeconds) || durationSeconds <= 0)
+            return;
+        string key = $"{path}|{File.GetLastWriteTimeUtc(path).Ticks}|{startSeconds:R}|{durationSeconds:R}";
+        if (!_waveformTasks.TryGetValue(key, out var task))
+        {
+            // Cache by source revision and trim; limit retained entries for long edit sessions.
+            if (_waveformTasks.Count >= 256) _waveformTasks.Clear();
+            task = ReadRealWaveformAsync(path, startSeconds, durationSeconds);
+            _waveformTasks[key] = task;
+        }
+        _ = ApplyRealWaveformAsync(entry, task);
+    }
+
+    private async Task<IReadOnlyList<double>> ReadRealWaveformAsync(string path, double start, double duration)
+    {
+        await _waveformGate.WaitAsync();
+        try { return await _waveformService.GetPeaksAsync(path, start, duration); }
+        finally { _waveformGate.Release(); }
+    }
+
+    private async Task ApplyRealWaveformAsync(TimelineEntry entry, Task<IReadOnlyList<double>> task)
+    {
+        try
+        {
+            var peaks = await task;
+            if (!TimelineItems.Contains(entry)) return;
+            foreach (double height in peaks)
+                entry.WaveformPeaks.Add(height);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarn($"Unable to display audio waveform for '{entry.Name}': {ex.Message}");
+        }
     }
 
     #region Media Library Operations
@@ -688,6 +717,7 @@ public partial class RenderVideoView : UserControl
         _project.Clips.RemoveAt(from);
         _project.Clips.Insert(to, clip);
         MarkChanged("Timeline reordered");
+        RefreshTimeline();
         TimelineList.SelectedIndex = to;
     }
 
@@ -856,57 +886,89 @@ public partial class RenderVideoView : UserControl
         }
     }
 
-    private bool _videoTrackMuted;
-    private bool _audioTrackMuted;
-    private bool _musicTrackMuted;
+    private bool _monitorMuted;
+
+    private void SyncMixerFromProject()
+    {
+        bool wasInitializing = _initializingUi;
+        _initializingUi = true;
+        try
+        {
+            if (MusicVolumeSlider != null) MusicVolumeSlider.Value = _project.MusicVolume;
+            if (AudioTrackVolSlider != null) AudioTrackVolSlider.Value = _project.ClipAudioVolume;
+        }
+        finally { _initializingUi = wasInitializing; }
+        UpdateTrackMuteButtons();
+        ApplyMonitorMix();
+    }
+
+    private void UpdateTrackMuteButtons()
+    {
+        if (VideoTrackMuteBtn != null)
+            VideoTrackMuteBtn.Background = (Brush)FindResource(_project.MuteVideo
+                ? "ErrorBrush" : "RenderTimelineVideoHeaderBrush");
+        if (AudioTrackMuteBtn != null)
+            AudioTrackMuteBtn.Background = (Brush)FindResource(_project.MuteClipAudio
+                ? "ErrorBrush" : "RenderTimelineAudioHeaderBrush");
+        if (MusicTrackMuteBtn != null)
+            MusicTrackMuteBtn.Background = (Brush)FindResource(_project.MuteMusic
+                ? "ErrorBrush" : "RenderTimelineMusicHeaderBrush");
+    }
+
+    private void ApplyMonitorMix()
+    {
+        if (VideoMonitor == null) return;
+        VideoMonitor.IsMuted = _project.MuteClipAudio || _monitorMuted;
+        VideoMonitor.Volume = _project.ClipAudioVolume * (MonitorVolumeSlider?.Value ?? 1);
+        VideoMonitor.Opacity = _project.MuteVideo ? 0 : (VideoPreviewOpacitySlider?.Value ?? 1);
+        if (VolumeIcon != null)
+            VolumeIcon.Kind = VideoMonitor.IsMuted ? PackIconKind.VolumeOff : PackIconKind.VolumeHigh;
+    }
 
     private void VideoTrackMute_Click(object sender, RoutedEventArgs e)
     {
-        _videoTrackMuted = !_videoTrackMuted;
-        if (VideoMonitor != null)
-            VideoMonitor.Opacity = _videoTrackMuted ? 0.0 : 1.0;
-        if (VideoTrackMuteBtn != null)
-            VideoTrackMuteBtn.Background = _videoTrackMuted ? new SolidColorBrush(Color.FromRgb(239, 68, 68)) : new SolidColorBrush(Color.FromRgb(22, 50, 92));
-        SetStatus(_videoTrackMuted ? "Video track muted (hidden)" : "Video track unmuted");
+        if (_exporting) return;
+        _project.MuteVideo = !_project.MuteVideo;
+        ApplyMonitorMix();
+        MarkChanged(_project.MuteVideo ? "Video track hidden in preview and export" : "Video track enabled for export");
     }
 
     private void AudioTrackMute_Click(object sender, RoutedEventArgs e)
     {
-        _audioTrackMuted = !_audioTrackMuted;
-        if (VideoMonitor != null)
-            VideoMonitor.IsMuted = _audioTrackMuted;
-        if (AudioTrackMuteBtn != null)
-            AudioTrackMuteBtn.Background = _audioTrackMuted ? new SolidColorBrush(Color.FromRgb(239, 68, 68)) : new SolidColorBrush(Color.FromRgb(61, 23, 34));
-        SetStatus(_audioTrackMuted ? "Clip audio track muted" : "Clip audio track unmuted");
+        if (_exporting) return;
+        _project.MuteClipAudio = !_project.MuteClipAudio;
+        ApplyMonitorMix();
+        MarkChanged(_project.MuteClipAudio ? "Clip audio muted in preview and export" : "Clip audio enabled for export");
     }
 
     private void MusicTrackMute_Click(object sender, RoutedEventArgs e)
     {
-        _musicTrackMuted = !_musicTrackMuted;
-        if (MusicTrackMuteBtn != null)
-            MusicTrackMuteBtn.Background = _musicTrackMuted ? new SolidColorBrush(Color.FromRgb(239, 68, 68)) : new SolidColorBrush(Color.FromRgb(42, 19, 56));
-        SetStatus(_musicTrackMuted ? "Background music muted" : "Background music unmuted");
+        if (_exporting) return;
+        _project.MuteMusic = !_project.MuteMusic;
+        MarkChanged(_project.MuteMusic ? "Background music excluded from export" : "Background music enabled for export");
     }
 
     private void VideoTrackLevelSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_initializingUi || VideoMonitor == null) return;
-        if (!_videoTrackMuted)
-            VideoMonitor.Opacity = e.NewValue;
+        ApplyMonitorMix();
         if (VideoTrackLevelText != null)
-            VideoTrackLevelText.Text = $"Nivel: {(int)Math.Round(e.NewValue * 100)} %";
+            VideoTrackLevelText.Text = $"Preview: {(int)Math.Round(e.NewValue * 100)}%";
     }
 
     private void AudioTrackVolSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_initializingUi || VideoMonitor == null) return;
-        if (!_audioTrackMuted)
-            VideoMonitor.Volume = e.NewValue;
+        if (_exporting) return;
+        _project.ClipAudioVolume = e.NewValue;
+        ApplyMonitorMix();
         if (AudioTrackVolText != null)
         {
             double db = e.NewValue > 0 ? 20.0 * Math.Log10(e.NewValue) : -60.0;
             AudioTrackVolText.Text = db <= -50 ? "Vol.: -inf dB" : $"Vol.: {db:F1} dB";
         }
+        _dirty = true;
+        UpdateProjectUi();
     }
 
     private void TimelineList_PreviewMouseMove(object sender, MouseEventArgs e)
@@ -1060,8 +1122,10 @@ public partial class RenderVideoView : UserControl
 
     private async void OpenClip(int index, bool autoplay, double seekSeconds)
     {
+        long requestId = ++_previewRequestId;
         if (index < 0 || index >= _project.Clips.Count) { ClearMonitor(); return; }
         var clip = _project.Clips[index];
+        var project = _project;
         string mediaPath = ResolveClipPath(clip);
         if (!File.Exists(mediaPath))
         {
@@ -1079,6 +1143,11 @@ public partial class RenderVideoView : UserControl
         VideoMonitor.Source = null;
 
         string playablePath = await ResolvePlayableMediaPathAsync(mediaPath);
+        // OGG conversion can outlive a fast timeline selection. Only the latest
+        // request may update MediaElement, otherwise an old clip revives in the monitor.
+        if (requestId != _previewRequestId || !ReferenceEquals(_project, project) ||
+            index >= _project.Clips.Count || !ReferenceEquals(_project.Clips[index], clip))
+            return;
         if (!File.Exists(playablePath))
         {
             SetStatus($"Could not prepare playable media for: {clip.DisplayName}");
@@ -1113,6 +1182,7 @@ public partial class RenderVideoView : UserControl
 
     private void VideoMonitor_MediaOpened(object sender, RoutedEventArgs e)
     {
+        ApplyMonitorMix();
         VideoMonitor.Position = TimeSpan.FromSeconds(_pendingClipSeek);
         if (_autoplayWhenOpened)
             StartPlaying();
@@ -1131,6 +1201,7 @@ public partial class RenderVideoView : UserControl
 
     private void ClearMonitor()
     {
+        ++_previewRequestId;
         StopPlaying();
         _activeClipIndex = -1;
         VideoMonitor.Source = null;
@@ -1211,8 +1282,9 @@ public partial class RenderVideoView : UserControl
         if (_activeClipIndex > 0)
         {
             int prev = _activeClipIndex - 1;
-            TimelineList.SelectedIndex = prev;
-            OpenClip(prev, _playing, _project.Clips[prev].TrimStartSeconds);
+            bool resumePlayback = _playing;
+            SelectTimelineWithoutReload(prev);
+            OpenClip(prev, resumePlayback, _project.Clips[prev].TrimStartSeconds);
         }
         else if (_activeClipIndex == 0)
         {
@@ -1227,8 +1299,9 @@ public partial class RenderVideoView : UserControl
         int next = _activeClipIndex + 1;
         if (next < _project.Clips.Count)
         {
-            TimelineList.SelectedIndex = next;
-            OpenClip(next, _playing, _project.Clips[next].TrimStartSeconds);
+            bool resumePlayback = _playing;
+            SelectTimelineWithoutReload(next);
+            OpenClip(next, resumePlayback, _project.Clips[next].TrimStartSeconds);
         }
     }
 
@@ -1247,21 +1320,14 @@ public partial class RenderVideoView : UserControl
 
     private void MuteToggle_Click(object sender, RoutedEventArgs e)
     {
-        VideoMonitor.IsMuted = !VideoMonitor.IsMuted;
-        VolumeIcon.Kind = VideoMonitor.IsMuted ? PackIconKind.VolumeOff : PackIconKind.VolumeHigh;
+        _monitorMuted = !_monitorMuted;
+        ApplyMonitorMix();
     }
 
     private void MonitorVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_initializingUi) return;
-        if (VideoMonitor != null)
-        {
-            VideoMonitor.Volume = e.NewValue;
-            if (VolumeIcon != null && !VideoMonitor.IsMuted)
-            {
-                VolumeIcon.Kind = e.NewValue == 0 ? PackIconKind.VolumeMute : PackIconKind.VolumeHigh;
-            }
-        }
+        ApplyMonitorMix();
     }
 
     private void PlaybackTimer_Tick(object? sender, EventArgs e)
@@ -1543,6 +1609,8 @@ public partial class RenderVideoView : UserControl
         _project = new VideoTimelineProject { Name = "Untitled montage" };
         _projectPath = null;
         _dirty = false;
+        _monitorMuted = false;
+        SyncMixerFromProject();
         RefreshTimeline();
     }
 
@@ -1562,6 +1630,8 @@ public partial class RenderVideoView : UserControl
             _project = loaded;
             _projectPath = dialog.FileName;
             _dirty = false;
+            _monitorMuted = false;
+            SyncMixerFromProject();
             UpdateProjectUi();
             await ImportPathsAsync(_project.Clips.Select(ResolveClipPath));
             var missing = _project.Clips.Where(c => !File.Exists(ResolveClipPath(c))).ToArray();
@@ -1638,7 +1708,26 @@ public partial class RenderVideoView : UserControl
 
     private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // Don't intercept if user is typing in a TextBox
+        // Project shortcuts remain available even when a field has keyboard focus.
+        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.S)
+        {
+            e.Handled = true;
+            SaveProject_Click(this, new RoutedEventArgs());
+            return;
+        }
+        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.O)
+        {
+            e.Handled = true;
+            OpenProject_Click(this, new RoutedEventArgs());
+            return;
+        }
+        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.N)
+        {
+            e.Handled = true;
+            NewProject_Click(this, new RoutedEventArgs());
+            return;
+        }
+        // Editing shortcuts must not trigger while typing into the inspector/search.
         if (e.OriginalSource is TextBox) return;
 
         if (e.Key == Key.Space)
@@ -1710,6 +1799,7 @@ public partial class RenderVideoView : UserControl
 
     private void Editor_Unloaded(object sender, RoutedEventArgs e)
     {
+        ++_previewRequestId;
         StopPlaying();
         if (VideoMonitor != null) VideoMonitor.Close();
         foreach (var file in _convertedOggToWavCache.Values)
