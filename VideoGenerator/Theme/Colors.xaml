@@ -62,8 +62,12 @@
     <SolidColorBrush x:Key="WorkspaceContentWellBrush" Color="{StaticResource WorkspaceContentWellColor}"/>
     <!-- FILTER STRIP: subtle filter tabs directly above a content well. -->
     <SolidColorBrush x:Key="WorkspaceFilterBarBrush" Color="{StaticResource WorkspaceFilterBarColor}"/>
-    <!-- CONSOLE HEADER: restrained dark strip separating console header from body. -->
-    <SolidColorBrush x:Key="WorkspaceConsoleHeaderBrush" Color="{StaticResource WorkspaceConsoleHeaderColor}"/>
+    <!-- CONSOLE HEADER: harmonized with shared workspace panel header gradient. -->
+    <LinearGradientBrush x:Key="WorkspaceConsoleHeaderBrush" StartPoint="0,0" EndPoint="1,0.85">
+        <GradientStop Color="#0C2248" Offset="0"/>
+        <GradientStop Color="#081836" Offset="0.62"/>
+        <GradientStop Color="#0C1B42" Offset="1"/>
+    </LinearGradientBrush>
     <SolidColorBrush x:Key="WorkspacePanelBorderBrush" Color="{StaticResource WorkspacePanelBorderColor}"/>
     <SolidColorBrush x:Key="WorkspaceInspectorBorderBrush" Color="{StaticResource WorkspaceInspectorBorderColor}"/>
     <SolidColorBrush x:Key="WorkspaceHeaderBorderBrush" Color="{StaticResource WorkspaceHeaderBorderColor}"/>

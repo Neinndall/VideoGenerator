@@ -278,8 +278,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <materialDesign:PackIcon Kind="PlaylistPlay" Foreground="{StaticResource TextMutedBrush}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="DETECTED PIPELINE" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
+                                <materialDesign:PackIcon Kind="PlaylistPlay" Foreground="{StaticResource AccentBrushLight}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="DETECTED PIPELINE" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="10" VerticalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Click="RetryMissingIcons_Click"
@@ -648,11 +648,10 @@
                 </Grid.RowDefinitions>
                 <!-- Both content surfaces live INSIDE the single rounded frame.
                      The parent panel clips this Grid; no inset second outline. -->
-                <Border Background="{StaticResource WorkspaceConsoleHeaderBrush}" Padding="16,8" CornerRadius="12,12,0,0"
-                        BorderBrush="{StaticResource WorkspaceConsoleHeaderBorderBrush}" BorderThickness="0,0,0,1">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Terminal" Foreground="{StaticResource TextMutedBrush}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <TextBlock Text="ENGINE CONSOLE" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                <Border Style="{StaticResource WorkspacePanelHeader}" Padding="16,8" CornerRadius="12,12,0,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Terminal" Foreground="{StaticResource AccentBrushLight}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="ENGINE CONSOLE" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
                 <RichTextBox Grid.Row="1" 
