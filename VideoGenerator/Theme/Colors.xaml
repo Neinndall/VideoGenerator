@@ -20,6 +20,12 @@
     <Color x:Key="WorkspaceConsoleHeaderBorderColor">#0D2039</Color>
     <Color x:Key="RenderTimelineTrackColor">#040B1A</Color>
     <Color x:Key="RenderTimelineClipColor">#19375F</Color>
+    <Color x:Key="RenderTimelineAudioClipColor">#341620</Color>
+    <Color x:Key="RenderTimelineAudioWaveformColor">#22D3EE</Color>
+    <Color x:Key="RenderTimelineVideoHeaderColor">#16325C</Color>
+    <Color x:Key="RenderTimelineAudioHeaderColor">#3D1722</Color>
+    <Color x:Key="RenderTimelineMusicHeaderColor">#2A1338</Color>
+    <Color x:Key="RenderTimelineVegasSelectedColor">#FACC15</Color>
     <Color x:Key="RenderTimelineMusicColor">#30264B</Color>
     
     <!-- Brand & Accents -->
@@ -77,6 +83,12 @@
          above the shared content well. Use the same keys in all timeline views. -->
     <SolidColorBrush x:Key="RenderTimelineTrackBrush" Color="{StaticResource RenderTimelineTrackColor}"/>
     <SolidColorBrush x:Key="RenderTimelineClipBrush" Color="{StaticResource RenderTimelineClipColor}"/>
+    <SolidColorBrush x:Key="RenderTimelineAudioClipBrush" Color="{StaticResource RenderTimelineAudioClipColor}"/>
+    <SolidColorBrush x:Key="RenderTimelineAudioWaveformBrush" Color="{StaticResource RenderTimelineAudioWaveformColor}"/>
+    <SolidColorBrush x:Key="RenderTimelineVideoHeaderBrush" Color="{StaticResource RenderTimelineVideoHeaderColor}"/>
+    <SolidColorBrush x:Key="RenderTimelineAudioHeaderBrush" Color="{StaticResource RenderTimelineAudioHeaderColor}"/>
+    <SolidColorBrush x:Key="RenderTimelineMusicHeaderBrush" Color="{StaticResource RenderTimelineMusicHeaderColor}"/>
+    <SolidColorBrush x:Key="RenderTimelineVegasSelectedBrush" Color="{StaticResource RenderTimelineVegasSelectedColor}"/>
     <SolidColorBrush x:Key="RenderTimelineMusicBrush" Color="{StaticResource RenderTimelineMusicColor}"/>
     <SolidColorBrush x:Key="VideoPreviewLabelBrush" Color="#CC161618"/>
     <SolidColorBrush x:Key="DesignerPreviewLabelBrush" Color="#E60D0D0F"/>

@@ -93,13 +93,33 @@ public partial class RenderVideoView : UserControl
 
     public sealed class TimelineEntry
     {
-        public static double CurrentZoomFactor { get; set; } = 11d;
+        public static double CurrentZoomFactor { get; set; } = 14d;
 
         public VideoTimelineClip Clip { get; init; } = null!;
+        public int ClipIndex { get; init; }
+        public string IndexDisplay => $"#{ClipIndex + 1}";
         public string Name => string.IsNullOrWhiteSpace(Clip.DisplayName)
             ? System.IO.Path.GetFileNameWithoutExtension(Clip.SourcePath) : Clip.DisplayName;
         public string TimeDisplay => FormatTime(Clip.DurationSeconds);
-        public double PixelWidth => Math.Clamp(Clip.DurationSeconds * CurrentZoomFactor, 85d, 700d);
+        public string TimecodeDisplay => FormatTimecode(Clip.DurationSeconds);
+        public double PixelWidth => Math.Clamp(Clip.DurationSeconds * CurrentZoomFactor, 120d, 1800d);
+        public List<double> WaveformPeaks { get; init; } = new();
+
+        public static List<double> GenerateWaveform(string seedString, double duration)
+        {
+            var peaks = new List<double>();
+            int count = Math.Clamp((int)(duration * 7), 16, 90);
+            int seed = Math.Abs(seedString.GetHashCode());
+            var rnd = new Random(seed);
+            for (int i = 0; i < count; i++)
+            {
+                double phase = (double)i / count;
+                double envelope = 0.3 + 0.6 * Math.Sin(phase * Math.PI) * (0.35 + 0.65 * rnd.NextDouble());
+                double h = Math.Clamp(envelope * 30.0, 4.0, 32.0);
+                peaks.Add(h);
+            }
+            return peaks;
+        }
     }
 
     private static string FormatTime(double seconds)
@@ -109,6 +129,18 @@ public partial class RenderVideoView : UserControl
         return span.TotalHours >= 1
             ? span.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture)
             : span.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
+    }
+
+    private static string FormatTimecode(double seconds, int fps = 30)
+    {
+        if (!double.IsFinite(seconds) || seconds < 0) seconds = 0;
+        int totalFrames = (int)Math.Round(seconds * fps);
+        int f = totalFrames % fps;
+        int totalSeconds = totalFrames / fps;
+        int s = totalSeconds % 60;
+        int m = (totalSeconds / 60) % 60;
+        int h = totalSeconds / 3600;
+        return $"{h:D2}:{m:D2}:{s:D2}:{f:D2}";
     }
 
     private string ResolveClipPath(VideoTimelineClip clip) => _project.ResolveMediaPath(clip.SourcePath);
@@ -135,6 +167,12 @@ public partial class RenderVideoView : UserControl
         if (TimelineDurationText != null)
             TimelineDurationText.Text = $"  ·  {formattedDuration}  ({_project.Clips.Count} clips)";
 
+        if (MasterTimecodeText != null)
+        {
+            double currentPos = VideoMonitor?.Position.TotalSeconds ?? 0;
+            MasterTimecodeText.Text = FormatTimecode(currentPos);
+        }
+
         string pathDisplay = string.IsNullOrEmpty(_projectPath)
             ? _project.Name
             : System.IO.Path.GetFileName(_projectPath);
@@ -160,9 +198,16 @@ public partial class RenderVideoView : UserControl
         if (_initializingUi || TimelineList == null) return;
         int prevSelected = TimelineList.SelectedIndex;
         TimelineItems.Clear();
-        foreach (var clip in _project.Clips)
+        for (int i = 0; i < _project.Clips.Count; i++)
         {
-            TimelineItems.Add(new TimelineEntry { Clip = clip });
+            var clip = _project.Clips[i];
+            var peaks = TimelineEntry.GenerateWaveform(clip.SourcePath + i, clip.DurationSeconds);
+            TimelineItems.Add(new TimelineEntry
+            {
+                Clip = clip,
+                ClipIndex = i,
+                WaveformPeaks = peaks
+            });
         }
         UpdateProjectUi();
         if (prevSelected >= 0 && prevSelected < TimelineItems.Count)
@@ -499,8 +544,202 @@ public partial class RenderVideoView : UserControl
     private void TimelineZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         TimelineEntry.CurrentZoomFactor = e.NewValue;
+        if (ZoomValueText != null)
+            ZoomValueText.Text = $"{(int)Math.Round((e.NewValue / 14.0) * 100)}%";
         if (_initializingUi || TimelineList == null) return;
         RefreshTimeline();
+    }
+
+    private void ZoomIn_Click(object sender, RoutedEventArgs e)
+    {
+        if (TimelineZoomSlider != null)
+            TimelineZoomSlider.Value = Math.Min(TimelineZoomSlider.Maximum, TimelineZoomSlider.Value + 3);
+    }
+
+    private void ZoomOut_Click(object sender, RoutedEventArgs e)
+    {
+        if (TimelineZoomSlider != null)
+            TimelineZoomSlider.Value = Math.Max(TimelineZoomSlider.Minimum, TimelineZoomSlider.Value - 3);
+    }
+
+    private void FitTimeline_Click(object sender, RoutedEventArgs e)
+    {
+        if (_project.Clips.Count == 0 || TimelineZoomSlider == null || TimelineList == null) return;
+        double totalSec = _project.Clips.Sum(c => c.DurationSeconds);
+        if (totalSec <= 0) return;
+        double availableWidth = Math.Max(300, TimelineList.ActualWidth - 60);
+        double targetZoom = Math.Clamp(availableWidth / totalSec, TimelineZoomSlider.Minimum, TimelineZoomSlider.Maximum);
+        TimelineZoomSlider.Value = targetZoom;
+    }
+
+    private void ClipMiniSplit_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is TimelineEntry entry)
+        {
+            int idx = _project.Clips.IndexOf(entry.Clip);
+            if (idx >= 0)
+            {
+                TimelineList.SelectedIndex = idx;
+                SplitSelectedClip();
+            }
+        }
+    }
+
+    private void ClipMiniDuplicate_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is TimelineEntry entry)
+        {
+            int idx = _project.Clips.IndexOf(entry.Clip);
+            if (idx >= 0)
+            {
+                TimelineList.SelectedIndex = idx;
+                DuplicateClip_Click(sender, e);
+            }
+        }
+    }
+
+    private void ClipMiniRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is TimelineEntry entry)
+        {
+            int idx = _project.Clips.IndexOf(entry.Clip);
+            if (idx >= 0)
+            {
+                TimelineList.SelectedIndex = idx;
+                Remove_Click(sender, e);
+            }
+        }
+    }
+
+    private void TimelineClip_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is TimelineEntry entry)
+        {
+            int index = _project.Clips.IndexOf(entry.Clip);
+            if (index >= 0)
+            {
+                double clickX = e.GetPosition(fe).X;
+                double width = fe.ActualWidth;
+                double ratio = width > 0 ? Math.Clamp(clickX / width, 0, 1) : 0;
+                double seekSec = entry.Clip.TrimStartSeconds + (ratio * entry.Clip.DurationSeconds);
+                TimelineList.SelectedIndex = index;
+                OpenClip(index, false, seekSec);
+            }
+        }
+    }
+
+    private void TrimStartMinus_Click(object sender, RoutedEventArgs e)
+    {
+        if (_exporting || TimelineList.SelectedIndex < 0 || TimelineList.SelectedIndex >= _project.Clips.Count) return;
+        var clip = _project.Clips[TimelineList.SelectedIndex];
+        double delta = Math.Min(0.5, clip.TrimStartSeconds);
+        if (delta > 0.01)
+        {
+            clip.TrimStartSeconds = Math.Round(clip.TrimStartSeconds - delta, 3);
+            clip.DurationSeconds = Math.Round(clip.DurationSeconds + delta, 3);
+            MarkChanged("Extended clip start by 0.5s");
+            RefreshTimeline();
+            SelectTimelineWithoutReload(TimelineList.SelectedIndex);
+        }
+    }
+
+    private void TrimStartPlus_Click(object sender, RoutedEventArgs e)
+    {
+        if (_exporting || TimelineList.SelectedIndex < 0 || TimelineList.SelectedIndex >= _project.Clips.Count) return;
+        var clip = _project.Clips[TimelineList.SelectedIndex];
+        if (clip.DurationSeconds > 0.6)
+        {
+            clip.TrimStartSeconds = Math.Round(clip.TrimStartSeconds + 0.5, 3);
+            clip.DurationSeconds = Math.Round(clip.DurationSeconds - 0.5, 3);
+            MarkChanged("Trimmed clip start by 0.5s");
+            RefreshTimeline();
+            SelectTimelineWithoutReload(TimelineList.SelectedIndex);
+        }
+    }
+
+    private void TrimEndMinus_Click(object sender, RoutedEventArgs e)
+    {
+        if (_exporting || TimelineList.SelectedIndex < 0 || TimelineList.SelectedIndex >= _project.Clips.Count) return;
+        var clip = _project.Clips[TimelineList.SelectedIndex];
+        if (clip.DurationSeconds > 0.6)
+        {
+            clip.DurationSeconds = Math.Round(clip.DurationSeconds - 0.5, 3);
+            MarkChanged("Trimmed clip end by 0.5s");
+            RefreshTimeline();
+            SelectTimelineWithoutReload(TimelineList.SelectedIndex);
+        }
+    }
+
+    private void TrimEndPlus_Click(object sender, RoutedEventArgs e)
+    {
+        if (_exporting || TimelineList.SelectedIndex < 0 || TimelineList.SelectedIndex >= _project.Clips.Count) return;
+        var clip = _project.Clips[TimelineList.SelectedIndex];
+        var libItem = _allLibraryEntries.FirstOrDefault(x => string.Equals(x.Path, ResolveClipPath(clip), StringComparison.OrdinalIgnoreCase));
+        double maxDuration = libItem?.DurationSeconds ?? 99999;
+        if (clip.TrimStartSeconds + clip.DurationSeconds + 0.5 <= maxDuration + 0.05)
+        {
+            clip.DurationSeconds = Math.Round(clip.DurationSeconds + 0.5, 3);
+            MarkChanged("Extended clip end by 0.5s");
+            RefreshTimeline();
+            SelectTimelineWithoutReload(TimelineList.SelectedIndex);
+        }
+        else
+        {
+            SetStatus("Cannot extend: reached end of source video.");
+        }
+    }
+
+    private bool _videoTrackMuted;
+    private bool _audioTrackMuted;
+    private bool _musicTrackMuted;
+
+    private void VideoTrackMute_Click(object sender, RoutedEventArgs e)
+    {
+        _videoTrackMuted = !_videoTrackMuted;
+        if (VideoMonitor != null)
+            VideoMonitor.Opacity = _videoTrackMuted ? 0.0 : 1.0;
+        if (VideoTrackMuteBtn != null)
+            VideoTrackMuteBtn.Background = _videoTrackMuted ? new SolidColorBrush(Color.FromRgb(239, 68, 68)) : new SolidColorBrush(Color.FromRgb(22, 50, 92));
+        SetStatus(_videoTrackMuted ? "Video track muted (hidden)" : "Video track unmuted");
+    }
+
+    private void AudioTrackMute_Click(object sender, RoutedEventArgs e)
+    {
+        _audioTrackMuted = !_audioTrackMuted;
+        if (VideoMonitor != null)
+            VideoMonitor.IsMuted = _audioTrackMuted;
+        if (AudioTrackMuteBtn != null)
+            AudioTrackMuteBtn.Background = _audioTrackMuted ? new SolidColorBrush(Color.FromRgb(239, 68, 68)) : new SolidColorBrush(Color.FromRgb(61, 23, 34));
+        SetStatus(_audioTrackMuted ? "Clip audio track muted" : "Clip audio track unmuted");
+    }
+
+    private void MusicTrackMute_Click(object sender, RoutedEventArgs e)
+    {
+        _musicTrackMuted = !_musicTrackMuted;
+        if (MusicTrackMuteBtn != null)
+            MusicTrackMuteBtn.Background = _musicTrackMuted ? new SolidColorBrush(Color.FromRgb(239, 68, 68)) : new SolidColorBrush(Color.FromRgb(42, 19, 56));
+        SetStatus(_musicTrackMuted ? "Background music muted" : "Background music unmuted");
+    }
+
+    private void VideoTrackLevelSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_initializingUi || VideoMonitor == null) return;
+        if (!_videoTrackMuted)
+            VideoMonitor.Opacity = e.NewValue;
+        if (VideoTrackLevelText != null)
+            VideoTrackLevelText.Text = $"Nivel: {(int)Math.Round(e.NewValue * 100)} %";
+    }
+
+    private void AudioTrackVolSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_initializingUi || VideoMonitor == null) return;
+        if (!_audioTrackMuted)
+            VideoMonitor.Volume = e.NewValue;
+        if (AudioTrackVolText != null)
+        {
+            double db = e.NewValue > 0 ? 20.0 * Math.Log10(e.NewValue) : -60.0;
+            AudioTrackVolText.Text = db <= -50 ? "Vol.: -inf dB" : $"Vol.: {db:F1} dB";
+        }
     }
 
     private void TimelineList_PreviewMouseMove(object sender, MouseEventArgs e)
@@ -757,6 +996,7 @@ public partial class RenderVideoView : UserControl
         {
             if (!_updatingSlider && PlayheadSlider != null) PlayheadSlider.Value = 0;
             if (MonitorTimeText != null) MonitorTimeText.Text = "00:00 / 00:00";
+            if (MasterTimecodeText != null) MasterTimecodeText.Text = "00:00:00:00";
             return;
         }
         var clip = _project.Clips[_activeClipIndex];
@@ -779,6 +1019,9 @@ public partial class RenderVideoView : UserControl
 
         if (MonitorTimeText != null)
             MonitorTimeText.Text = $"{FormatTime(overallTime)} / {FormatTime(overallTotal)}";
+
+        if (MasterTimecodeText != null)
+            MasterTimecodeText.Text = FormatTimecode(overallTime);
     }
 
     private void PlayheadSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
