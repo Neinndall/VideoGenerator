@@ -34,6 +34,7 @@ namespace VideoGenerator.Views
         private readonly AudioFamilyMergeService _audioFamilyMergeService;
         private readonly HudImagePreparationService _hudImagePreparationService;
         private readonly ProductionWorkPlanningService _productionWorkPlanningService;
+        private readonly LocalGameDataRefreshService _gameDataRefresh;
 
         public DashboardView(
             DatabaseBuilder databaseBuilder,
@@ -52,7 +53,8 @@ namespace VideoGenerator.Views
             PreviewImageService previewImageService,
             AudioFamilyMergeService audioFamilyMergeService,
             HudImagePreparationService hudImagePreparationService,
-            ProductionWorkPlanningService productionWorkPlanningService)
+            ProductionWorkPlanningService productionWorkPlanningService,
+            LocalGameDataRefreshService gameDataRefresh)
         {
             InitializeComponent();
             _databaseBuilder = databaseBuilder;
@@ -72,6 +74,7 @@ namespace VideoGenerator.Views
             _audioFamilyMergeService = audioFamilyMergeService;
             _hudImagePreparationService = hudImagePreparationService;
             _productionWorkPlanningService = productionWorkPlanningService;
+            _gameDataRefresh = gameDataRefresh;
             
             DataContext = this;
             DashboardModel = _model;
@@ -82,6 +85,43 @@ namespace VideoGenerator.Views
 
         public DashboardModel DashboardModel { get; }
         public LogService LogService { get; }
+
+        /// <summary>
+        /// Reflow the production toolbar instead of clipping folder, search and
+        /// action controls at 125–150% Windows scaling. The actual UI elements
+        /// and their bindings are preserved in every layout mode.
+        /// </summary>
+        private void AnalysisToolbar_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            bool actionsOnNewRow = e.NewSize.Width < 1040;
+            bool filtersOnNewRow = e.NewSize.Width < 625;
+
+            Grid.SetRow(AnalysisActionsPanel, actionsOnNewRow ? 1 : 0);
+            Grid.SetColumn(AnalysisActionsPanel, actionsOnNewRow ? 0 : 1);
+            Grid.SetColumnSpan(AnalysisFiltersPanel, actionsOnNewRow ? 2 : 1);
+            AnalysisFiltersPanel.Margin = actionsOnNewRow
+                ? new Thickness(0)
+                : new Thickness(0, 0, 16, 0);
+
+            Grid.SetColumnSpan(AnalysisPathSelector, filtersOnNewRow ? 3 : 1);
+            Grid.SetRow(AnalysisSearchSelector, filtersOnNewRow ? 1 : 0);
+            Grid.SetColumn(AnalysisSearchSelector, filtersOnNewRow ? 0 : 1);
+            Grid.SetRow(AnalysisCharacterSelector, filtersOnNewRow ? 1 : 0);
+            Grid.SetColumn(AnalysisCharacterSelector, filtersOnNewRow ? 1 : 2);
+            AnalysisPathSelector.Margin = filtersOnNewRow
+                ? new Thickness(0, 0, 0, 5)
+                : new Thickness(0, 0, 12, 0);
+        }
+
+        public bool FocusEventSearch()
+        {
+            if (!_model.IsAnalyzed || !SearchTextBox.IsVisible)
+                return false;
+
+            SearchTextBox.Focus();
+            SearchTextBox.SelectAll();
+            return true;
+        }
 
         private async Task EnsureAudioFamiliesMergedAsync(
             PreviewEventModel ev,
@@ -389,6 +429,97 @@ namespace VideoGenerator.Views
             _model.SelectedCharacter = "ALL";
         }
 
+        private async void ExportManifest_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_model.IsAnalyzed || _model.IsProcessing)
+                return;
+
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Export Event Manifest",
+                FileName = "VideoGenerator-event-manifest.json",
+                DefaultExt = ".json",
+                Filter = "JSON manifest (*.json)|*.json"
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            try
+            {
+                string manifest = EventManifestExportService.CreateJson(
+                    _model.AudioPath,
+                    AppSettings.Instance.DefaultDictionaryLanguage ?? "EN",
+                    _model.ProcessedEvents);
+                await File.WriteAllTextAsync(dialog.FileName, manifest);
+                _logger.LogInfo($">>> EVENT MANIFEST EXPORTED. {_model.ProcessedEvents.Count} events.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Event manifest export failed", ex);
+                ModernMessageBox.Show("Unable to export the event manifest.", "Export Failed",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void RetryMissingIcons_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_model.IsAnalyzed || _model.IsProcessing)
+                return;
+
+            var candidates = _model.ProcessedEvents
+                .Where(ev => !ev.NeedsMapping && ev.Status != EventStatuses.NoAudio &&
+                             EventIconResolutionService.RequiresIcon(ev.ParsedData))
+                .ToList();
+
+            // Existing images may have been manually deleted or a cache folder cleared.
+            // Mark these for recovery just like a previously missing WAD asset.
+            foreach (var ev in candidates)
+            {
+                string existingPath = ev.ParsedData.IconPath;
+                if (!string.IsNullOrEmpty(existingPath) && !File.Exists(existingPath))
+                {
+                    ev.ParsedData.IconPath = null;
+                    ev.UpdateStatusAfterIconResolution(null);
+                }
+            }
+
+            int failedCount = candidates.Count(ev =>
+                ev.Status == EventStatuses.MissingIcon &&
+                string.IsNullOrEmpty(ev.ParsedData.IconPath));
+            if (failedCount == 0)
+            {
+                _logger.LogInfo("No unresolved local game icons to retry.");
+                return;
+            }
+
+            CancellationToken token = _cancellationService.CreateNewToken();
+            _model.IsProcessing = true;
+            try
+            {
+                _logger.LogInfo($">>> RETRYING {failedCount} MISSING EVENT ICONS...");
+                await ResolvePendingIconsAsync(token, retryOnlyFailed: true);
+                token.ThrowIfCancellationRequested();
+                int remaining = candidates.Count(ev =>
+                    ev.Status == EventStatuses.MissingIcon &&
+                    string.IsNullOrEmpty(ev.ParsedData.IconPath));
+                _logger.LogInfo($"Icon retry complete: {failedCount - remaining}/{failedCount} recovered.");
+                await UpdatePreviewAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                HandleCancellation();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Unable to retry missing event icons", ex);
+            }
+            finally
+            {
+                _model.IsProcessing = false;
+                await _progressService.CompleteAsync();
+            }
+        }
+
         private async void ProcessFolders_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(_model.AudioPath) || !Directory.Exists(_model.AudioPath))
@@ -400,7 +531,7 @@ namespace VideoGenerator.Views
             var token = _cancellationService.CreateNewToken();
 
             _model.IsProcessing = true;
-            _progressService.Start("Waiting for official data synchronization", true);
+            _progressService.Start("Checking the installed League game data", true);
             _model.ProcessedEvents.Clear();
             _model.FilteredProcessedEvents.Clear();
             _model.CharactersList.Clear();
@@ -413,6 +544,11 @@ namespace VideoGenerator.Views
 
             try {
                 await _databaseBuilder.ReadyTask.WaitAsync(token);
+                token.ThrowIfCancellationRequested();
+                // Riot may have installed a new patch while VideoGenerator stayed
+                // open. Import its WAD catalogs and invalidate stale lookups before
+                // identifying skin IDs or any voice event.
+                await _gameDataRefresh.RefreshAsync(token);
                 token.ThrowIfCancellationRequested();
                 _progressService.Start("Analyzing audio folders", false);
 
@@ -487,7 +623,7 @@ namespace VideoGenerator.Views
                         _progressService.SetStatus($"Preparing: {ev.FolderName}");
 
                         // 1. Resolve pending icon
-                        if (ev.ParsedData != null && ev.ParsedData.IconType != "generic" && string.IsNullOrEmpty(ev.ParsedData.IconPath))
+                        if (EventIconResolutionService.RequiresIcon(ev.ParsedData) && string.IsNullOrEmpty(ev.ParsedData.IconPath))
                         {
                             _progressService.SetStatus($"Resolving icon for: {ev.FolderName}");
                             string iconPath = await _eventIconResolutionService.ResolveAsync(ev.ParsedData);
@@ -497,7 +633,7 @@ namespace VideoGenerator.Views
                             }
                             token.ThrowIfCancellationRequested();
                             Application.Current.Dispatcher.Invoke(() => {
-                                ev.ParsedData.IconPath = string.IsNullOrEmpty(iconPath) ? "MISSING" : iconPath;
+                                ev.ParsedData.IconPath = iconPath;
                                 ev.UpdateStatusAfterIconResolution(iconPath);
                             });
                             _progressService.Advance(1, $"Resolved icon: {ev.FolderName}");

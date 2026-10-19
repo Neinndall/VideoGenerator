@@ -15,6 +15,14 @@ public sealed class AppSettingsLanguageTests
         Assert.Equal("EN", settings.DefaultDictionaryLanguage);
     }
 
+    [Fact]
+    public void NewSettingsHaveNoDefaultLeagueGameDirectory()
+    {
+        var settings = new AppSettings();
+
+        Assert.Equal(string.Empty, settings.LeagueGameDirectory);
+    }
+
     [Theory]
     [InlineData("EN", "default")]
     [InlineData("ES", "es_es")]

@@ -31,22 +31,32 @@ namespace VideoGenerator
             // resolve the application dispatcher when they publish UI notifications.
             base.OnStartup(e);
 
-            // 3. Auto-Sync Databases in background (Fire and forget)
+            // 3. Prepare locally installed and cached game data in background.
+            // An absent Riot installation must not block the production workspace.
             _ = Task.Run(async () =>
             {
                 try
                 {
                     var dbBuilder = ServiceProvider.GetRequiredService<DatabaseBuilder>();
-                    var dataFetcher = ServiceProvider.GetRequiredService<DataFetcher>();
-                    string version = await dataFetcher.GetLatestLolVersionAsync();
-                    await dbBuilder.InitializeDatabasesAsync(version);
+                    try
+                    {
+                        // A fresh snapshot is imported once per installation patch.
+                        await ServiceProvider.GetRequiredService<LocalGameDataRefreshService>()
+                            .RefreshAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        ServiceProvider.GetRequiredService<LogService>()
+                            .LogWarn($"Could not prepare all local WAD catalogs: {ex.Message}");
+                    }
+                    await dbBuilder.InitializeDatabasesAsync("local");
                     ServiceProvider.GetRequiredService<LogService>()
-                        .LogInfo("Database synchronization finished. Existing local caches remain available when a source could not be refreshed.");
+                        .LogInfo("Local League of Legends catalogs are ready. Existing settings and offline caches were preserved.");
                 }
                 catch (Exception ex)
                 {
                     ServiceProvider.GetRequiredService<LogService>()
-                        .LogError("Failed to synchronize local databases", ex);
+                        .LogError("Failed to initialize local game catalogs", ex);
                 }
             });
 
@@ -61,6 +71,8 @@ namespace VideoGenerator
         {
             // --- Core Services (Singletons) ---
             services.AddSingleton(_ => AppSettings.Instance);
+            // Whisper's optional model downloader still needs HttpClient.
+            // Removing external WAD hash catalogs must not break transcription.
             services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromMinutes(15) });
             services.AddSingleton<LogService>();
             services.AddSingleton<DatabaseBuilder>();
@@ -70,7 +82,24 @@ namespace VideoGenerator
             services.AddSingleton<SkinlineManager>();
             services.AddSingleton<GroupManager>();
             services.AddSingleton<AliasManager>();
-            services.AddSingleton<IconManager>();
+            services.AddSingleton(provider => new LeagueWadAssetSource(
+                provider.GetRequiredService<LogService>(),
+                provider.GetRequiredService<AppSettings>().LeagueGameDirectory));
+            services.AddSingleton(provider => new LeagueWadHashResolver(
+                provider.GetRequiredService<LeagueWadAssetSource>()));
+            services.AddSingleton(provider => new OfflineSkinCatalog(logger:
+                provider.GetRequiredService<LogService>()));
+            services.AddSingleton<LocalWadCatalogBootstrapper>();
+            services.AddSingleton(provider => new LocalGameIconManager(
+                provider.GetRequiredService<LeagueWadAssetSource>(),
+                provider.GetRequiredService<DataFetcher>(),
+                provider.GetRequiredService<AliasManager>(),
+                provider.GetRequiredService<GroupManager>(),
+                provider.GetRequiredService<SkinlineManager>(),
+                provider.GetRequiredService<LogService>(),
+                hashes: provider.GetRequiredService<LeagueWadHashResolver>(),
+                offlineSkins: provider.GetRequiredService<OfflineSkinCatalog>()));
+            services.AddSingleton<LocalGameDataRefreshService>();
             services.AddSingleton<IEventNameParser, EventNameParser>();
             services.AddSingleton<ImageGenerator>();
             services.AddSingleton<VideoService>();

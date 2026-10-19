@@ -20,7 +20,7 @@ namespace VideoGenerator.Services.Parsers
         private readonly AliasManager _aliasManager;
         private readonly SkinlineManager _skinlineManager;
         private readonly DataFetcher _dataFetcher;
-        private static readonly Random _random = new();
+        private readonly MonsterEventParser _monsterResolver;
 
         public DynamicRuleParser(
             TranslationService translationService,
@@ -28,7 +28,8 @@ namespace VideoGenerator.Services.Parsers
             RuleManager ruleManager,
             GroupManager groupManager,
             AliasManager aliasManager,
-            SkinlineManager skinlineManager)
+            SkinlineManager skinlineManager,
+            MonsterEventParser monsterResolver = null)
         {
             _translationService = translationService;
             _dataFetcher = dataFetcher;
@@ -36,6 +37,8 @@ namespace VideoGenerator.Services.Parsers
             _groupManager = groupManager;
             _aliasManager = aliasManager;
             _skinlineManager = skinlineManager;
+            _monsterResolver = monsterResolver ??
+                new MonsterEventParser(translationService, dataFetcher, aliasManager);
         }
 
         public bool CanParse(string folderName)
@@ -100,6 +103,14 @@ namespace VideoGenerator.Services.Parsers
         private async Task<ParsedEvent> ProcessRuleEventAsync(string folderName, EventRule rule, string normalizedFolder, string normalizedKeyword, string language, string prefix = "")
         {
             string rawWithoutPrefix = StripOwnerPrefix(folderName);
+            // Keep the un-normalized target to preserve the semantic
+            // ChampionSkinlineTheme boundary; NormalizeFolderName removes
+            // "Skinline" for legacy generic matching.
+            int rawKeywordIndex = rawWithoutPrefix.IndexOf(rule.Keyword, StringComparison.OrdinalIgnoreCase);
+            string rawTarget = rawKeywordIndex >= 0
+                ? rawWithoutPrefix[(rawKeywordIndex + rule.Keyword.Length)..]
+                : "";
+            rawTarget = Regex.Replace(rawTarget, @"^(2D|3D|_)+", "", RegexOptions.IgnoreCase).Trim('_');
             
             // 1. Extraction logic for targets
             int index = normalizedFolder.IndexOf(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
@@ -203,7 +214,24 @@ namespace VideoGenerator.Services.Parsers
 
                 var matchedGroup = _groupManager.Groups.FirstOrDefault(g => g.Name.Equals(displayTargetName, StringComparison.OrdinalIgnoreCase));
                 
-                if (matchedGroup != null)
+                if (string.IsNullOrWhiteSpace(rule.IconLookup) &&
+                    LeagueSkinlineIdentity.TrySplitChampionQualified(
+                        rawTarget, out string themeChampion, out string themeToken) &&
+                    _skinlineManager.IsKnownSkinline(themeToken))
+                {
+                    // Official line identity is sufficient for routing.
+                    // champions.json (and therefore IsValidChampion) may be
+                    // absent on fresh installs. The WAD resolver validates
+                    // the requested champion against actual skinline members
+                    // and does not substitute an unrelated champion's icon.
+                    string officialTheme = _skinlineManager.GetDisplayName(themeToken);
+                    string officialChampion = _aliasManager.GetInternalName(themeChampion);
+                    iconType = "skinline";
+                    iconTarget = $"{officialChampion}Skinline{officialTheme}";
+                    displayText = _translationService.GetText(
+                        language, rule.TranslationKey, $"{officialTheme} {officialChampion}");
+                }
+                else if (matchedGroup != null)
                 {
                     if (matchedGroup.Category.Equals("Region", StringComparison.OrdinalIgnoreCase))
                     {
@@ -213,7 +241,7 @@ namespace VideoGenerator.Services.Parsers
                     else
                     {
                         var candidates = matchedGroup.GetChampionsList();
-                        iconTarget = candidates.Count > 0 ? candidates[_random.Next(candidates.Count)] : "General";
+                        iconTarget = ChooseRepresentative(candidates, matchedGroup.Name) ?? "General";
                         iconType = "champion";
                     }
 
@@ -226,17 +254,18 @@ namespace VideoGenerator.Services.Parsers
                 }
                 else if (_skinlineManager.IsKnownSkinline(displayTargetName))
                 {
-                    var candidates = _skinlineManager.GetChampionsWithSkin(displayTargetName);
-                    var chosen = candidates.Count > 0 ? candidates[_random.Next(candidates.Count)] : null;
-                    iconTarget = chosen != null ? chosen.ToString() : "General";
-                    iconType = "champion";
+                    // Preserve thematic identity all the way to the icon
+                    // resolver. It knows which skin IDs actually belong to
+                    // this line and can try another member if a tile is absent.
+                    string officialName = _skinlineManager.GetDisplayName(displayTargetName);
+                    iconTarget = officialName;
+                    iconType = "skinline";
 
-                    string themeKey = $"skinline_{displayTargetName.ToLower().Replace(" ", "_")}";
+                    string themeKey = $"skinline_{officialName.ToLower().Replace(" ", "_")}";
                     string themeDisplayName = _translationService.GetText(language, themeKey);
                     if (themeDisplayName == themeKey)
                     {
-                        // No localized name available in translations.json: query localized CDragon database dynamically
-                        themeDisplayName = await _skinlineManager.GetLocalizedDisplayNameAsync(displayTargetName, language);
+                        themeDisplayName = await _skinlineManager.GetLocalizedDisplayNameAsync(officialName, language);
                     }
                     displayText = _translationService.GetText(language, rule.TranslationKey, themeDisplayName);
                 }
@@ -246,20 +275,30 @@ namespace VideoGenerator.Services.Parsers
                     bool ruleHasExplicitIcon = !string.IsNullOrEmpty(rule.IconLookup) &&
                         (rule.IconType.Equals("monster", StringComparison.OrdinalIgnoreCase) ||
                          rule.IconType.Equals("structure", StringComparison.OrdinalIgnoreCase) ||
-                         rule.IconType.Equals("system", StringComparison.OrdinalIgnoreCase));
+                         rule.IconType.Equals("system", StringComparison.OrdinalIgnoreCase) ||
+                         rule.IconType.Equals("skinline", StringComparison.OrdinalIgnoreCase));
 
                     if (!ruleHasExplicitIcon)
                     {
-                        if (_aliasManager.IsValidChampion(iconTarget))
+                        if (rule.Keyword.Equals("Kill", StringComparison.OrdinalIgnoreCase) &&
+                            iconTarget.Equals("Ward", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Destroying a ward uses the installed game's Warding
+                            // Totem item icon, not a fictitious Ward champion.
+                            iconType = "item";
+                        }
+                        else if (_aliasManager.IsValidChampion(iconTarget))
                         {
                             iconTarget = _aliasManager.GetInternalName(iconTarget);
                             iconType = "champion";
                             displayTargetName = cleanDisplayName;
                         }
-                        else if (IsMonster(iconTarget))
+                        else if (_monsterResolver.TryResolveTarget(iconTarget, out string monsterName))
                         {
                             iconType = "monster";
-                            displayTargetName = Regex.Replace(iconTarget, @"(?<!^)(?=[A-Z])", " ").Trim();
+                            iconTarget = Regex.Replace(monsterName.Replace(' ', '_'),
+                                @"(?<=[a-z0-9])(?=[A-Z])", "_");
+                            displayTargetName = monsterName;
                         }
                         else if (IsStructure(iconTarget))
                         {
@@ -269,11 +308,13 @@ namespace VideoGenerator.Services.Parsers
                         }
                         else if (iconType != "system" &&
                                  iconType != "item" &&
+                                 iconType != "champion" &&
                                  await IsKnownItemAsync(iconTarget))
                         {
                             iconType = "item";
                         }
-                        else if (iconType != "system" && iconType != "item")
+                        else if (iconType != "system" && iconType != "item" &&
+                                 iconType != "champion")
                         {
                             iconType = "generic";
                         }
@@ -312,6 +353,30 @@ namespace VideoGenerator.Services.Parsers
             }
 
             return new ParsedEvent { OriginalFolder = folderName, DisplayText = displayText, IconLookupName = iconTarget, IconType = iconType };
+        }
+
+        // A thematic event must retain the same representative icon on every analysis.
+        // Stable ordering also keeps user-defined group list reordering from changing its icon.
+        private static string ChooseRepresentative(IEnumerable<string> candidates, string themeName)
+        {
+            var ordered = candidates
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (ordered.Count == 0) return null;
+
+            unchecked
+            {
+                uint hash = 2166136261;
+                foreach (char character in (themeName ?? string.Empty).ToUpperInvariant())
+                {
+                    hash ^= character;
+                    hash *= 16777619;
+                }
+
+                return ordered[(int)(hash % (uint)ordered.Count)];
+            }
         }
 
         private async Task<bool> IsKnownItemAsync(string target)
@@ -365,53 +430,6 @@ namespace VideoGenerator.Services.Parsers
             }
             catch { }
             return new List<StructureMapping>();
-        }
-
-        private List<string> _cachedMonsters;
-        private readonly object _monsterLock = new();
-
-        private bool IsMonster(string target)
-        {
-            if (string.IsNullOrEmpty(target)) return false;
-            if (_cachedMonsters == null)
-            {
-                lock (_monsterLock)
-                {
-                    if (_cachedMonsters == null) _cachedMonsters = LoadMonstersList();
-                }
-            }
-            return _cachedMonsters.Any(kw => target.Contains(kw, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private List<string> LoadMonstersList()
-        {
-            try
-            {
-                string path = AppConfig.MonstersPath;
-                if (File.Exists(path))
-                {
-                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var reader = new StreamReader(stream);
-                    string json = reader.ReadToEnd();
-                    var db = JsonSerializer.Deserialize<MonsterDatabase>(json);
-                    if (db != null) return db.All;
-                }
-            }
-            catch
-            {
-                // Fallback to legacy flat list format
-                try
-                {
-                    string path = AppConfig.MonstersPath;
-                    if (File.Exists(path))
-                    {
-                        string json = File.ReadAllText(path);
-                        return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
-                    }
-                }
-                catch { }
-            }
-            return new List<string>();
         }
 
         private string NormalizeFolderName(string folderName)

@@ -6,9 +6,11 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!-- Material Design -->
-                <materialDesign:BundledTheme BaseTheme="Dark" 
-                                             PrimaryColor="DeepPurple" 
-                                             SecondaryColor="Lime" />
+                <!-- All MaterialDesign fallbacks use the same cool brand family as
+                     the custom navy / cyan / violet theme. No lime-green accents. -->
+                <materialDesign:BundledTheme BaseTheme="Dark"
+                                             PrimaryColor="Blue"
+                                             SecondaryColor="Cyan" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
                 
                 <!-- Custom Theme -->
@@ -17,6 +19,7 @@
                 <ResourceDictionary Source="Theme/DesignTokens.xaml" />
                 <ResourceDictionary Source="Theme/ButtonStyles.xaml" />
                 <ResourceDictionary Source="Theme/ProductionWorkspaceStyles.xaml" />
+                <ResourceDictionary Source="Theme/SettingsStyles.xaml" />
                 <ResourceDictionary Source="Theme/AppShellStyles.xaml" />
                 <ResourceDictionary Source="Theme/RichTextBoxStyles.xaml" />
                 <ResourceDictionary Source="Theme/Animations.xaml" />

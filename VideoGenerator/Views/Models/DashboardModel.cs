@@ -44,6 +44,8 @@ namespace VideoGenerator.Views.Models
         public int RunnableSelectedVisibleEventCount => FilteredProcessedEvents.Count(
             ev => ev.IsSelected && !ev.NeedsMapping);
 
+        public int NeedsMappingVisibleEventCount => FilteredProcessedEvents.Count(ev => ev.NeedsMapping);
+
         public bool HasVisibleEvents => VisibleEventCount > 0;
 
         public bool AreAllVisibleEventsSelected => HasVisibleEvents && SelectedVisibleEventCount == VisibleEventCount;
@@ -173,6 +175,7 @@ namespace VideoGenerator.Views.Models
             OnPropertyChanged(nameof(VisibleEventCount));
             OnPropertyChanged(nameof(SelectedVisibleEventCount));
             OnPropertyChanged(nameof(RunnableSelectedVisibleEventCount));
+            OnPropertyChanged(nameof(NeedsMappingVisibleEventCount));
             OnPropertyChanged(nameof(HasVisibleEvents));
             OnPropertyChanged(nameof(AreAllVisibleEventsSelected));
             OnPropertyChanged(nameof(SelectionActionLabel));

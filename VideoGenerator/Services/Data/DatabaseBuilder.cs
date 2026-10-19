@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
-using System.Text.Json;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using VideoGenerator.Models;
@@ -14,23 +13,24 @@ using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Services
 {
+    /// <summary>
+    /// Prepares the locally stored catalogs required by parsers and icon resolution.
+    /// Game asset indexing can populate the catalogs when its local provider is available.
+    /// Startup must not synchronize catalogs over HTTP or overwrite user data.
+    /// </summary>
     public class DatabaseBuilder
     {
-        private readonly HttpClient _httpClient;
         private readonly LogService _logger;
         private readonly string _storageRoot;
         private readonly SemaphoreSlim _initializationGate = new(1, 1);
         private readonly TaskCompletionSource<bool> _initializationReady = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
+
         public Task ReadyTask => _initializationReady.Task;
         public bool IsReady => _initializationReady.Task.IsCompleted;
 
-        public DatabaseBuilder(
-            HttpClient httpClient,
-            LogService logger,
-            string storageRoot = null)
+        public DatabaseBuilder(LogService logger, string storageRoot = null)
         {
-            _httpClient = httpClient;
             _logger = logger;
             _storageRoot = storageRoot;
         }
@@ -39,390 +39,127 @@ namespace VideoGenerator.Services
         private string ItemsFilePath => AppConfig.GetItemsFilePath(_storageRoot);
         private string MonstersFilePath => AppConfig.GetMonstersFilePath(_storageRoot);
         private string StructuresFilePath => AppConfig.GetStructuresFilePath(_storageRoot);
-        private string LocalVersionFilePath => AppConfig.GetLocalVersionFilePath(_storageRoot);
 
         public async Task InitializeDatabasesAsync(string currentLolVersion)
         {
             await _initializationGate.WaitAsync();
             try
             {
-                if (_initializationReady.Task.IsCompleted)
+                if (IsReady)
                     return;
 
-                bool versionChanged = CheckIfVersionChanged(currentLolVersion);
+                // version.json represents a previously synchronized version. Never
+                // change it merely because a different client version was detected.
+                await CreateCatalogIfMissingAsync(ChampionsFilePath, new List<string>());
+                if (!File.Exists(ItemsFilePath))
+                    await CreateCatalogIfMissingAsync(ItemsFilePath, await GetLocallyCachedItemsAsync());
+                await CreateCatalogIfMissingAsync(MonstersFilePath, new MonsterDatabase());
+                await CreateCatalogIfMissingAsync(StructuresFilePath, new List<StructureMapping>());
 
-                // 1. Sync Champions and Items from DDragon if version changed or files missing
-                if (versionChanged || !File.Exists(ChampionsFilePath))
-                {
-                    await SyncChampionsAsync(currentLolVersion);
-                }
-
-                if (versionChanged || !File.Exists(ItemsFilePath))
-                {
-                    await SyncItemsAsync(currentLolVersion);
-                }
-
-                // 2. Sync CommunityDragon data (skins, skinlines, full items database)
-                // The conditional request keeps valid local files while still checking
-                // the server for updates on every application session.
-                string defaultLocale = AppConfig.GetCdragonLocale();
-                await Task.WhenAll(
-                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinsDataUrl(defaultLocale), AppConfig.GetSkinsCachePath(defaultLocale, _storageRoot)),
-                    SyncCommunityDragonJsonAsync(AppConfig.GetSkinLinesUrl(defaultLocale), AppConfig.GetSkinLinesCachePath(defaultLocale, _storageRoot)),
-                    SyncCommunityDragonJsonAsync(AppConfig.GetItemsDataUrl(defaultLocale), AppConfig.GetItemsCachePath(defaultLocale, _storageRoot))
-                );
-
-                // 3. Fandom sync (Monsters/Structures) - These are lore-based, so we always try to merge new ones
-                var epicMonsters = await SyncFandomCategoryAsync("Epic_monsters");
-                var largeMonsters = await SyncFandomCategoryAsync("Large_monsters");
-                await SaveMonstersDatabaseAsync(epicMonsters, largeMonsters);
-                var structureNames = await SyncFandomCategoryAsync("Structures");
-                await SaveStructuresDatabaseAsync(structureNames);
-
-                // 4. Save the new version locally if sync was successful
-                if (versionChanged)
-                {
-                    SaveLocalVersion(currentLolVersion);
-                }
+                _logger.LogInfo("Local game catalogs initialized without network synchronization.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to initialize local game catalogs. Existing files remain unchanged.", ex);
             }
             finally
             {
-                // A failed network sync must not deadlock production. Consumers
-                // can continue with any valid cache already present on disk.
+                // Even a missing or damaged local catalog must not block analysis.
+                // The user can restore it, or a future local game-assets provider can fill it.
                 _initializationReady.TrySetResult(true);
                 _initializationGate.Release();
             }
         }
 
-        private async Task SyncCommunityDragonJsonAsync(string url, string cachePath)
+        private async Task<Dictionary<string, string>> GetLocallyCachedItemsAsync()
         {
-            try
-            {
-                DirectoriesCreator.CreateParentDirectory(cachePath);
+            var items = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string[] locales = { AppConfig.GetCdragonLocale(), "default", "es_es", "tr_tr" };
 
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
-                if (File.Exists(cachePath))
-                {
-                    request.Headers.IfModifiedSince = File.GetLastWriteTimeUtc(cachePath);
-                }
-
-                var response = await _httpClient.SendAsync(request);
-                if (response.StatusCode == System.Net.HttpStatusCode.NotModified)
-                {
-                    return;
-                }
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    string temporaryPath = $"{cachePath}.{Guid.NewGuid():N}.tmp";
-                    try
-                    {
-                        await File.WriteAllTextAsync(temporaryPath, json, Encoding.UTF8);
-                        File.Move(temporaryPath, cachePath, true);
-                    }
-                    finally
-                    {
-                        try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
-                    }
-                }
-            }
-            catch (Exception ex)
+            foreach (string locale in locales.Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                _logger.LogError($"Failed to sync CommunityDragon data from {url}. Existing cache will be used when available.", ex);
-            }
-        }
+                string path = AppConfig.GetItemsCachePath(locale, _storageRoot);
+                if (!File.Exists(path))
+                    continue;
 
-        private bool CheckIfVersionChanged(string currentVersion)
-        {
-            try
-            {
-                if (!File.Exists(LocalVersionFilePath)) return true;
-                string localVersion = File.ReadAllText(LocalVersionFilePath).Trim();
-                return !localVersion.Equals(currentVersion, StringComparison.OrdinalIgnoreCase);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarn("Failed to read the locally stored League of Legends version. A synchronization will be attempted.");
-                _logger.LogDebug($"Version cache read details: {ex.Message}");
-                return true;
-            }
-        }
-
-        private void SaveLocalVersion(string version)
-        {
-            try
-            {
-                string temporaryPath = $"{LocalVersionFilePath}.{Guid.NewGuid():N}.tmp";
                 try
                 {
-                    File.WriteAllText(temporaryPath, version, Encoding.UTF8);
-                    File.Move(temporaryPath, LocalVersionFilePath, true);
+                    using JsonDocument document = JsonDocument.Parse(await File.ReadAllTextAsync(path));
+                    if (document.RootElement.ValueKind != JsonValueKind.Array)
+                        throw new JsonException("Expected an array of item records.");
+
+                    foreach (JsonElement entry in document.RootElement.EnumerateArray())
+                    {
+                        if (entry.ValueKind != JsonValueKind.Object ||
+                            !entry.TryGetProperty("id", out JsonElement id) ||
+                            id.ValueKind != JsonValueKind.Number ||
+                            !id.TryGetInt32(out int itemId) ||
+                            !entry.TryGetProperty("name", out JsonElement name) ||
+                            name.ValueKind != JsonValueKind.String ||
+                            string.IsNullOrWhiteSpace(name.GetString()))
+                            continue;
+
+                        items[name.GetString()] = itemId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    }
+
+                    if (items.Count > 0)
+                    {
+                        _logger.LogDebug($"Prepared {items.Count} item names from the existing local cache '{Path.GetFileName(path)}'.");
+                        return items;
+                    }
                 }
-                finally
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
                 {
-                    try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+                    _logger.LogWarn($"Local item cache '{Path.GetFileName(path)}' could not be read; original file preserved.");
+                    _logger.LogDebug($"Local item cache details: {ex.Message}");
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to save the locally synchronized League of Legends version.", ex);
-            }
+
+            // No WAD reader is wired into DatabaseBuilder yet. A schema-compatible
+            // empty catalog keeps first-run parsing safe until local assets are indexed.
+            return items;
         }
 
-        private async Task SyncChampionsAsync(string version)
+        private async Task CreateCatalogIfMissingAsync<T>(string path, T catalog)
         {
-            try
-            {
-                string url = $"https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/champion.json";
-                string jsonStr = await _httpClient.GetStringAsync(url);
-                
-                using (JsonDocument doc = JsonDocument.Parse(jsonStr))
-                {
-                    var dataProp = doc.RootElement.GetProperty("data");
-                    var championsList = new List<string>();
-                    
-                    foreach (var champ in dataProp.EnumerateObject())
-                    {
-                        championsList.Add(champ.Name); // Internal ID (e.g. MonkeyKing)
-                        string name = champ.Value.GetProperty("name").GetString();
-                        if (!string.IsNullOrEmpty(name) && !championsList.Contains(name))
-                        {
-                            championsList.Add(name); // Display Name (e.g. Wukong)
-                        }
-                    }
+            // The existence check is intentional. User-maintained catalogs, even
+            // ones with unsupported or malformed JSON, are never rewritten here.
+            if (File.Exists(path))
+                return;
 
-                    SaveToJson(ChampionsFilePath, championsList.OrderBy(x => x).ToList());
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to sync the champion database from Data Dragon. Existing data will be used when available.", ex);
-            }
-        }
-
-        private async Task SyncItemsAsync(string version)
-        {
-            try
-            {
-                string url = $"https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/item.json";
-                string jsonStr = await _httpClient.GetStringAsync(url);
-                
-                using (JsonDocument doc = JsonDocument.Parse(jsonStr))
-                {
-                    var dataProp = doc.RootElement.GetProperty("data");
-                    var itemsDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                    
-                    foreach (var itemProp in dataProp.EnumerateObject())
-                    {
-                        string id = itemProp.Name;
-                        string name = itemProp.Value.GetProperty("name").GetString();
-                        
-                        if (!string.IsNullOrEmpty(name))
-                        {
-                            itemsDict[name] = id; // "Infinity Edge": "3031"
-                        }
-                    }
-
-                    SaveToJson(ItemsFilePath, itemsDict);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to sync the item database from Data Dragon. Existing data will be used when available.", ex);
-            }
-        }
-
-        private async Task<List<string>> SyncFandomCategoryAsync(string category, string savePath = null)
-        {
-            var result = new List<string>();
-            try
-            {
-                string url = $"https://leagueoflegends.fandom.com/api.php?action=query&list=categorymembers&cmtitle=Category:{category}&cmnamespace=0&cmlimit=100&format=json";
-                string jsonStr = await _httpClient.GetStringAsync(url);
-                
-                using (JsonDocument doc = JsonDocument.Parse(jsonStr))
-                {
-                    var members = doc.RootElement.GetProperty("query").GetProperty("categorymembers");
-                    var newItems = new List<string>();
-                    
-                    foreach (var member in members.EnumerateArray())
-                    {
-                        string title = member.GetProperty("title").GetString();
-                        if (!string.IsNullOrEmpty(title))
-                        {
-                            // Clean Fandom junk
-                            string cleanTitle = title.Replace("/LoL", "").Replace(" camp", "");
-                            newItems.Add(cleanTitle);
-                        }
-                    }
-
-                    if (string.IsNullOrEmpty(savePath))
-                    {
-                        return newItems.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
-                    }
-
-                    // Smart Merge
-                    var existingItems = new List<string>();
-                    if (File.Exists(savePath))
-                    {
-                        try
-                        {
-                            string existingJson = File.ReadAllText(savePath);
-                            var loaded = JsonSerializer.Deserialize<List<string>>(existingJson);
-                            if (loaded != null) existingItems = loaded;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarn($"Failed to read the existing Fandom database for '{category}'. Newly synchronized entries will be used.");
-                            _logger.LogDebug($"Existing Fandom database details: {ex.Message}");
-                        }
-                    }
-
-                    bool merged = false;
-                    foreach (var item in newItems)
-                    {
-                        if (!existingItems.Contains(item, StringComparer.OrdinalIgnoreCase))
-                        {
-                            existingItems.Add(item);
-                            merged = true;
-                        }
-                    }
-
-                    if (merged || !File.Exists(savePath))
-                    {
-                        SaveToJson(savePath, existingItems.OrderBy(x => x).ToList());
-                    }
-
-                    return existingItems;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Failed to sync the Fandom category '{category}'. Existing data will be used when available.", ex);
-            }
-            return result;
-        }
-
-        private async Task SaveMonstersDatabaseAsync(List<string> epicMonsters, List<string> largeMonsters)
-        {
-            try
-            {
-                var existing = new MonsterDatabase();
-                if (File.Exists(MonstersFilePath))
-                {
-                    try
-                    {
-                        string existingJson = await File.ReadAllTextAsync(MonstersFilePath);
-                        var loaded = JsonSerializer.Deserialize<MonsterDatabase>(existingJson);
-                        if (loaded != null) existing = loaded;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarn("Failed to read the existing monsters database. Newly synchronized entries will be used.");
-                        _logger.LogDebug($"Existing monsters database details: {ex.Message}");
-                    }
-                }
-
-                bool MergeInto(List<string> target, List<string> source)
-                {
-                    bool changed = false;
-                    foreach (var item in source)
-                    {
-                        if (!target.Contains(item, StringComparer.OrdinalIgnoreCase))
-                        {
-                            target.Add(item);
-                            changed = true;
-                        }
-                    }
-                    return changed;
-                }
-
-                bool epicChanged = MergeInto(existing.Epic, epicMonsters);
-                bool largeChanged = MergeInto(existing.Large, largeMonsters);
-
-                if (epicChanged || largeChanged || !File.Exists(MonstersFilePath))
-                {
-                    SaveToJson(MonstersFilePath, existing);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to save the monsters database.", ex);
-            }
-        }
-
-        private async Task SaveStructuresDatabaseAsync(List<string> newStructures)
-        {
-            try
-            {
-                var existing = new List<StructureMapping>();
-                if (File.Exists(StructuresFilePath))
-                {
-                    try
-                    {
-                        string existingJson = await File.ReadAllTextAsync(StructuresFilePath);
-                        var loaded = JsonSerializer.Deserialize<List<StructureMapping>>(existingJson);
-                        if (loaded != null) existing = loaded;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarn("Failed to read the existing structures database. Newly synchronized entries will be used.");
-                        _logger.LogDebug($"Existing structures database details: {ex.Message}");
-                    }
-                }
-
-                bool changed = false;
-                foreach (var name in newStructures)
-                {
-                    if (!existing.Any(s => s.Keyword.Equals(name, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        string targetName = "Turret";
-                        if (name.Contains("inhibitor", StringComparison.OrdinalIgnoreCase))
-                            targetName = "Inhibitor";
-                        else if (name.Contains("nexus", StringComparison.OrdinalIgnoreCase))
-                            targetName = "Nexus";
-
-                        existing.Add(new StructureMapping { Keyword = name, TargetName = targetName });
-                        changed = true;
-                    }
-                }
-
-                if (changed || !File.Exists(StructuresFilePath))
-                {
-                    SaveToJson(StructuresFilePath, existing.OrderBy(x => x.Keyword).ToList());
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to save the structures database.", ex);
-            }
-        }
-
-        private void SaveToJson<T>(string path, T data)
-        {
+            string temporaryPath = null;
             try
             {
                 DirectoriesCreator.CreateParentDirectory(path);
-                string json = JsonSerializer.Serialize(data, new JsonSerializerOptions 
-                { 
+                string json = JsonSerializer.Serialize(catalog, new JsonSerializerOptions
+                {
                     WriteIndented = true,
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 });
-                string temporaryPath = $"{path}.{Guid.NewGuid():N}.tmp";
-                try
-                {
-                    File.WriteAllText(temporaryPath, json, Encoding.UTF8);
-                    File.Move(temporaryPath, path, true);
-                }
-                finally
-                {
-                    try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
-                }
+                temporaryPath = $"{path}.{Guid.NewGuid():N}.tmp";
+                await File.WriteAllTextAsync(temporaryPath, json, Encoding.UTF8);
+
+                // File.Move without overwrite avoids races with another initializer
+                // or with user edits made while the temporary file is being written.
+                File.Move(temporaryPath, path);
+            }
+            catch (IOException ex) when (File.Exists(path))
+            {
+                _logger.LogDebug($"Local catalog '{Path.GetFileName(path)}' was created concurrently: {ex.Message}");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed to save synchronized data to '{path}'.", ex);
+                _logger.LogError($"Could not bootstrap local catalog '{Path.GetFileName(path)}'.", ex);
+            }
+            finally
+            {
+                try
+                {
+                    if (temporaryPath != null && File.Exists(temporaryPath))
+                        File.Delete(temporaryPath);
+                }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
             }
         }
     }

@@ -219,12 +219,12 @@ namespace VideoGenerator.Services
                 return EventStatuses.Pending;
             }
 
-            if (parsedEvent.IconType == "generic")
+            if (!EventIconResolutionService.RequiresIcon(parsedEvent))
             {
                 return EventStatuses.Ready;
             }
 
-            return !string.IsNullOrEmpty(parsedEvent.IconLookupName) ? EventStatuses.PendingIcon : EventStatuses.Ready;
+            return EventStatuses.PendingIcon;
         }
     }
 }

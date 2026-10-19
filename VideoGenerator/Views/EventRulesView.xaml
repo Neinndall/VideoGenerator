@@ -9,24 +9,8 @@
     </UserControl.Resources>
 
     <Grid Margin="{StaticResource WorkspacePagePadding}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <!-- HEADER -->
-        <Border Grid.Row="0" Style="{StaticResource WorkspaceHeaderContainer}" Margin="0,0,0,16">
-            <StackPanel>
-                <TextBlock Text="RULE ENGINE" Style="{StaticResource WorkspaceEyebrowText}"/>
-                <TextBlock Text="Event mapping" Style="{StaticResource WorkspaceTitleText}" Margin="0,4,0,0"/>
-                <TextBlock Text="Orchestrate logic behaviors, thematic groupings, and champion identity mapping." 
-                           Style="{StaticResource PageSubtitleText}" 
-                           Margin="0,5,0,0"/>
-            </StackPanel>
-        </Border>
-
-        <!-- MAIN CONTENT AREA -->
-        <TabControl Grid.Row="1" 
+        <!-- Main content fills the page below the MainWindow title bar. -->
+        <TabControl
                     Style="{StaticResource LoreEngineTabControl}">
             
             <!-- SECTION 1: EVENT RULES -->
@@ -53,10 +37,10 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" Padding="20,16">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="PlusCircleOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
-                                    <TextBlock x:Name="RuleFormTitle" Text="NEW BEHAVIOR" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="RuleFormTitle" Text="NEW BEHAVIOR" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -64,11 +48,14 @@
                                 <StackPanel>
                                     <!-- FORM FIELDS -->
                                     <StackPanel x:Name="FormFieldsPanel">
-                                        <TextBox x:Name="KeywordBox" materialDesign:HintAssist.Hint="Folder keyword" Style="{StaticResource ModernTextBox}" Margin="0,6,0,12"/>
+                                        <TextBlock Text="FOLDER KEYWORD" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                        <TextBox x:Name="KeywordBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,12" AutomationProperties.Name="Folder keyword"/>
                                         
-                                        <TextBox x:Name="DictKeyBox" materialDesign:HintAssist.Hint="Dict key (auto-generated, editable)" Style="{StaticResource ModernTextBox}" FontFamily="{StaticResource AppMonoFontFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,20"/>
+                                        <TextBlock Text="DICTIONARY KEY" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                        <TextBox x:Name="DictKeyBox" Style="{StaticResource ModernTextBox}" FontFamily="{StaticResource AppMonoFontFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,15" AutomationProperties.Name="Dictionary key (auto-generated, editable)"/>
 
-                                        <ComboBox x:Name="RuleSectionBox" materialDesign:HintAssist.Hint="Behavior category" Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,0,20">
+                                        <TextBlock Text="BEHAVIOR CATEGORY" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                        <ComboBox x:Name="RuleSectionBox" Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,0,15" AutomationProperties.Name="Behavior category">
                                             <ComboBoxItem Content="ALL" ToolTip="General purpose rule when no specific category fits"/>
                                             <ComboBoxItem Content="COMBAT" ToolTip="Kill, death, assist, ace, damage events"/>
                                             <ComboBoxItem Content="EMOTES" ToolTip="Joke, taunt, laugh, dance, emote"/>
@@ -81,27 +68,35 @@
                                             <ComboBoxItem Content="OTHER" ToolTip="Anything that does not fit the above"/>
                                         </ComboBox>
 
-                                        <TextBox x:Name="IconLookupBox" materialDesign:HintAssist.Hint="Icon name or ID (optional)" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
+                                        <TextBlock Text="ICON NAME OR ID (OPTIONAL)" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                        <TextBox x:Name="IconLookupBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,15" AutomationProperties.Name="Icon name or ID (optional)"/>
                                         
                                         <Grid Margin="0,0,0,24">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
-                                            <ComboBox x:Name="IconTypeBox" Grid.Column="0" materialDesign:HintAssist.Hint="Icon category" Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,12,0">
+                                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                <TextBlock Text="ICON CATEGORY" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                                <ComboBox x:Name="IconTypeBox" Style="{StaticResource ModernComboBoxStyle}" AutomationProperties.Name="Icon category">
                                                 <sys:String>generic</sys:String>
                                                 <sys:String>champion</sys:String>
+                                                <sys:String>skinline</sys:String>
                                                 <sys:String>item</sys:String>
                                                 <sys:String>monster</sys:String>
                                                 <sys:String>structure</sys:String>
                                                 <sys:String>region</sys:String>
                                                 <sys:String>system</sys:String>
-                                            </ComboBox>
-                                            <ComboBox x:Name="RuleTypeBox" Grid.Column="1" materialDesign:HintAssist.Hint="Rule type" Style="{StaticResource ModernComboBoxStyle}">
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="RULE TYPE" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                                <ComboBox x:Name="RuleTypeBox" Style="{StaticResource ModernComboBoxStyle}" AutomationProperties.Name="Rule type">
                                                 <sys:String>Simple</sys:String>
                                                 <sys:String>Target</sys:String>
                                                 <sys:String>Interaction</sys:String>
-                                            </ComboBox>
+                                                </ComboBox>
+                                            </StackPanel>
                                         </Grid>
                                     </StackPanel>
 
@@ -132,22 +127,22 @@
 
                                             <TextBlock Text="DICT KEY" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,6"/>
                                             <Border Background="{StaticResource SurfaceBrush}" Padding="0" CornerRadius="6" Margin="0,0,0,24">
-                                                <TextBox x:Name="TransKeyBox" Text="event_key" FontFamily="{StaticResource AppMonoFontFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" FontSize="13" Background="Transparent" BorderThickness="0" Padding="12,10" materialDesign:HintAssist.Hint="Translation key"/>
+                                                <TextBox x:Name="TransKeyBox" Text="event_key" FontFamily="{StaticResource AppMonoFontFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" FontSize="13" Background="Transparent" BorderThickness="0" Padding="12,10" AutomationProperties.Name="Translation key"/>
                                             </Border>
 
                                             <TextBlock Text="TRANSLATIONS" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,12"/>
                                             <StackPanel Margin="0,0,0,24">
                                                 <StackPanel Margin="0,0,0,10">
                                                     <TextBlock Text="EN" FontSize="9" FontWeight="Black" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,4"/>
-                                                    <TextBox x:Name="TransENBox" Style="{StaticResource ModernTextBox}" materialDesign:HintAssist.Hint="English"/>
+                                                    <TextBox x:Name="TransENBox" Style="{StaticResource ModernTextBox}" AutomationProperties.Name="English translation"/>
                                                 </StackPanel>
                                                 <StackPanel Margin="0,0,0,10">
                                                     <TextBlock Text="ES" FontSize="9" FontWeight="Black" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,4"/>
-                                                    <TextBox x:Name="TransESBox" Style="{StaticResource ModernTextBox}" materialDesign:HintAssist.Hint="Spanish"/>
+                                                    <TextBox x:Name="TransESBox" Style="{StaticResource ModernTextBox}" AutomationProperties.Name="Spanish translation"/>
                                                 </StackPanel>
                                                 <StackPanel>
                                                     <TextBlock Text="TR" FontSize="9" FontWeight="Black" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,4"/>
-                                                    <TextBox x:Name="TransTRBox" Style="{StaticResource ModernTextBox}" materialDesign:HintAssist.Hint="Turkish"/>
+                                                    <TextBox x:Name="TransTRBox" Style="{StaticResource ModernTextBox}" AutomationProperties.Name="Turkish translation"/>
                                                 </StackPanel>
                                             </StackPanel>
 
@@ -164,7 +159,7 @@
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border x:Name="RegisterButtonBar" Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8">
+                            <Border x:Name="RegisterButtonBar" Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -186,12 +181,30 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
                             
-                            <!-- Title Header -->
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
-                                <StackPanel Orientation="Horizontal">
+                            <!-- Repository filtering stays independent from the registration form. -->
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="24,12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                <DockPanel LastChildFill="False">
+                                    <ComboBox x:Name="RuleRepositoryFilterBox"
+                                              DockPanel.Dock="Right" Width="165" Height="36"
+                                              SelectedIndex="0" Margin="16,0,0,0"
+                                              AutomationProperties.Name="Filter repository"
+                                              Style="{StaticResource ModernComboBoxStyle}">
+                                        <ComboBoxItem Content="ALL"/>
+                                        <ComboBoxItem Content="COMBAT"/>
+                                        <ComboBoxItem Content="EMOTES"/>
+                                        <ComboBoxItem Content="MOVEMENT"/>
+                                        <ComboBoxItem Content="ITEMS"/>
+                                        <ComboBoxItem Content="PINGS"/>
+                                        <ComboBoxItem Content="ABILITIES"/>
+                                        <ComboBoxItem Content="INTERACTIONS"/>
+                                        <ComboBoxItem Content="SYSTEM"/>
+                                        <ComboBoxItem Content="OTHER"/>
+                                    </ComboBox>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <materialDesign:PackIcon Kind="DatabaseOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                     <TextBlock Text="RULES REPOSITORY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
-                                </StackPanel>
+                                    </StackPanel>
+                                </DockPanel>
                             </Border>
 
                             <!-- Column Headers (dark bg, no icons) -->
@@ -288,7 +301,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="FolderPlusOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
                                     <TextBlock Text="NEW GROUP" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
@@ -297,19 +310,22 @@
 
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
                                 <StackPanel>
-                                    <TextBox x:Name="GroupNameBox" materialDesign:HintAssist.Hint="Group Name (e.g. Freljord)" Style="{StaticResource ModernTextBox}" Margin="0,6,0,16"/>
-                                    <ComboBox x:Name="GroupCategoryBox" materialDesign:HintAssist.Hint="Category" Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,0,16">
+                                    <TextBlock Text="GROUP NAME" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBox x:Name="GroupNameBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,15" AutomationProperties.Name="Group name"/>
+                                    <TextBlock Text="CATEGORY" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <ComboBox x:Name="GroupCategoryBox" Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,0,15" AutomationProperties.Name="Group category">
                                         <sys:String>Region</sys:String>
                                         <sys:String>Skinline</sys:String>
                                         <sys:String>Class</sys:String>
                                         <sys:String>Role</sys:String>
                                         <sys:String>Custom</sys:String>
                                     </ComboBox>
-                                    <TextBox x:Name="ChampionsBox" materialDesign:HintAssist.Hint="Champions (Comma separated)" Style="{StaticResource ModernTextBox}" AcceptsReturn="True" Height="140" VerticalContentAlignment="Top" Padding="12" Margin="0,0,0,16"/>
+                                    <TextBlock Text="CHAMPIONS (COMMA SEPARATED)" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBox x:Name="ChampionsBox" Style="{StaticResource ModernTextBox}" AcceptsReturn="True" Height="140" VerticalContentAlignment="Top" Padding="12" Margin="0,0,0,16" AutomationProperties.Name="Champions (comma separated)"/>
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8">
+                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Button Content="ADD GROUP" Click="AddGroup_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                             </Border>
                         </Grid>
@@ -323,7 +339,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Group" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                     <TextBlock Text="GROUPS REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
@@ -398,7 +414,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="AccountPlusOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
                                     <TextBlock Text="NEW CHAMPION / ALIAS" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
@@ -407,8 +423,10 @@
 
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
                                 <StackPanel>
-                                    <TextBox x:Name="AliasDisplayBox" materialDesign:HintAssist.Hint="Champion Name (e.g. Locke)" Style="{StaticResource ModernTextBox}" Margin="0,6,0,16"/>
-                                    <TextBox x:Name="AliasInternalBox" materialDesign:HintAssist.Hint="Internal System Name (Optional)" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20"/>
+                                    <TextBlock Text="CHAMPION NAME" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBox x:Name="AliasDisplayBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,16" AutomationProperties.Name="Champion name"/>
+                                    <TextBlock Text="INTERNAL SYSTEM NAME (OPTIONAL)" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBox x:Name="AliasInternalBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20" AutomationProperties.Name="Internal system name (optional)"/>
                                     
                                     <Border Background="{StaticResource InfoSoftBrush}" BorderBrush="{StaticResource InfoSoftBorderBrush}" BorderThickness="1" Padding="16" CornerRadius="8" Margin="0,4,0,16">
                                         <StackPanel>
@@ -423,7 +441,7 @@
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8">
+                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Button Content="ADD CHAMPION" Click="AddAlias_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                             </Border>
                         </Grid>
@@ -437,7 +455,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="AccountBoxMultiple" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                     <TextBlock Text="ALIASES REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
@@ -510,7 +528,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Ghost" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
                                     <TextBlock Text="NEW MONSTER" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
@@ -519,11 +537,12 @@
 
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
                                 <StackPanel>
-                                    <TextBox x:Name="NewMonsterBox" materialDesign:HintAssist.Hint="Monster Name (e.g. Zebra)" Style="{StaticResource ModernTextBox}" Margin="0,6,0,24"/>
+                                    <TextBlock Text="MONSTER NAME" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBox x:Name="NewMonsterBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,24" AutomationProperties.Name="Monster name"/>
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8">
+                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Button Content="ADD MONSTER" Click="AddMonster_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                             </Border>
                         </Grid>
@@ -537,7 +556,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Ghost" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                     <TextBlock Text="MONSTERS REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
@@ -602,7 +621,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="HomeModern" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
                                     <TextBlock Text="NEW STRUCTURE MAPPING" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
@@ -611,9 +630,11 @@
 
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
                                 <StackPanel>
-                                    <TextBox x:Name="NewStructureKeywordBox" materialDesign:HintAssist.Hint="Folder Keyword (e.g. Tower)" Style="{StaticResource ModernTextBox}" Margin="0,6,0,20"/>
+                                    <TextBlock Text="FOLDER KEYWORD" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBox x:Name="NewStructureKeywordBox" Style="{StaticResource ModernTextBox}" Margin="0,0,0,20" AutomationProperties.Name="Structure folder keyword"/>
                                     
-                                    <ComboBox x:Name="NewStructureTargetBox" materialDesign:HintAssist.Hint="Map Target Icon" Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,0,24">
+                                    <TextBlock Text="TARGET STRUCTURE" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <ComboBox x:Name="NewStructureTargetBox" Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,0,24" AutomationProperties.Name="Target structure">
                                         <sys:String>Turret</sys:String>
                                         <sys:String>Inhibitor</sys:String>
                                         <sys:String>Nexus</sys:String>
@@ -621,7 +642,7 @@
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8">
+                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Button Content="ADD STRUCTURE" Click="AddStructure_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                             </Border>
                         </Grid>
@@ -635,7 +656,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="HomeModern" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                     <TextBlock Text="STRUCTURES REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />

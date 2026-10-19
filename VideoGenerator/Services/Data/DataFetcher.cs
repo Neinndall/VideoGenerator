@@ -2,21 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using SixLabors.ImageSharp;
 using VideoGenerator.Models;
-using VideoGenerator.Utils;
 using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Services
 {
     public class DataFetcher
     {
-        private readonly HttpClient _httpClient;
         private readonly LogService _logger;
         private readonly string _storageRoot;
         private Dictionary<string, JsonElement> _skinsCache;
@@ -25,7 +21,29 @@ namespace VideoGenerator.Services
         private string _loadedSkinsLocale;
         private string _loadedSkinlinesLocale;
         private string _loadedItemsLocale;
+        private readonly object _cacheLock = new();
+        private int _cacheVersion;
 
+        // The bootstrapper writes new official JSON on game updates. In-flight reads
+        // may finish after this call, so their cache writes must check _cacheVersion.
+        public void InvalidateCaches()
+        {
+            lock (_cacheLock)
+            {
+                ++_cacheVersion;
+                _skinsCache = null;
+                _skinLinesCache = null;
+                _itemsCache = null;
+                _loadedSkinsLocale = null;
+                _loadedSkinlinesLocale = null;
+                _loadedItemsLocale = null;
+                _itemNameIdCache = null;
+                _communityItemNameToIdCache = null;
+                _loadedCommunityItemsLocale = null;
+            }
+        }
+
+        internal string StorageRoot => _storageRoot;
         private class ItemData
         {
             public int Id { get; set; }
@@ -33,20 +51,11 @@ namespace VideoGenerator.Services
             public string NameSlug { get; set; }
         }
 
-        public DataFetcher(
-            HttpClient httpClient,
-            LogService logger,
-            string storageRoot = null)
+        public DataFetcher(LogService logger, string storageRoot = null)
         {
-            _httpClient = httpClient;
             _logger = logger;
             _storageRoot = storageRoot;
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            _httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8");
-            _httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
         }
-
-        private string _cachedVersion;
 
         private string GetSkinsCachePath(string locale) =>
             AppConfig.GetSkinsCachePath(locale, _storageRoot);
@@ -57,50 +66,60 @@ namespace VideoGenerator.Services
         private string GetItemsCachePath(string locale) =>
             AppConfig.GetItemsCachePath(locale, _storageRoot);
 
-        private string IconCacheDirectory => AppConfig.GetIconCacheDirectory(_storageRoot);
         private string ItemsFilePath => AppConfig.GetItemsFilePath(_storageRoot);
         private string MonstersFilePath => AppConfig.GetMonstersFilePath(_storageRoot);
 
-        public async Task<string> GetLatestLolVersionAsync()
+        // A Mapping edit must be observed by the next scan, without
+        // rebuilding the EventNameParser or restarting VideoGenerator.
+        // Checking file metadata is cheap; the JSON is parsed only when it
+        // changes. Use both length and timestamp for ordinary saves.
+        internal string MonsterCatalogRevision
         {
-            if (!string.IsNullOrEmpty(_cachedVersion)) return _cachedVersion;
-            try
+            get
             {
-                var response = await _httpClient.GetStringAsync(AppConfig.VersionsUrl);
-                var versions = JsonSerializer.Deserialize<List<string>>(response);
-                _cachedVersion = versions?.FirstOrDefault() ?? "14.1.1";
-                return _cachedVersion;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarn("Failed to retrieve the latest League of Legends version. The cached or fallback version will be used.");
-                _logger.LogDebug($"LoL version request details: {ex.Message}");
-                return _cachedVersion ?? "14.1.1";
+                try
+                {
+                    var info = new FileInfo(MonstersFilePath);
+                    return info.Exists
+                        ? $"{info.LastWriteTimeUtc.Ticks}:{info.Length}"
+                        : "<missing>";
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    return "<unavailable>";
+                }
             }
         }
 
         public async Task<Dictionary<string, JsonElement>> GetSkinsDataAsync(string language = null)
         {
             string locale = AppConfig.GetCdragonLocale(language);
-            if (_skinsCache != null && _loadedSkinsLocale == locale) return _skinsCache;
-
-            string cachePath = GetSkinsCachePath(locale);
-            if (File.Exists(cachePath))
+            while (true)
             {
-                try
+                int version;
+                lock (_cacheLock)
                 {
-                    string cachedJson = await File.ReadAllTextAsync(cachePath);
-                    var rawSkins = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
-                    if (rawSkins != null)
+                    if (_skinsCache != null && _loadedSkinsLocale == locale) return _skinsCache;
+                    version = _cacheVersion;
+                }
+
+                Dictionary<string, JsonElement> rawSkins = null;
+                string cachePath = GetSkinsCachePath(locale);
+                if (File.Exists(cachePath))
+                {
+                    try
                     {
-                        var extraSkins = new Dictionary<string, JsonElement>();
-                        foreach (var kvp in rawSkins)
+                        string cachedJson = await File.ReadAllTextAsync(cachePath);
+                        rawSkins = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(cachedJson);
+                        if (rawSkins != null)
                         {
-                            var skinElement = kvp.Value;
-                            if (skinElement.TryGetProperty("questSkinInfo", out var questInfoProp) && 
-                                questInfoProp.ValueKind == JsonValueKind.Object)
+                            var extraSkins = new Dictionary<string, JsonElement>();
+                            foreach (var kvp in rawSkins)
                             {
-                                if (questInfoProp.TryGetProperty("tiers", out var tiersProp) && 
+                                var skinElement = kvp.Value;
+                                if (skinElement.TryGetProperty("questSkinInfo", out var questInfoProp) &&
+                                    questInfoProp.ValueKind == JsonValueKind.Object &&
+                                    questInfoProp.TryGetProperty("tiers", out var tiersProp) &&
                                     tiersProp.ValueKind == JsonValueKind.Array)
                                 {
                                     foreach (var tier in tiersProp.EnumerateArray())
@@ -116,75 +135,143 @@ namespace VideoGenerator.Services
                                     }
                                 }
                             }
-                        }
 
-                        foreach (var kvp in extraSkins)
-                        {
-                            rawSkins[kvp.Key] = kvp.Value;
+                            foreach (var kvp in extraSkins)
+                                rawSkins[kvp.Key] = kvp.Value;
                         }
-                        _skinsCache = rawSkins;
                     }
-                    _loadedSkinsLocale = locale;
-                    return _skinsCache ?? new Dictionary<string, JsonElement>();
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarn("Failed to read the local skins cache. Skin data may be unavailable until the next synchronization.");
+                        _logger.LogDebug($"Skins cache read details: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
+
+                lock (_cacheLock)
                 {
-                    _logger.LogWarn("Failed to read the local skins cache. Skin data may be unavailable until the next synchronization.");
-                    _logger.LogDebug($"Skins cache read details: {ex.Message}");
+                    if (version != _cacheVersion) continue;
+                    if (_skinsCache != null && _loadedSkinsLocale == locale) return _skinsCache;
+                    if (rawSkins != null)
+                    {
+                        _skinsCache = rawSkins;
+                        _loadedSkinsLocale = locale;
+                    }
+                    return rawSkins ?? new Dictionary<string, JsonElement>();
                 }
             }
-
-            return new Dictionary<string, JsonElement>();
         }
 
         public async Task<List<JsonElement>> GetSkinLinesAsync(string language = null)
         {
             string locale = AppConfig.GetCdragonLocale(language);
-            if (_skinLinesCache != null && _loadedSkinlinesLocale == locale) return _skinLinesCache;
-
-            string cachePath = GetSkinLinesCachePath(locale);
-            if (File.Exists(cachePath))
+            while (true)
             {
-                try
+                int version;
+                lock (_cacheLock)
                 {
-                    string cachedJson = await File.ReadAllTextAsync(cachePath);
-                    _skinLinesCache = JsonSerializer.Deserialize<List<JsonElement>>(cachedJson);
-                    _loadedSkinlinesLocale = locale;
-                    return _skinLinesCache ?? new List<JsonElement>();
+                    if (_skinLinesCache != null && _loadedSkinlinesLocale == locale) return _skinLinesCache;
+                    version = _cacheVersion;
                 }
-                catch (Exception ex)
+
+                List<JsonElement> parsed = null;
+                string cachePath = GetSkinLinesCachePath(locale);
+                if (File.Exists(cachePath))
                 {
-                    _logger.LogWarn("Failed to read the local skinlines cache. Skinline data may be unavailable until the next synchronization.");
-                    _logger.LogDebug($"Skinlines cache read details: {ex.Message}");
+                    try
+                    {
+                        string cachedJson = await File.ReadAllTextAsync(cachePath);
+                        parsed = JsonSerializer.Deserialize<List<JsonElement>>(cachedJson);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarn("Failed to read the local skinlines cache. Skinline data may be unavailable until the next synchronization.");
+                        _logger.LogDebug($"Skinlines cache read details: {ex.Message}");
+                    }
+                }
+
+                lock (_cacheLock)
+                {
+                    if (version != _cacheVersion) continue;
+                    if (_skinLinesCache != null && _loadedSkinlinesLocale == locale) return _skinLinesCache;
+                    if (parsed != null)
+                    {
+                        _skinLinesCache = parsed;
+                        _loadedSkinlinesLocale = locale;
+                    }
+                    return parsed ?? new List<JsonElement>();
                 }
             }
-
-            return new List<JsonElement>();
         }
 
         private async Task<Dictionary<int, ItemData>> GetItemsDataAsync(string language = null)
         {
             string locale = AppConfig.GetCdragonLocale(language);
-            if (_itemsCache != null && _loadedItemsLocale == locale) return _itemsCache;
-
-            string cachePath = GetItemsCachePath(locale);
-            if (File.Exists(cachePath))
+            while (true)
             {
-                try
+                int version;
+                lock (_cacheLock)
                 {
-                    string cachedJson = await File.ReadAllTextAsync(cachePath);
-                    _itemsCache = ParseItemsJson(cachedJson);
-                    _loadedItemsLocale = locale;
-                    return _itemsCache ?? new Dictionary<int, ItemData>();
+                    if (_itemsCache != null && _loadedItemsLocale == locale) return _itemsCache;
+                    version = _cacheVersion;
                 }
-                catch (Exception ex)
+
+                // The dictionary language is a display preference, not a
+                // requirement for the local game catalog to exist in that locale.
+                // Always retain the default (English) IDs as a fallback. A
+                // localized catalog may be absent or contain only some items.
+                var parsed = new Dictionary<int, ItemData>();
+                bool foundCatalog = false;
+                string[] cacheLocales = locale == "default"
+                    ? new[] { "default" }
+                    : new[] { "default", locale };
+                foreach (string cacheLocale in cacheLocales)
                 {
-                    _logger.LogWarn("Failed to read the local CommunityDragon items cache. Item resolution may be limited.");
-                    _logger.LogDebug($"Items cache read details: {ex.Message}");
+                    string cachePath = GetItemsCachePath(cacheLocale);
+                    if (!File.Exists(cachePath))
+                        continue;
+                    foundCatalog = true;
+
+                    try
+                    {
+                        string cachedJson = await File.ReadAllTextAsync(cachePath);
+                        foreach (var entry in ParseItemsJson(cachedJson))
+                        {
+                            if (parsed.TryGetValue(entry.Key, out var previous))
+                            {
+                                // Sparse locale records must not erase known
+                                // English names or slugs for the same item ID.
+                                if (!string.IsNullOrWhiteSpace(entry.Value.Name))
+                                    previous.Name = entry.Value.Name;
+                                if (!string.IsNullOrWhiteSpace(entry.Value.NameSlug))
+                                    previous.NameSlug = entry.Value.NameSlug;
+                            }
+                            else
+                            {
+                                parsed[entry.Key] = entry.Value;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarn($"Failed to read the local CommunityDragon items cache '{Path.GetFileName(cachePath)}'. Item resolution may be limited.");
+                        _logger.LogDebug($"Items cache read details: {ex.Message}");
+                    }
+                }
+
+                lock (_cacheLock)
+                {
+                    if (version != _cacheVersion) continue;
+                    if (_itemsCache != null && _loadedItemsLocale == locale) return _itemsCache;
+                    // Keep missing-cache lookups retryable: bootstrap may write
+                    // a new catalog later in the same process.
+                    if (foundCatalog)
+                    {
+                        _itemsCache = parsed;
+                        _loadedItemsLocale = locale;
+                    }
+                    return parsed;
                 }
             }
-
-            return new Dictionary<int, ItemData>();
         }
 
         private Dictionary<int, ItemData> ParseItemsJson(string json)
@@ -197,15 +284,20 @@ namespace VideoGenerator.Services
                 {
                     foreach (var item in doc.RootElement.EnumerateArray())
                     {
-                        if (item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.Number)
-                        {
-                            var data = new ItemData { Id = idProp.GetInt32() };
-                            if (item.TryGetProperty("name", out var nameProp) && nameProp.ValueKind == JsonValueKind.String)
-                                data.Name = nameProp.GetString();
-                            if (item.TryGetProperty("nameSlug", out var slugProp) && slugProp.ValueKind == JsonValueKind.String)
-                                data.NameSlug = slugProp.GetString();
-                            result[data.Id] = data;
-                        }
+                        // A single malformed entry must not discard the other
+                        // valid records in a locally cached Riot items array.
+                        if (item.ValueKind != JsonValueKind.Object ||
+                            !item.TryGetProperty("id", out var idProp) ||
+                            idProp.ValueKind != JsonValueKind.Number ||
+                            !idProp.TryGetInt32(out int id))
+                            continue;
+
+                        var data = new ItemData { Id = id };
+                        if (item.TryGetProperty("name", out var nameProp) && nameProp.ValueKind == JsonValueKind.String)
+                            data.Name = nameProp.GetString();
+                        if (item.TryGetProperty("nameSlug", out var slugProp) && slugProp.ValueKind == JsonValueKind.String)
+                            data.NameSlug = slugProp.GetString();
+                        result[data.Id] = data;
                     }
                 }
             }
@@ -216,140 +308,90 @@ namespace VideoGenerator.Services
             return result;
         }
 
-        public async Task<string> DownloadIconAsync(string url, string category, string customFileName = null)
+        // Shared by the local game icon resolver for existing image-cache entries.
+        internal static Task<bool> IsUsableCachedIconAsync(string path) =>
+            Task.Run(() => IsValidCachedImage(path));
+
+        private static bool IsValidCachedImage(string path)
         {
             try
             {
-                string categoryDir = Path.Combine(IconCacheDirectory, category);
-                DirectoriesCreator.CreateDirectory(categoryDir);
-                
-                string fileName = customFileName ?? Path.GetFileName(new Uri(url).LocalPath);
-                // Strip query parameters if customFileName wasn't provided
-                if (customFileName == null)
-                {
-                    int queryIdx = fileName.IndexOf('?');
-                    if (queryIdx >= 0) fileName = fileName.Substring(0, queryIdx);
-                }
-                
-                string filePath = Path.Combine(categoryDir, fileName);
-
-                if (File.Exists(filePath)) return filePath;
-
-                var bytes = await _httpClient.GetByteArrayAsync(url);
-                string temporaryPath = $"{filePath}.{Guid.NewGuid():N}.download";
-                try
-                {
-                    await File.WriteAllBytesAsync(temporaryPath, bytes);
-                    File.Move(temporaryPath, filePath, true);
-                }
-                finally
-                {
-                    try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
-                }
-                
-                return filePath;
+                return File.Exists(path) && IsDecodableImage(File.ReadAllBytes(path));
             }
-            catch (Exception ex)
-            {
-                _logger.LogDebug($"Failed to download icon from {url}. Details: {ex.Message}");
-                return null;
-            }
+            catch (IOException) { return false; }
+            catch (UnauthorizedAccessException) { return false; }
         }
 
-        public async Task<List<string>> GetAllItemIconFilenamesAsync()
+        private static bool IsDecodableImage(byte[] bytes)
         {
+            if (bytes == null || bytes.Length == 0) return false;
             try
             {
-                string url = "https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/assets/items/icons2d/";
-                var html = await _httpClient.GetStringAsync(url);
-                var matches = Regex.Matches(html, @"<a href=""([^""]+\.png)""");
-                return matches.Cast<Match>().Select(m => m.Groups[1].Value).ToList();
+                using var image = Image.Load(bytes);
+                return image.Width > 0 && image.Height > 0;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is UnknownImageFormatException or InvalidImageContentException or NotSupportedException or ArgumentException)
             {
-                _logger.LogWarn("Failed to retrieve the item icon catalog.");
-                _logger.LogDebug($"Item icon catalog details: {ex.Message}");
-                return new List<string>();
+                return false;
             }
-        }
-
-        public string GetFandomImageUrl(string filename)
-        {
-            // Legacy direct redirect path; kept for compatibility.
-            // Prefer ResolveFandomImageUrlAsync which uses the MediaWiki API to bypass Cloudflare.
-            string encodedName = Uri.EscapeDataString(filename.Replace(" ", "_"));
-            return $"https://leagueoflegends.fandom.com/wiki/Special:FilePath/{encodedName}";
-        }
-
-        public async Task<string> ResolveFandomImageUrlAsync(string filename)
-        {
-            try
-            {
-                string encodedTitle = Uri.EscapeDataString("File:" + filename.Replace(" ", "_"));
-                string apiUrl = $"https://leagueoflegends.fandom.com/api.php?action=query&titles={encodedTitle}&prop=imageinfo&iiprop=url&format=json";
-                string json = await _httpClient.GetStringAsync(apiUrl);
-
-                using var doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("query", out var query) &&
-                    query.TryGetProperty("pages", out var pages))
-                {
-                    foreach (var page in pages.EnumerateObject())
-                    {
-                        if (page.Value.TryGetProperty("missing", out _)) continue;
-                        if (page.Value.TryGetProperty("imageinfo", out var imageInfo) &&
-                            imageInfo.ValueKind == JsonValueKind.Array)
-                        {
-                            foreach (var info in imageInfo.EnumerateArray())
-                            {
-                                if (info.TryGetProperty("url", out var urlProp))
-                                {
-                                    string resolved = urlProp.GetString();
-                                    if (!string.IsNullOrEmpty(resolved)) return resolved;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarn($"Failed to resolve the Fandom image URL for '{filename}'.");
-                _logger.LogDebug($"Fandom image resolution details: {ex.Message}");
-            }
-            return null;
         }
 
         private Dictionary<string, string> _itemNameIdCache;
-        private readonly object _itemCacheLock = new();
         private Dictionary<string, int> _communityItemNameToIdCache;
+        private string _loadedCommunityItemsLocale;
 
-        private async Task<Dictionary<string, int>> GetCommunityItemNameToIdMapAsync()
+        private async Task<Dictionary<string, int>> GetCommunityItemNameToIdMapAsync(string language)
         {
-            if (_communityItemNameToIdCache != null) return _communityItemNameToIdCache;
-
-            var itemsData = await GetItemsDataAsync("EN");
-            var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var item in itemsData.Values)
+            string locale = AppConfig.GetCdragonLocale(language);
+            while (true)
             {
-                var namesToTry = new List<string>();
-                if (!string.IsNullOrEmpty(item.Name))
-                    namesToTry.Add(item.Name);
-                if (!string.IsNullOrEmpty(item.NameSlug))
-                    namesToTry.Add(item.NameSlug);
-
-                foreach (var name in namesToTry.Where(n => !string.IsNullOrEmpty(n)))
+                int version;
+                lock (_cacheLock)
                 {
-                    map[name] = item.Id;
-                    string normalized = Regex.Replace(name, @"[^A-Za-z0-9]", "");
-                    if (!map.ContainsKey(normalized))
-                        map[normalized] = item.Id;
+                    if (_communityItemNameToIdCache != null && _loadedCommunityItemsLocale == locale)
+                        return _communityItemNameToIdCache;
+                    version = _cacheVersion;
+                }
+
+                // Include English names and slugs even when the selected
+                // language has localized item display names.
+                var defaultItems = await GetItemsDataAsync("EN");
+                var localizedItems = locale == "default"
+                    ? defaultItems
+                    : await GetItemsDataAsync(language);
+                var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                void AddNames(IEnumerable<ItemData> items)
+                {
+                    foreach (var item in items)
+                    {
+                        foreach (string name in new[] { item.Name, item.NameSlug })
+                        {
+                            if (string.IsNullOrWhiteSpace(name))
+                                continue;
+
+                            map[name] = item.Id;
+                            string normalized = Regex.Replace(name, @"[^A-Za-z0-9]", "");
+                            if (!map.ContainsKey(normalized))
+                                map[normalized] = item.Id;
+                        }
+                    }
+                }
+
+                AddNames(defaultItems.Values);
+                if (locale != "default")
+                    AddNames(localizedItems.Values);
+                map["Ward"] = 3340;
+                lock (_cacheLock)
+                {
+                    if (version != _cacheVersion) continue;
+                    if (_communityItemNameToIdCache != null && _loadedCommunityItemsLocale == locale)
+                        return _communityItemNameToIdCache;
+                    _communityItemNameToIdCache = map;
+                    _loadedCommunityItemsLocale = locale;
+                    return map;
                 }
             }
-
-            map["Ward"] = 3340;
-            _communityItemNameToIdCache = map;
-            return map;
         }
 
         public MonsterDatabase LoadMonsterDatabase()
@@ -397,7 +439,7 @@ namespace VideoGenerator.Services
                 return (numericId, numericItem.Name ?? numericItem.NameSlug ?? itemName);
             }
 
-            var nameToIdMap = await GetCommunityItemNameToIdMapAsync();
+            var nameToIdMap = await GetCommunityItemNameToIdMapAsync(language);
             if (nameToIdMap == null || nameToIdMap.Count == 0) return null;
 
             // Exact or normalized match
@@ -439,7 +481,7 @@ namespace VideoGenerator.Services
             if (string.IsNullOrEmpty(itemName)) return null;
             if (int.TryParse(itemName, out _)) return itemName; // already an ID
 
-            // 1. Try CommunityDragon items data first (cached locally in Cache/items_data.json)
+            // 1. Read the installed game's items catalog from its local JSON cache.
             try
             {
                 var info = await GetItemInfoAsync(itemName);
@@ -448,69 +490,78 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarn("Failed to resolve the item through CommunityDragon. The local item database will be used as fallback.");
-                _logger.LogDebug($"CommunityDragon item resolution details: {ex.Message}");
+                _logger.LogWarn("Failed to resolve the item through the local game catalog. The local item database will be used as fallback.");
+                _logger.LogDebug($"Local item catalog details: {ex.Message}");
             }
 
-            // 2. Fallback to local DDragon items db
-            if (_itemNameIdCache == null)
+            // 2. Fallback to the preserved local item name-to-ID database.
+            Dictionary<string, string> itemNameIdCache;
+            while (true)
             {
+                int version;
+                lock (_cacheLock)
+                {
+                    itemNameIdCache = _itemNameIdCache;
+                    version = _cacheVersion;
+                }
+
+                if (itemNameIdCache != null || !File.Exists(ItemsFilePath)) break;
+
                 try
                 {
-                    if (File.Exists(ItemsFilePath))
-                    {
-                        string jsonStr = await File.ReadAllTextAsync(ItemsFilePath);
-                        var baseMap = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonStr) ?? new Dictionary<string, string>();
-                        
-                        var tempMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                        foreach (var kvp in baseMap)
-                        {
-                            tempMap[kvp.Key] = kvp.Value;
-                            string normalized = Regex.Replace(kvp.Key, @"[^A-Za-z0-9]", "");
-                            if (!tempMap.ContainsKey(normalized))
-                            {
-                                tempMap[normalized] = kvp.Value;
-                            }
-                        }
+                    string jsonStr = await File.ReadAllTextAsync(ItemsFilePath);
+                    var baseMap = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonStr) ?? new Dictionary<string, string>();
 
-                        lock (_itemCacheLock)
+                    var tempMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var kvp in baseMap)
+                    {
+                        tempMap[kvp.Key] = kvp.Value;
+                        string normalized = Regex.Replace(kvp.Key, @"[^A-Za-z0-9]", "");
+                        if (!tempMap.ContainsKey(normalized))
                         {
-                            _itemNameIdCache = tempMap;
+                            tempMap[normalized] = kvp.Value;
                         }
                     }
+
+                    lock (_cacheLock)
+                    {
+                        if (version != _cacheVersion) continue;
+                        itemNameIdCache = _itemNameIdCache ??= tempMap;
+                    }
+                    break;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("Failed to load the local Data Dragon item database.", ex);
+                    _logger.LogError("Failed to load the local item name-to-ID database.", ex);
                     return null;
                 }
             }
 
-            if (_itemNameIdCache != null)
+            if (itemNameIdCache != null)
             {
                 // 1. Direct exact or normalized match
-                if (_itemNameIdCache.TryGetValue(itemName, out string id))
+                if (itemNameIdCache.TryGetValue(itemName, out string id))
                 {
                     return id;
                 }
 
                 string cleanSearch = Regex.Replace(itemName, @"[^A-Za-z0-9]", "");
-                if (_itemNameIdCache.TryGetValue(cleanSearch, out id))
+                if (itemNameIdCache.TryGetValue(cleanSearch, out id))
                 {
                     return id;
                 }
 
                 // 2. Partial match
-                var bestMatch = _itemNameIdCache.Keys.FirstOrDefault(k => k.Contains(itemName, StringComparison.OrdinalIgnoreCase));
+                var bestMatch = itemNameIdCache.Keys.FirstOrDefault(k => k.Contains(itemName, StringComparison.OrdinalIgnoreCase));
                 if (bestMatch != null)
                 {
-                    return _itemNameIdCache[bestMatch];
+                    return itemNameIdCache[bestMatch];
                 }
 
-                var bestMatchClean = _itemNameIdCache.Keys.FirstOrDefault(k => k.Contains(cleanSearch, StringComparison.OrdinalIgnoreCase));
+                var bestMatchClean = itemNameIdCache.Keys.FirstOrDefault(k => k.Contains(cleanSearch, StringComparison.OrdinalIgnoreCase));
                 if (bestMatchClean != null)
                 {
-                    return _itemNameIdCache[bestMatchClean];
+                    return itemNameIdCache[bestMatchClean];
                 }
             }
 

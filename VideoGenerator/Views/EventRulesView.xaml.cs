@@ -46,8 +46,8 @@ namespace VideoGenerator.Views
             LoadStructures();
             NewStructureTargetBox.SelectedIndex = 0;
 
-            // Trigger filter refresh when category changes
-            RuleSectionBox.SelectionChanged += (s, e) => _rulesView.Refresh();
+            // Editing a rule must not change what is visible in the repository.
+            RuleRepositoryFilterBox.SelectionChanged += (s, e) => _rulesView.Refresh();
             RuleTypeBox.SelectionChanged += (s, e) => SyncDictKey();
 
             KeywordBox.TextChanged += (s, e) => { SuggestCategoryFromKeyword(); SyncDictKey(); };
@@ -93,14 +93,28 @@ namespace VideoGenerator.Views
         private static string DetectCategory(string keyword)
         {
             string k = keyword.ToLowerInvariant();
+            // Ping-specific keywords take precedence over generic combat phrases
+            // such as "assist", which also occurs in "AssistPing".
+            if (k.Contains("ping") || k.Contains("omw") || k.Contains("enemymissing") ||
+                k.Contains("caution") || k.Contains("retreat") || k == "mia")
+            {
+                return "PINGS";
+            }
+
+            // A single ability-slot letter is meaningful only as a whole keyword.
+            if (k is "q" or "w" or "e" or "r")
+            {
+                return "ABILITIES";
+            }
+
             var map = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
             {
-                ["COMBAT"] = new[] { "kill", "death", "dead", "assist", "ace", "slay", "combat", "killstreak", "multikill", "firstblood", "execute", "shutdown" },
+                ["COMBAT"] = new[] { "kill", "death", "dead", "assist", "ace", "slay", "combat", "attack", "killstreak", "multikill", "firstblood", "execute", "shutdown" },
                 ["EMOTES"] = new[] { "joke", "taunt", "laugh", "dance", "emote" },
                 ["MOVEMENT"] = new[] { "teleport", "recall", "run", "dash", "move", "movespeed", "walk", "blink" },
                 ["ITEMS"] = new[] { "item", "buy", "shop", "purchase", "sell", "gold", "spend" },
                 ["PINGS"] = new[] { "ping", "mia", "omw", "danger", "retreat", "assist", "caution", "enemymissing" },
-                ["ABILITIES"] = new[] { "spell", "cast", "hit", "ability", "q", "w", "e", "r", "passive", "skill" },
+                ["ABILITIES"] = new[] { "spell", "cast", "hit", "ability", "passive", "skill" },
                 ["INTERACTIONS"] = new[] { "encounter", "interact", "skin", "firstencounter", "firstmeet", "banter" },
                 ["SYSTEM"] = new[] { "system", "shopopen", "shopclose", "end", "surrender", "start", "lockin", "hud", "menu", "pause" }
             };
@@ -123,7 +137,7 @@ namespace VideoGenerator.Views
         {
             if (obj is not EventRule rule) return false;
             
-            string selectedCategory = (RuleSectionBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "ALL";
+            string selectedCategory = (RuleRepositoryFilterBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "ALL";
             if (selectedCategory == "ALL" || string.IsNullOrEmpty(selectedCategory)) return true;
 
             return rule.Section != null && rule.Section.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase);
@@ -356,6 +370,15 @@ namespace VideoGenerator.Views
         {
             if (sender is Button button && button.DataContext is EventRule rule)
             {
+                if (ModernMessageBox.Show(
+                    $"Delete the event rule '{rule.Keyword}'? This will change how matching folders are interpreted.",
+                    "Delete Event Rule",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
                 _ruleManager.Rules.Remove(rule);
                 _ruleManager.SaveRules();
 

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using VideoGenerator.Models;
+using VideoGenerator.Services;
 using System.Collections.Generic;
 
 namespace VideoGenerator.Views.Models
@@ -119,7 +120,7 @@ namespace VideoGenerator.Views.Models
                 return;
             }
 
-            Status = string.IsNullOrEmpty(iconPath) && ParsedData?.IconType != "generic"
+            Status = string.IsNullOrEmpty(iconPath) && EventIconResolutionService.RequiresIcon(ParsedData)
                 ? EventStatuses.MissingIcon
                 : EventStatuses.Ready;
         }

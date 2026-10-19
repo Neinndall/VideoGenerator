@@ -1,3 +1,62 @@
+# VideoGenerator — v2.0.0.0 development changelog
+
+MAJOR UPDATE
+Current direction: removed the optional CommunityDragon hash-dictionary downloader, its weekly startup job and the Hash Catalogs Settings panel. The installed WAD reader, xxHash64 path resolver, metadata refresh and icon cache remain operational; existing user caches and settings files are not deleted.
+
+New Features
+  - Sidebar / Uniform Full-Height Surface: Removed inset vignette and radial overlays that created vertical shade boundaries; the whole navigation column now uses one opaque midnight-navy background, with gradients reserved for the selected workspace.
+  - Settings / Return to Original Layout: Restored the General & Media / Processing / Transcription navigation. General now contains League game status and media/language settings; optional external hash syncing was retired.
+  - UI / Dedicated Shell Views: Extracted the sidebar and global processing status rail into separate WPF controls, retaining cached workspace navigation and cancellation actions.
+  - UI / Workflow Navigation: Added Ctrl+1 through Ctrl+5 workspace switching and Ctrl+F event search in the active Dashboard.
+  - Pipeline / Event Manifest: Added a shareable JSON export for analyzed event names, interpretations, mapped state and audio counts without raw audio/transcripts or machine-specific absolute paths.
+  - HUD / Retry Icons: Added a dashboard command to retry missing or deleted event icons without rescanning source folders.
+  - Assets / Local Game WAD: Introduced LeagueToolkit 4.1.0-beta.53 extraction of Riot .wad/.wad.client assets and .tex/.dds conversion to reusable PNGs.
+  - Assets / Hash Resolution: Added LeagueWadHashResolver (virtual path normalization, xxHash64, semantic lookup indexing, local champion ID catalog) and read-only OfflineSkinCatalog with imported WAD JSON paths.
+  - Settings / Local Client: Added configurable League of Legends installation folder and detection of WAD archives; a fresh profile has **no default game directory**, and an existing chosen path is preserved.
+  - Settings / General Workspace: Rebuilt preferences into independent General, Production and Transcription WPF views, with a persistent section navigator, dedicated scrolling panels, and local game installation diagnostics.
+  - Workspace / Compact Shell: Moved the live Events, Selected, Mapping and Eligible counters from the large Dashboard banner into the permanent top bar, replacing the redundant VideoGenerator badge.
+  - Visual System / V2 Premium: Reworked the shared WPF design language toward the reference mockup: midnight-navy surfaces, blue/violet primary gradients, electric cyan navigation/selection, coordinated typography and panels instead of muddy gray or lime accents. The original resource keys and functional bindings remain compatible.
+  - Settings / Visual Reference (historical iteration): Explored branded settings identity and concept-based card layouts; later replaced per user feedback with the simpler current section design.
+  - Settings / Layout Correction: Replaced fixed-width centered General cards with full-width responsive columns, removed overlapping Material Design hints from saved readonly paths, realigned the header subtitle, distributed the three section tabs equally, and brought Production/Transcription to the same content edges.
+  - Settings / Earlier Mockup Pass (superseded): A six-card, 7:5 grid was prototyped then retired following feedback. It is **not** the current Settings UI; the hash synchronization section was also removed.
+  - Settings / Historical QA: Compared early 1672×941 WPF renders with the mockup; the fixed hero/tab tray arrangement was later replaced. The current shell still releases the idle Settings statusbar space, restoring it during active work.
+  - Data / Multilanguage Item IDs: Merge local default items data with available localized catalogs, preserving English item IDs/aliases when the configured dictionary language lacks a catalog or contains a malformed entry. The resolver stays offline and existing caches are not overwritten.
+  - Installation / User-Selected Only: Removed implicit game-directory discovery; a fresh installation leaves the League directory empty until the user selects and saves a valid folder.
+  - Workspace / More Room: Removed duplicate hero headers from Dashboard, Visual Design, Event Mapping, Dictionary and Settings; preserved Dictionary search/add actions in its toolbar.
+  - Dashboard / Stable Event Queue: Reworked Detected Pipeline in matching navy surfaces with cyan selection and filters, fixed-height rows, consistent focus borders and reserved rule-action space to prevent the row contents from shifting on selection.
+  - Sidebar / Simpler Navigation: Removed the redundant Quick Access shortcuts panel while keeping all workspace navigation and keyboard shortcuts functional.
+  - Assets / Local WAD Hashes: The virtual path → xxHash64 resolver remains; the earlier optional external hash dictionary downloader was removed after confirming that the normal icon pipeline never consumed those catalogs.
+
+Improvements
+  - UI / Midnight Neon Theme: Introduced a ChatWork-inspired navy, cyan and violet palette, a more prominent workspace header, clear workflow stages, mapping/eligible counters, empty pipeline guidance and keyboard focus outlines.
+  - UI / Collapsible Navigation: Added an independent global workspace topbar with a toggle for the sidebar (Ctrl+B), while keeping workspace views cached.
+  - Mapping / Repository: Separated repository category filtering from the rule editor category, so automatic suggestions never hide unrelated repository rows.
+  - Mapping / Category Suggestions: Refined ping and ability-letter heuristics to avoid false categories.
+  - Design / Preview: New preview requests supersede older in-flight render results.
+  - Game Assets / Offline: Extracts champion portraits, skin tiles, full-size splashes and item icons from local WAD metadata and chunks; image downloads through Data Dragon, CommunityDragon and Fandom are retired.
+  - Game Assets / Patch Awareness: Tracks archive snapshot identity, refreshes official WAD-derived JSON caches and memory indices when installed LoL files change, and avoids stale skin IDs/tiles across patches without rescanning for every event.
+  - Design / Local Splash Search: Updated the background selector labels and error messages to describe WAD-based local extraction, removing outdated Riot API/web-download instructions.
+  - Game Assets / Integrity: Verifies and atomically publishes extracted PNGs; preserves valid cached images and existing event settings on failures.
+  - Game Assets / Configuration: Normalizes League installation selections from Game, DATA and Plugins to the installation root; checks the presence of both WAD families and game-data catalog before saving; runs the scan without blocking the UI, shows restart-needed status, and saves immediately.
+  - Icon Resolution / Skins and Themes: Uses real champion, skin and item paths provided by local game metadata; attempts other thematic members if an asset is unavailable.
+  - Icon Routing / Consistency: Centralizes the decision to require artwork and normalizes imported icon categories, while preserving existing per-event icon choices and user-created rules.
+
+Changes
+  - UX / Safety: Deleting an event rule now asks for confirmation before persisting.
+  - Planning / Scope: Kept the working app name and local configuration path VideoGenerator; public branding will be decided later.
+
+Bug Fixes
+  - Video / Atomic Publication: Final MP4 output is replaced only after a successful nonempty render; cancellation and failure preserve the previous video.
+  - Data / WAD Catalogs: Populates missing local skins, skinlines, items and champion catalogs from rcp-be-lol-game-data archives and validates their schema without replacing user caches.
+  - Pipeline / Monster Target Recognition: Attack2D/3D checks the monster catalog and known aliases. More specific parsing/routing for valid structures and champion interactions was added subsequently; genuinely unknown targets remain eligible for manual Mapping.
+  - HUD / Missing Image State: Removes the bogus "MISSING" file-path marker so failed icons can recover; direct icon cache lookups are also validated before use.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+<!-- Older v1.x entries below are archival patch notes. They mention the
+     retired Data Dragon/CommunityDragon/Fandom artwork implementations and
+     historical tests. Do not use them as current v2 implementation guidance. -->
+
 VideoGenerator - Patch Notes | v1.3.0.2
 
 HOTFIX UPDATE

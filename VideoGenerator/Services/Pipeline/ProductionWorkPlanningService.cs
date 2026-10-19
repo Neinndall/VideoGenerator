@@ -44,8 +44,7 @@ namespace VideoGenerator.Services
                 plan.TranscriptionWork += transcriptionWork;
                 plan.ImageWork += imageWork;
 
-                if (pipelineEvent.ParsedData != null &&
-                    pipelineEvent.ParsedData.IconType != "generic" &&
+                if (EventIconResolutionService.RequiresIcon(pipelineEvent.ParsedData) &&
                     string.IsNullOrEmpty(pipelineEvent.ParsedData.IconPath))
                 {
                     plan.IconWork++;

@@ -1,6 +1,5 @@
-using System.Net;
-using System.Net.Http;
-using System.Text.Json;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
 using Xunit;
@@ -31,8 +30,7 @@ public sealed class DataFetcherTests
                 }
                 """);
 
-            using var httpClient = new HttpClient(new ThrowingHandler());
-            var fetcher = new DataFetcher(httpClient, new LogService(), root);
+            var fetcher = new DataFetcher(new LogService(), root);
 
             var skins = await fetcher.GetSkinsDataAsync("EN");
 
@@ -62,8 +60,7 @@ public sealed class DataFetcherTests
                 ]
                 """);
 
-            using var httpClient = new HttpClient(new ThrowingHandler());
-            var fetcher = new DataFetcher(httpClient, new LogService(), root);
+            var fetcher = new DataFetcher(new LogService(), root);
 
             var exact = await fetcher.GetItemInfoAsync("InfinityEdge", "EN");
             string normalized = await fetcher.ResolveItemNameToIdAsync("Stealth Ward");
@@ -74,6 +71,122 @@ public sealed class DataFetcherTests
             Assert.Equal("Infinity Edge", exact.Value.Name);
             Assert.Equal("3340", normalized);
             Assert.Equal("3031", numeric);
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
+
+    [Theory]
+    [InlineData("ES")]
+    [InlineData("TR")]
+    public async Task MissingLocalizedItemsCacheFallsBackToDefaultWithoutNetwork(string language)
+    {
+        string root = CreateRoot();
+        try
+        {
+            string cachePath = Path.Combine(root, "Cache", "items_data_default.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+            await File.WriteAllTextAsync(cachePath, """
+                [{ "id": 3340, "name": "Stealth Ward", "nameSlug": "StealthWard" }]
+                """);
+
+            var fetcher = new DataFetcher(new LogService(), root);
+            var ward = await fetcher.GetItemInfoAsync("StealthWard", language);
+
+            Assert.True(ward.HasValue);
+            Assert.Equal(3340, ward.Value.Id);
+            Assert.Equal("Stealth Ward", ward.Value.Name);
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task LocalizedItemsOverrideNamesButRetainMissingDefaultItemIdsAndEnglishAliases()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string cacheDirectory = Path.Combine(root, "Cache");
+            Directory.CreateDirectory(cacheDirectory);
+            await File.WriteAllTextAsync(Path.Combine(cacheDirectory, "items_data_default.json"), """
+                [
+                  { "id": 3031, "name": "Infinity Edge", "nameSlug": "InfinityEdge" },
+                  { "id": 3340, "name": "Stealth Ward", "nameSlug": "StealthWard" }
+                ]
+                """);
+            await File.WriteAllTextAsync(Path.Combine(cacheDirectory, "items_data_es_es.json"), """
+                [
+                  { "id": 3031, "name": "Filo Infinito", "nameSlug": "FiloInfinito" },
+                  { "id": 9999, "name": "Artefacto", "nameSlug": "Artefacto" }
+                ]
+                """);
+
+            var fetcher = new DataFetcher(new LogService(), root);
+            var englishAlias = await fetcher.GetItemInfoAsync("InfinityEdge", "ES");
+            var spanishAlias = await fetcher.GetItemInfoAsync("FiloInfinito", "ES");
+            var defaultOnly = await fetcher.GetItemInfoAsync("StealthWard", "ES");
+            var spanishOnly = await fetcher.GetItemInfoAsync("Artefacto", "ES");
+
+            Assert.Equal(3031, englishAlias?.Id);
+            Assert.Equal("Filo Infinito", englishAlias?.Name);
+            Assert.Equal(3031, spanishAlias?.Id);
+            Assert.Equal(3340, defaultOnly?.Id);
+            Assert.Equal(9999, spanishOnly?.Id);
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task MalformedLocalizedItemsCacheDoesNotHideValidDefaultCatalog()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string cacheDirectory = Path.Combine(root, "Cache");
+            Directory.CreateDirectory(cacheDirectory);
+            await File.WriteAllTextAsync(Path.Combine(cacheDirectory, "items_data_default.json"), """
+                [{ "id": 1001, "name": "Boots", "nameSlug": "Boots" }]
+                """);
+            await File.WriteAllTextAsync(Path.Combine(cacheDirectory, "items_data_es_es.json"), "{invalid");
+
+            var fetcher = new DataFetcher(new LogService(), root);
+            var boots = await fetcher.GetItemInfoAsync("Boots", "ES");
+
+            Assert.Equal(1001, boots?.Id);
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task MalformedItemRowsDoNotDiscardFollowingValidItemRecords()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string cachePath = Path.Combine(root, "Cache", "items_data_default.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+            await File.WriteAllTextAsync(cachePath, """
+                [
+                  null,
+                  { "id": "not-an-id", "name": "Bad Item" },
+                  { "id": 999999999999, "name": "Out-of-range ID" },
+                  { "id": 1001, "name": "Boots", "nameSlug": "Boots" }
+                ]
+                """);
+
+            var fetcher = new DataFetcher(new LogService(), root);
+            Assert.Equal(1001, (await fetcher.GetItemInfoAsync("Boots", "EN"))?.Id);
         }
         finally
         {
@@ -92,8 +205,7 @@ public sealed class DataFetcherTests
             Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
             File.WriteAllText(databasePath, "[\"Baron Nashor\", \"Dragon\"]");
 
-            using var httpClient = new HttpClient(new ThrowingHandler());
-            var fetcher = new DataFetcher(httpClient, new LogService(), root);
+            var fetcher = new DataFetcher(new LogService(), root);
 
             MonsterDatabase database = fetcher.LoadMonsterDatabase();
 
@@ -107,7 +219,7 @@ public sealed class DataFetcherTests
     }
 
     [Fact]
-    public async Task UsesCachedIconsWithoutCallingTheNetwork()
+    public async Task AcceptsValidCachedIconWithoutAnyNetworkClient()
     {
         string root = CreateRoot();
 
@@ -115,18 +227,10 @@ public sealed class DataFetcherTests
         {
             string iconPath = Path.Combine(root, "Cache", "IconCache", "item", "cached.png");
             Directory.CreateDirectory(Path.GetDirectoryName(iconPath)!);
-            await File.WriteAllBytesAsync(iconPath, new byte[] { 1, 2, 3 });
+            using (var image = new Image<Rgba32>(2, 2))
+                image.SaveAsPng(iconPath);
 
-            var handler = new ThrowingHandler();
-            using var httpClient = new HttpClient(handler);
-            var fetcher = new DataFetcher(httpClient, new LogService(), root);
-
-            string resolvedPath = await fetcher.DownloadIconAsync(
-                "https://example.test/cached.png?version=1",
-                "item");
-
-            Assert.Equal(iconPath, resolvedPath);
-            Assert.Equal(0, handler.RequestCount);
+            Assert.True(await DataFetcher.IsUsableCachedIconAsync(iconPath));
         }
         finally
         {
@@ -135,32 +239,217 @@ public sealed class DataFetcherTests
     }
 
     [Fact]
-    public async Task CachesTheLatestLeagueVersionAfterAValidResponse()
+    public async Task RejectsInvalidMissingOrEmptyCachedImagesOffline()
     {
-        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        string root = CreateRoot();
+        try
         {
-            Content = new StringContent("[\"15.9.1\", \"15.9.0\"]")
-        });
-        using var httpClient = new HttpClient(handler);
-        var fetcher = new DataFetcher(httpClient, new LogService());
+            string iconDirectory = Path.Combine(root, "Cache", "IconCache", "item");
+            Directory.CreateDirectory(iconDirectory);
+            string html = Path.Combine(iconDirectory, "fake.png");
+            string empty = Path.Combine(iconDirectory, "empty.png");
+            string truncated = Path.Combine(iconDirectory, "truncated.png");
+            await File.WriteAllTextAsync(html, "<html>Not an image</html>");
+            await File.WriteAllBytesAsync(empty, Array.Empty<byte>());
+            await File.WriteAllBytesAsync(truncated, new byte[] { 0x89, 0x50, 0x4E, 0x47 });
 
-        string first = await fetcher.GetLatestLolVersionAsync();
-        string second = await fetcher.GetLatestLolVersionAsync();
-
-        Assert.Equal("15.9.1", first);
-        Assert.Equal(first, second);
-        Assert.Equal(1, handler.RequestCount);
+            Assert.False(await DataFetcher.IsUsableCachedIconAsync(html));
+            Assert.False(await DataFetcher.IsUsableCachedIconAsync(empty));
+            Assert.False(await DataFetcher.IsUsableCachedIconAsync(truncated));
+            Assert.False(await DataFetcher.IsUsableCachedIconAsync(Path.Combine(root, "absent.png")));
+            Assert.False(await DataFetcher.IsUsableCachedIconAsync(null!));
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
     }
 
     [Fact]
-    public async Task UsesTheFallbackVersionWhenTheVersionRequestFails()
+    public async Task ConstructorDoesNotRequireHttpClientAndMissingCachesRemainOffline()
     {
-        using var httpClient = new HttpClient(new ThrowingHandler());
-        var fetcher = new DataFetcher(httpClient, new LogService());
+        string root = CreateRoot();
+        try
+        {
+            var fetcher = new DataFetcher(new LogService(), root);
 
-        string version = await fetcher.GetLatestLolVersionAsync();
+            Assert.Empty(await fetcher.GetSkinsDataAsync("EN"));
+            Assert.Empty(await fetcher.GetSkinLinesAsync("EN"));
+            Assert.Null(await fetcher.GetItemInfoAsync("UnknownItem", "EN"));
+            Assert.Null(await fetcher.ResolveItemNameToIdAsync("UnknownItem"));
+            Assert.Empty(fetcher.LoadMonsterDatabase().All);
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
 
-        Assert.Equal("14.1.1", version);
+    [Fact]
+    public async Task LoadsSkinAndSkinlineCachesByLocaleWithoutNetwork()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string cache = Path.Combine(root, "Cache");
+            Directory.CreateDirectory(cache);
+            await File.WriteAllTextAsync(Path.Combine(cache, "skins_data_es_es.json"),
+                """{"1001":{"name":"Aspecto ES"}}""");
+            await File.WriteAllTextAsync(Path.Combine(cache, "skins_data_default.json"),
+                """{"1001":{"name":"Skin EN"}}""");
+            await File.WriteAllTextAsync(Path.Combine(cache, "skinlines_data_es_es.json"),
+                """[{"id":44,"name":"Temática ES"}]""");
+            await File.WriteAllTextAsync(Path.Combine(cache, "skinlines_data_default.json"),
+                """[{"id":44,"name":"Theme EN"}]""");
+
+            var fetcher = new DataFetcher(new LogService(), root);
+            Assert.Equal("Aspecto ES", (await fetcher.GetSkinsDataAsync("ES"))["1001"].GetProperty("name").GetString());
+            Assert.Equal("Skin EN", (await fetcher.GetSkinsDataAsync("EN"))["1001"].GetProperty("name").GetString());
+            Assert.Equal("Temática ES", (await fetcher.GetSkinLinesAsync("ES"))[0].GetProperty("name").GetString());
+            Assert.Equal("Theme EN", (await fetcher.GetSkinLinesAsync("EN"))[0].GetProperty("name").GetString());
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task InvalidateCachesReloadsUpdatedSkinsSkinlinesAndItems()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string cache = Path.Combine(root, "Cache");
+            Directory.CreateDirectory(cache);
+            string skinsPath = Path.Combine(cache, "skins_data_default.json");
+            string linesPath = Path.Combine(cache, "skinlines_data_default.json");
+            string itemsPath = Path.Combine(cache, "items_data_default.json");
+            await File.WriteAllTextAsync(skinsPath, """{"100":{"name":"Old Skin"}}""");
+            await File.WriteAllTextAsync(linesPath, """[{"id":1,"name":"Old Line"}]""");
+            await File.WriteAllTextAsync(itemsPath,
+                """[{"id":1001,"name":"Old Item","nameSlug":"OldItem"}]""");
+
+            var fetcher = new DataFetcher(new LogService(), root);
+            Assert.Equal("Old Skin", (await fetcher.GetSkinsDataAsync("EN"))["100"].GetProperty("name").GetString());
+            Assert.Equal("Old Line", (await fetcher.GetSkinLinesAsync("EN"))[0].GetProperty("name").GetString());
+            Assert.Equal("1001", await fetcher.ResolveItemNameToIdAsync("OldItem"));
+
+            await File.WriteAllTextAsync(skinsPath, """{"200":{"name":"New Skin"}}""");
+            await File.WriteAllTextAsync(linesPath, """[{"id":2,"name":"New Line"}]""");
+            await File.WriteAllTextAsync(itemsPath,
+                """[{"id":2002,"name":"New Item","nameSlug":"NewItem"}]""");
+
+            // Existing lookups stay memoized until the game patch is synchronized.
+            Assert.Contains("100", (await fetcher.GetSkinsDataAsync("EN")).Keys);
+            Assert.Equal("Old Line", (await fetcher.GetSkinLinesAsync("EN"))[0].GetProperty("name").GetString());
+            Assert.Equal("1001", await fetcher.ResolveItemNameToIdAsync("OldItem"));
+
+            fetcher.InvalidateCaches();
+
+            var skins = await fetcher.GetSkinsDataAsync("EN");
+            Assert.DoesNotContain("100", skins.Keys);
+            Assert.Equal("New Skin", skins["200"].GetProperty("name").GetString());
+            Assert.Equal("New Line", (await fetcher.GetSkinLinesAsync("EN"))[0].GetProperty("name").GetString());
+            Assert.Equal("2002", await fetcher.ResolveItemNameToIdAsync("NewItem"));
+            Assert.Null(await fetcher.GetItemInfoAsync("OldItem", "EN"));
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task InvalidateCachesAlsoReloadsLegacyItemFallback()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string config = Path.Combine(root, "Config");
+            Directory.CreateDirectory(config);
+            string itemsPath = Path.Combine(config, "items.json");
+            await File.WriteAllTextAsync(itemsPath, """{"Old Artifact":"9001"}""");
+            var fetcher = new DataFetcher(new LogService(), root);
+            Assert.Equal("9001", await fetcher.ResolveItemNameToIdAsync("OldArtifact"));
+
+            await File.WriteAllTextAsync(itemsPath, """{"New Artifact":"9002"}""");
+            fetcher.InvalidateCaches();
+
+            Assert.Null(await fetcher.ResolveItemNameToIdAsync("OldArtifact"));
+            Assert.Equal("9002", await fetcher.ResolveItemNameToIdAsync("NewArtifact"));
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task ResolvesItemsFromLegacyLocalFileWhenItemCacheIsMissing()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string config = Path.Combine(root, "Config");
+            Directory.CreateDirectory(config);
+            await File.WriteAllTextAsync(Path.Combine(config, "items.json"),
+                """{"Zhonya's Hourglass":"3157","Guardian Angel":"3026"}""");
+
+            var fetcher = new DataFetcher(new LogService(), root);
+            Assert.Equal("3157", await fetcher.ResolveItemNameToIdAsync("ZhonyasHourglass"));
+            Assert.Equal("3026", await fetcher.ResolveItemNameToIdAsync("Guardian Angel"));
+            Assert.Equal("3026", await fetcher.ResolveItemNameToIdAsync("3026"));
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task CorruptLocalDatabasesNeverTriggerNetworkRequests()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string cache = Path.Combine(root, "Cache");
+            Directory.CreateDirectory(cache);
+            await File.WriteAllTextAsync(Path.Combine(cache, "skins_data_default.json"), "{invalid");
+            await File.WriteAllTextAsync(Path.Combine(cache, "skinlines_data_default.json"), "invalid");
+            await File.WriteAllTextAsync(Path.Combine(cache, "items_data_default.json"), "{invalid");
+
+            var fetcher = new DataFetcher(new LogService(), root);
+            Assert.Empty(await fetcher.GetSkinsDataAsync("EN"));
+            Assert.Empty(await fetcher.GetSkinLinesAsync("EN"));
+            Assert.Null(await fetcher.GetItemInfoAsync("Sword", "EN"));
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
+    }
+
+    [Fact]
+    public void LoadsStructuredMonsterDatabaseFromLocalConfig()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string config = Path.Combine(root, "Config");
+            Directory.CreateDirectory(config);
+            File.WriteAllText(Path.Combine(config, "monsters.json"),
+                """{"Epic":["Baron Nashor","Elder Dragon"],"Large":["Blue Sentinel"]}""");
+
+            var fetcher = new DataFetcher(new LogService(), root);
+            var result = fetcher.LoadMonsterDatabase();
+            Assert.Equal(new[] { "Baron Nashor", "Elder Dragon" }, result.Epic);
+            Assert.Equal(new[] { "Blue Sentinel" }, result.Large);
+        }
+        finally
+        {
+            DeleteRoot(root);
+        }
     }
 
     private static string CreateRoot() =>
@@ -174,37 +463,4 @@ public sealed class DataFetcherTests
         }
     }
 
-    private sealed class ThrowingHandler : HttpMessageHandler
-    {
-        public int RequestCount { get; private set; }
-
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-        {
-            RequestCount++;
-            return Task.FromException<HttpResponseMessage>(
-                new HttpRequestException("Network access is disabled for this test."));
-        }
-    }
-
-    private sealed class StubHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responseFactory;
-
-        public StubHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)
-        {
-            _responseFactory = responseFactory;
-        }
-
-        public int RequestCount { get; private set; }
-
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-        {
-            RequestCount++;
-            return Task.FromResult(_responseFactory(request));
-        }
-    }
 }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using VideoGenerator.Services;
 using VideoGenerator.Views.Models;
 
 namespace VideoGenerator.Views
@@ -29,8 +30,8 @@ namespace VideoGenerator.Views
                 if (token.IsCancellationRequested) return;
 
                 PreviewEventModel pipelineEvent = _model.SelectedEvent;
-                if (pipelineEvent.ParsedData != null &&
-                    pipelineEvent.ParsedData.IconType != "generic" &&
+                if (EventIconResolutionService.RequiresIcon(pipelineEvent.ParsedData) &&
+                    pipelineEvent.Status != EventStatuses.MissingIcon &&
                     string.IsNullOrEmpty(pipelineEvent.ParsedData.IconPath))
                 {
                     await ResolveEventIconAsync(pipelineEvent);
@@ -67,23 +68,25 @@ namespace VideoGenerator.Views
 
         private async Task ResolveEventIconAsync(PreviewEventModel pipelineEvent)
         {
-            if (pipelineEvent?.ParsedData == null ||
-                pipelineEvent.ParsedData.IconType == "generic" ||
+            if (pipelineEvent == null || !EventIconResolutionService.RequiresIcon(pipelineEvent.ParsedData) ||
+                pipelineEvent.Status == EventStatuses.MissingIcon ||
                 !string.IsNullOrEmpty(pipelineEvent.ParsedData.IconPath))
             {
                 return;
             }
 
             string iconPath = await _eventIconResolutionService.ResolveAsync(pipelineEvent.ParsedData);
-            pipelineEvent.ParsedData.IconPath = string.IsNullOrEmpty(iconPath) ? "MISSING" : iconPath;
+            // Keep a failed resolution as null; the user can retry without rescanning.
+            pipelineEvent.ParsedData.IconPath = iconPath;
             pipelineEvent.UpdateStatusAfterIconResolution(iconPath);
         }
 
-        private async Task ResolvePendingIconsAsync(CancellationToken cancellationToken)
+        private async Task ResolvePendingIconsAsync(CancellationToken cancellationToken, bool retryOnlyFailed = false)
         {
             var pendingEvents = _model.ProcessedEvents
-                .Where(pipelineEvent => pipelineEvent.ParsedData != null &&
-                                        pipelineEvent.ParsedData.IconType != "generic" &&
+                .Where(pipelineEvent => EventIconResolutionService.RequiresIcon(pipelineEvent.ParsedData) &&
+                                        !pipelineEvent.NeedsMapping &&
+                                        (!retryOnlyFailed || pipelineEvent.Status == EventStatuses.MissingIcon) &&
                                         string.IsNullOrEmpty(pipelineEvent.ParsedData.IconPath))
                 .ToList();
             if (pendingEvents.Count == 0) return;
@@ -92,23 +95,39 @@ namespace VideoGenerator.Views
             int resolved = 0;
             _progressService.Start($"Resolving icons: 0/{total} (0%)", indeterminate: false);
 
+            // Numerous audio folders can reference the SAME thematic skinline,
+            // champion or system icon. Resolve that semantic icon once per scan,
+            // then hydrate all matching events. An actual missing icon remains a
+            // Missing Icon status for every affected event, but causes only one
+            // actionable warning instead of hundreds of duplicate warnings.
+            var batches = pendingEvents.GroupBy(pipelineEvent =>
+                pipelineEvent.ParsedData.IconType.Trim() + ":" +
+                pipelineEvent.ParsedData.IconLookupName.Trim(),
+                StringComparer.OrdinalIgnoreCase).ToList();
             using var semaphore = new SemaphoreSlim(3, 3);
-            Task[] resolutionTasks = pendingEvents.Select(async pipelineEvent =>
+            Task[] resolutionTasks = batches.Select(async batch =>
             {
                 await semaphore.WaitAsync(cancellationToken);
                 try
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    string iconPath = await _eventIconResolutionService.ResolveAsync(pipelineEvent.ParsedData);
+                    PreviewEventModel representative = batch.First();
+                    string iconPath = await _eventIconResolutionService.ResolveAsync(representative.ParsedData);
                     if (string.IsNullOrEmpty(iconPath))
                     {
-                        _logger.LogWarn($"Failed to resolve icon for event '{pipelineEvent.FolderName}' ({pipelineEvent.ParsedData.IconType}:{pipelineEvent.ParsedData.IconLookupName}). The event will remain without an icon.");
+                        string affected = batch.Count() == 1
+                            ? $"event '{representative.FolderName}'"
+                            : $"{batch.Count()} events (e.g. '{representative.FolderName}')";
+                        _logger.LogWarn($"Failed to resolve local WAD icon for {affected} ({representative.ParsedData.IconType}:{representative.ParsedData.IconLookupName}). These events remain marked Missing Icon.");
                     }
 
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        pipelineEvent.ParsedData.IconPath = iconPath;
-                        pipelineEvent.UpdateStatusAfterIconResolution(iconPath);
+                        foreach (PreviewEventModel pipelineEvent in batch)
+                        {
+                            pipelineEvent.ParsedData.IconPath = iconPath;
+                            pipelineEvent.UpdateStatusAfterIconResolution(iconPath);
+                        }
                     });
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -117,11 +136,11 @@ namespace VideoGenerator.Views
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"Background icon resolution failed for {pipelineEvent.FolderName}", ex);
+                    _logger.LogError($"Background icon resolution failed for {batch.First().ParsedData.IconType}:{batch.First().ParsedData.IconLookupName}", ex);
                 }
                 finally
                 {
-                    int currentResolved = Interlocked.Increment(ref resolved);
+                    int currentResolved = Interlocked.Add(ref resolved, batch.Count());
                     double progressValue = (double)currentResolved / total * 100.0;
                     _progressService.Report(progressValue, $"Resolving icons: {currentResolved}/{total} ({progressValue:0}%)");
                     semaphore.Release();

@@ -12,44 +12,12 @@
 
     <Grid Margin="{StaticResource WorkspacePagePadding}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Border Grid.Row="0" Style="{StaticResource WorkspaceHeaderContainer}" Margin="0,0,0,16">
-            <Grid>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="LOCALIZATION WORKSPACE" Style="{StaticResource WorkspaceEyebrowText}"/>
-                    <TextBlock Text="Dictionary" Style="{StaticResource WorkspaceTitleText}" Margin="0,4,0,0"/>
-                    <TextBlock Text="Manage supported languages and HUD event translations." 
-                               Style="{StaticResource PageSubtitleText}" 
-                               Margin="0,5,0,0"/>
-                </StackPanel>
-                
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource ModernSearchTextBox}"
-                             materialDesign:HintAssist.Hint="Search..."
-                             Width="180"
-                             Margin="0,0,16,0"/>
-                    
-                    <Button Click="AddNew_Click"
-                             Style="{StaticResource ModernPrimaryButton}"
-                             Height="42" Padding="16,0"
-                             Width="140">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Plus" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="ADD ENTRY" VerticalAlignment="Center" FontSize="11" FontWeight="Bold"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
-
         <!-- Main Content (Sidebar + List) -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="110"/>
                 <ColumnDefinition Width="*"/>
@@ -63,8 +31,8 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
-                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="12,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
-                        <TextBlock Text="LANGS" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="9" HorizontalAlignment="Center"/>
+                    <Border Style="{StaticResource WorkspacePanelHeader}" Padding="12,11">
+                        <TextBlock Text="LANGUAGES" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="10" HorizontalAlignment="Center"/>
                     </Border>
 
                     <ListBox Grid.Row="1" 
@@ -92,12 +60,34 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
-                    <!-- Title Header -->
-                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="7,7,0,0" Padding="24,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="BookOpenOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
-                            <TextBlock Text="TRANSLATIONS DICTIONARY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
-                        </StackPanel>
+                    <!-- Dictionary toolbar: retain search and Add Entry after removing the page hero. -->
+                    <Border Grid.Row="0" Style="{StaticResource WorkspacePanelHeader}" Padding="16,11">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="BookOpenOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
+                                <TextBlock Text="TRANSLATIONS DICTIONARY" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource ModernSearchTextBox}"
+                                         materialDesign:HintAssist.Hint="Search..."
+                                         Width="180"
+                                         Margin="0,0,12,0"/>
+                                <Button Click="AddNew_Click"
+                                        Style="{StaticResource ModernPrimaryButton}"
+                                        Height="42" Padding="16,0"
+                                        Width="140">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Plus" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="ADD ENTRY" VerticalAlignment="Center" FontSize="11" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
                     </Border>
 
                     <!-- Column Headers (dark bg, no icons) -->
@@ -191,7 +181,7 @@
 
 
         <!-- Footer Actions -->
-        <Grid Grid.Row="2" Margin="0,24,0,0">
+        <Grid Grid.Row="1" Margin="0,24,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>

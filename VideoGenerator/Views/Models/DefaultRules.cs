@@ -31,6 +31,10 @@ namespace VideoGenerator.Views.Models
                 new EventRule { Keyword = "KillAllyBehind", TranslationKey = "event_kill_ally_behind", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillBehindAllyTeam", TranslationKey = "event_kill_ally_behind", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "DeathHuman", TranslationKey = "event_death_human", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                // Riot VO names general incoming effects as Receive2D/3D{Effect}.
+                // Match only known non-target effects; unknown Receive targets still need mapping.
+                new EventRule { Keyword = "ReceiveDamage", TranslationKey = "event_receive_damage", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "ReceiveHealShield", TranslationKey = "event_receive_heal_shield", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
 
                 // ==========================================
                 // 🗣️ EMOTES (Risas, Bromas, Respuestas)

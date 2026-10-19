@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <!-- Custom TabControl for Lore Engine -->
+    <!-- Editorial navigation: selection is communicated by icon/text color alone. -->
     <Style x:Key="LoreEngineTabControl" TargetType="TabControl">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -16,11 +16,16 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         
-                        <!-- Header with underlining indicator -->
-                        <UniformGrid Grid.Row="0" Rows="1" x:Name="HeaderPanel" 
-                                     IsItemsHost="True" 
-                                     Margin="0,0,0,40"
-                                     HorizontalAlignment="Center"/>
+                        <Border Grid.Row="0"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Margin="0,0,0,18"
+                                HorizontalAlignment="Center">
+                            <UniformGrid Rows="1" x:Name="HeaderPanel"
+                                         IsItemsHost="True"
+                                         HorizontalAlignment="Center"/>
+                        </Border>
                         
                         <ContentPresenter Grid.Row="1" ContentSource="SelectedContent"/>
                     </Grid>
@@ -32,33 +37,41 @@
     <Style x:Key="LoreEngineTabItem" TargetType="TabItem">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
-        <Setter Property="Padding" Value="24,12"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="18,11"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
-                    <Grid x:Name="Root">
-                        <StackPanel x:Name="Content" Orientation="Vertical" HorizontalAlignment="Center">
-                            <ContentPresenter x:Name="ContentSite"
-                                            ContentSource="Header"
-                                            Margin="{TemplateBinding Padding}"
-                                            RecognizesAccessKey="True"/>
-                            <Border x:Name="Indicator" 
-                                    Height="3" 
-                                    Width="40" 
-                                    Background="{StaticResource AccentBrush}" 
-                                    CornerRadius="1.5"
-                                    Opacity="0"
-                                    Margin="0,-4,0,0"/>
-                        </StackPanel>
+                    <Grid Background="Transparent" Margin="2,0">
+                        <ContentPresenter x:Name="ContentSite"
+                                          ContentSource="Header"
+                                          Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          RecognizesAccessKey="True"/>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                            <Setter TargetName="Indicator" Property="Opacity" Value="1"/>
-                        </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource FocusBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.38"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

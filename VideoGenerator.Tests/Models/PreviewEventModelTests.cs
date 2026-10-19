@@ -45,4 +45,43 @@ public sealed class PreviewEventModelTests
 
         Assert.Equal(EventStatuses.NoAudio, noAudio.Status);
     }
+
+    [Fact]
+    public void FailedIconCanRecoverWithoutReanalyzingEvent()
+    {
+        var pipelineEvent = new PreviewEventModel
+        {
+            Status = EventStatuses.PendingIcon,
+            ParsedData = new ParsedEvent
+            {
+                IsMapped = true,
+                IconType = "champion",
+                IconLookupName = "Lux"
+            }
+        };
+
+        pipelineEvent.UpdateStatusAfterIconResolution(null);
+        Assert.Equal(EventStatuses.MissingIcon, pipelineEvent.Status);
+        Assert.Null(pipelineEvent.ParsedData.IconPath);
+
+        pipelineEvent.ParsedData.IconPath = "lux.png";
+        pipelineEvent.UpdateStatusAfterIconResolution(pipelineEvent.ParsedData.IconPath);
+
+        Assert.Equal(EventStatuses.Ready, pipelineEvent.Status);
+        Assert.Equal("lux.png", pipelineEvent.ParsedData.IconPath);
+    }
+
+    [Fact]
+    public void ImportedGenericIconTypeDoesNotProduceMissingIconStatus()
+    {
+        var pipelineEvent = new PreviewEventModel
+        {
+            Status = EventStatuses.PendingIcon,
+            ParsedData = new ParsedEvent { IconType = " Generic ", IconLookupName = "Generic" }
+        };
+
+        pipelineEvent.UpdateStatusAfterIconResolution(null);
+
+        Assert.Equal(EventStatuses.Ready, pipelineEvent.Status);
+    }
 }

@@ -42,6 +42,9 @@ namespace VideoGenerator.Models
         public static readonly string ApplicationLogPath = Path.Combine(LogsDir, "application_logs.log");
         public static readonly string ApplicationErrorsPath = Path.Combine(LogsDir, "application_errors.log");
         public static readonly string PreviewIconPlaceholderPath = Path.Combine(CacheDir, "preview_icon_placeholder.png");
+        // New preview-only vector-derived tile. Never overwrite legacy placeholder
+        // or user-provided icon/cache files during this visual upgrade.
+        public static readonly string PreviewDialogueIconPath = Path.Combine(CacheDir, "preview_dialogue_icon_v2.png");
 
         // Isolated storage helpers for deterministic tests
         public static string GetConfigDirectory(string storageRoot = null) =>
@@ -88,13 +91,6 @@ namespace VideoGenerator.Models
 
         public static string CreateTemporaryWavPath() =>
             Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wav");
-
-        // URLs
-        public static readonly string MonsterWikiUrl = "https://leagueoflegends.fandom.com/wiki/Monster";
-        public static string GetSkinsDataUrl(string locale) => $"https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/{locale}/v1/skins.json";
-        public static string GetSkinLinesUrl(string locale) => $"https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/{locale}/v1/skinlines.json";
-        public static string GetItemsDataUrl(string locale) => $"https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/{locale}/v1/items.json";
-        public static readonly string VersionsUrl = "https://ddragon.leagueoflegends.com/api/versions.json";
 
         public static string GetCdragonLocale(string language = null)
         {

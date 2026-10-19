@@ -1,44 +1,63 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- HUD Style Border (Tag/Label look) -->
+    <!-- Surface language shared across every workspace. Names are deliberately
+         stable: all preexisting XAML bindings and StaticResource keys survive. -->
     <Style x:Key="HUDBorder" TargetType="Border">
-        <Setter Property="CornerRadius" Value="6"/>
-        <Setter Property="Padding" Value="8,4"/>
-        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="CornerRadius" Value="7"/>
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
     <!-- Canonical card surface for application content. -->
     <Style x:Key="SurfaceContainer" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource SecondaryBackgroundBrush}"/>
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#0B1D37" Offset="0"/>
+                    <GradientStop Color="#0A1730" Offset="0.63"/>
+                    <GradientStop Color="#101A39" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="12"/>
-        <Setter Property="Padding" Value="20"/>
+        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="Padding" Value="22"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
     <!-- Inner surface for toolbars, forms, and grouped controls. -->
     <Style x:Key="InsetContainer" TargetType="Border" BasedOn="{StaticResource SurfaceContainer}">
-        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
+        <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="CornerRadius" Value="10"/>
         <Setter Property="Padding" Value="16"/>
     </Style>
 
     <Style x:Key="StatusPill" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource AccentSoftBrush}"/>
-        <Setter Property="BorderBrush" Value="#558B5CF6"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="8"/>
-        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="CornerRadius" Value="9"/>
+        <Setter Property="Padding" Value="10,5"/>
     </Style>
 
     <Style x:Key="SectionHeaderBorder" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource ElevatedSurfaceBrush}"/>
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#10284B" Offset="0"/>
+                    <GradientStop Color="#101D38" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
-        <Setter Property="Padding" Value="16,10"/>
+        <Setter Property="Padding" Value="18,13"/>
     </Style>
 
 </ResourceDictionary>

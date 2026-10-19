@@ -12,70 +12,164 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:NonLockingImageConverter x:Key="NonLockingImageConverter"/>
         <Style x:Key="DashboardEventSelectionCheckBox"
-               TargetType="CheckBox"
-               BasedOn="{StaticResource MaterialDesignCheckBox}">
+               TargetType="CheckBox">
             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Width" Value="27"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Background="Transparent">
+                            <Border x:Name="SelectionBox" Width="18" Height="18" CornerRadius="4"
+                                    Background="#0B1933" BorderBrush="#375B87"
+                                    BorderThickness="1" HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="SelectionTick" Text="✓" Visibility="Collapsed"
+                                           Foreground="{StaticResource AccentBrushLight}"
+                                           FontSize="13" FontWeight="Bold" TextAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="SelectionBox" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
+                                <Setter TargetName="SelectionBox" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="SelectionTick" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="SelectionBox" Property="BorderBrush" Value="{StaticResource AccentBrushLight}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="SelectionBox" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="DashboardPipelineFilter" TargetType="RadioButton">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <!-- Same single underline language as the HUD ALIGNMENT selector.
+                             The line is always allocated so selecting never shifts content. -->
+                        <Grid Background="Transparent" SnapsToDevicePixels="True">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="2"/>
+                            </Grid.RowDefinitions>
+                            <ContentPresenter Grid.Row="0" ContentSource="Content"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                            <Border x:Name="SelectionLine" Grid.Row="1" Height="2"
+                                    Background="{StaticResource AccentBrushLight}"
+                                    CornerRadius="1" Opacity="0" Margin="7,0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                                <Setter TargetName="SelectionLine" Property="Opacity" Value="1"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                                <Setter TargetName="SelectionLine" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True"/>
+                                    <Condition Property="IsKeyboardFocused" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="SelectionLine" Property="Opacity" Value="1"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="DashboardPipelineRow" TargetType="ListBoxItem">
+            <Setter Property="Height" Value="54"/>
+            <Setter Property="Margin" Value="5,2"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <!-- The outline is always one pixel wide: selection, mouse
+                             hover and keyboard focus never change row geometry. -->
+                        <Border x:Name="RowSurface" Background="Transparent"
+                                BorderBrush="Transparent" BorderThickness="1"
+                                CornerRadius="8" SnapsToDevicePixels="True">
+                            <Grid>
+                                <Border x:Name="RowAccent" Width="3" Background="Transparent"
+                                        HorizontalAlignment="Left" Margin="0,7,0,7" CornerRadius="2"/>
+                                <ContentPresenter Margin="7,0,5,0"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowSurface" Property="Background" Value="#112B4B"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowSurface" Property="Background" Value="#163F69"/>
+                                <Setter TargetName="RowSurface" Property="BorderBrush" Value="#367EC2"/>
+                                <Setter TargetName="RowAccent" Property="Background" Value="{StaticResource AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="RowSurface" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
     <Grid Margin="{StaticResource WorkspacePagePadding}">
         <Grid.RowDefinitions>
-            <RowDefinition x:Name="HeaderRow" Height="Auto"/>
             <RowDefinition x:Name="ConfigRow" Height="Auto"/>
             <RowDefinition Height="3*"/>
             <RowDefinition x:Name="LogsRow" Height="*"/>
         </Grid.RowDefinitions>
- 
-        <!-- 1. CINEMATIC HEADER -->
-        <Border Grid.Row="0" Style="{StaticResource WorkspaceHeaderContainer}" Margin="0,0,0,16">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="PRODUCTION WORKSPACE" Style="{StaticResource WorkspaceEyebrowText}"/>
-                    <TextBlock Text="Video production" Style="{StaticResource WorkspaceTitleText}" Margin="0,4,0,0"/>
-                    <TextBlock Text="Analyze sources, validate event mapping, and render your video batch from one workspace."
-                               Style="{StaticResource PageSubtitleText}" Margin="0,4,0,0"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Style="{StaticResource WorkspaceMetricPill}" Margin="0,0,8,0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="EVENTS" Style="{StaticResource SectionLabelText}" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding DashboardModel.FilteredProcessedEvents.Count}" Style="{StaticResource MonoValueText}"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource WorkspaceMetricPill}" Margin="0,0,8,0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="SELECTED" Style="{StaticResource SectionLabelText}" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding DashboardModel.SelectedVisibleEventCount}" Style="{StaticResource MonoValueText}"/>
-                            <TextBlock Text="/" Style="{StaticResource MonoValueText}"/>
-                            <TextBlock Text="{Binding DashboardModel.VisibleEventCount}" Style="{StaticResource MonoValueText}"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource WorkspaceMetricPill}"
-                            Background="{StaticResource SuccessSoftBrush}"
-                            BorderBrush="{StaticResource SuccessSoftBorderBrush}">
-                        <TextBlock Text="PIPELINE STATUS"
-                                   Style="{StaticResource SectionLabelText}"
-                                   Foreground="{StaticResource SuccessBrush}"/>
-                    </Border>
-                </StackPanel>
-            </Grid>
-        </Border>
 
-        <!-- 2. CONFIGURATION & ANALYSIS BAR -->
-        <Grid Grid.Row="1" Margin="0,0,0,12">
+        <!-- Folder controls start immediately below the persistent app toolbar. -->
+        <Grid x:Name="AnalysisToolbar" Grid.Row="0" Margin="0,0,0,12"
+              SizeChanged="AnalysisToolbar_SizeChanged">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Border Style="{StaticResource WorkspaceToolbarContainer}" Margin="0,0,16,0">
-                <Grid>
+            <Border x:Name="AnalysisFiltersPanel" Style="{StaticResource WorkspaceToolbarContainer}"
+                    Margin="0,0,16,0">
+                <Grid x:Name="AnalysisFiltersGrid">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>    <!-- Path Selector -->
                         <ColumnDefinition Width="Auto"/> <!-- Search Box (Hidden until processed) -->
@@ -83,7 +177,8 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Path Selector -->
-                    <StackPanel Grid.Column="0" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <StackPanel x:Name="AnalysisPathSelector" Grid.Column="0"
+                                Margin="0,0,12,0" VerticalAlignment="Center">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -100,7 +195,8 @@
                     </StackPanel>
 
                     <!-- Search Box (Only visible after analysis is complete) -->
-                    <StackPanel Grid.Column="1" Width="180" Margin="0,0,12,0" VerticalAlignment="Center"
+                    <StackPanel x:Name="AnalysisSearchSelector" Grid.Column="1" Width="180"
+                                Margin="0,0,12,0" VerticalAlignment="Center"
                                 Visibility="{Binding DashboardModel.IsAnalyzed, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <Grid>
                             <TextBox x:Name="SearchTextBox"
@@ -121,7 +217,8 @@
                     </StackPanel>
 
                     <!-- Character Selector (Only visible after analysis is complete) -->
-                    <StackPanel Grid.Column="2" Width="160" Margin="0,0,12,0" VerticalAlignment="Center"
+                    <StackPanel x:Name="AnalysisCharacterSelector" Grid.Column="2" Width="160"
+                                Margin="0,0,12,0" VerticalAlignment="Center"
                                 Visibility="{Binding DashboardModel.IsAnalyzed, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <ComboBox ItemsSource="{Binding DashboardModel.CharactersList}" 
                                   SelectedItem="{Binding DashboardModel.SelectedCharacter}"
@@ -131,21 +228,34 @@
                 </Grid>
             </Border>
 
-            <Button Grid.Column="1" 
-                    Click="ProcessFolders_Click"
-                    IsEnabled="{Binding DashboardModel.IsProcessing, Converter={StaticResource InverseBooleanConverter}}"
-                    Style="{StaticResource ModernPrimaryButton}"
-                    Width="172" Height="42"
-                    VerticalAlignment="Center">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="FileSearchOutline" Margin="0,0,10,0" VerticalAlignment="Center" Width="18" Height="18"/>
-                    <TextBlock Text="PROCESS FOLDERS" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
-                </StackPanel>
-            </Button>
+            <StackPanel x:Name="AnalysisActionsPanel" Grid.Column="1"
+                        Orientation="Horizontal" VerticalAlignment="Center"
+                        HorizontalAlignment="Right" Margin="0,3,0,3">
+                <Button Click="ExportManifest_Click"
+                        IsEnabled="{Binding DashboardModel.IsAnalyzed}"
+                        Style="{StaticResource ModernSecondaryButton}"
+                        Height="42" Padding="12,0" Margin="0,0,10,0"
+                        ToolTip="Export the analyzed event names and mapping results without audio or transcripts">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ExportVariant" Margin="0,0,7,0" VerticalAlignment="Center" Width="16" Height="16"/>
+                        <TextBlock Text="EXPORT MANIFEST" VerticalAlignment="Center" FontSize="10" FontWeight="Bold"/>
+                    </StackPanel>
+                </Button>
+                <Button Click="ProcessFolders_Click"
+                        IsEnabled="{Binding DashboardModel.IsProcessing, Converter={StaticResource InverseBooleanConverter}}"
+                        Style="{StaticResource ModernPrimaryButton}"
+                        Width="172" Height="42"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FileSearchOutline" Margin="0,0,10,0" VerticalAlignment="Center" Width="18" Height="18"/>
+                        <TextBlock Text="1. SCAN FOLDERS" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <!-- 3. MAIN WORKSPACE: LIST & PREVIEW -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="PipelineColumn" Width="430" MinWidth="250" MaxWidth="700"/>
                 <ColumnDefinition x:Name="SplitterColumn" Width="Auto"/>
@@ -171,23 +281,33 @@
                                 <materialDesign:PackIcon Kind="PlaylistPlay" Foreground="{StaticResource TextMutedBrush}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <TextBlock Text="DETECTED PIPELINE" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <Button Grid.Column="1"
-                                    Click="SelectAllVisible_Click"
-                                    IsEnabled="{Binding DashboardModel.HasVisibleEvents}"
-                                    Style="{StaticResource AccentActionButton}"
-                                    HorizontalAlignment="Right"
-                                    Padding="6,2"
-                                    ToolTip="Toggle selection for all events currently visible in the list">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="CheckboxMultipleMarkedOutline" Width="13" Height="13" Margin="0,0,5,0"/>
-                                    <TextBlock Text="{Binding DashboardModel.SelectionActionLabel}" VerticalAlignment="Center" FontSize="8"/>
-                                </StackPanel>
-                            </Button>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Click="RetryMissingIcons_Click"
+                                        IsEnabled="{Binding DashboardModel.IsAnalyzed}"
+                                        Style="{StaticResource AccentActionButton}" Padding="6,2" Margin="0,0,8,0"
+                                        AutomationProperties.Name="Retry missing event icons"
+                                        ToolTip="Retry missing event images without scanning folders again">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ImageRefreshOutline" Width="13" Height="13" Margin="0,0,5,0"/>
+                                        <TextBlock Text="RETRY ICONS" VerticalAlignment="Center" FontSize="8"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Click="SelectAllVisible_Click"
+                                        IsEnabled="{Binding DashboardModel.HasVisibleEvents}"
+                                        Style="{StaticResource AccentActionButton}"
+                                        Padding="6,2"
+                                        ToolTip="Toggle selection for all events currently visible in the list">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="CheckboxMultipleMarkedOutline" Width="13" Height="13" Margin="0,0,5,0"/>
+                                        <TextBlock Text="{Binding DashboardModel.SelectionActionLabel}" VerticalAlignment="Center" FontSize="8"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
                         </Grid>
                     </Border>
 
                     <!-- Filter pills -->
-                    <Border Grid.Row="1" Background="{StaticResource PrimaryBackgroundBrush}" Padding="12,8,12,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <Border Grid.Row="1" Background="#0C1E3B" Padding="10,8,10,9" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -195,24 +315,26 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <RadioButton Grid.Column="0" Content="ALL" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=ALL, Mode=TwoWay}" Checked="Filter_Checked" Tag="ALL" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
-                            <RadioButton Grid.Column="1" Content="ERRORS" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=ERRORS, Mode=TwoWay}" Checked="Filter_Checked" Tag="ERRORS" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
-                            <RadioButton Grid.Column="2" Content="PENDING" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=PENDING, Mode=TwoWay}" Checked="Filter_Checked" Tag="PENDING" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
-                            <RadioButton Grid.Column="3" Content="MAPPING" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=NEEDS_MAPPING, Mode=TwoWay}" Checked="Filter_Checked" Tag="NEEDS_MAPPING" Style="{StaticResource MaterialDesignTabRadioButton}" FontSize="10" Height="28"/>
+                            <RadioButton Grid.Column="0" Content="ALL" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=ALL, Mode=TwoWay}" Checked="Filter_Checked" Tag="ALL" Style="{StaticResource DashboardPipelineFilter}"/>
+                            <RadioButton Grid.Column="1" Content="ERRORS" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=ERRORS, Mode=TwoWay}" Checked="Filter_Checked" Tag="ERRORS" Style="{StaticResource DashboardPipelineFilter}"/>
+                            <RadioButton Grid.Column="2" Content="PENDING" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=PENDING, Mode=TwoWay}" Checked="Filter_Checked" Tag="PENDING" Style="{StaticResource DashboardPipelineFilter}"/>
+                            <RadioButton Grid.Column="3" Content="MAPPING" GroupName="FilterGroup" IsChecked="{Binding DashboardModel.SelectedFilter, Converter={StaticResource EqualityToBooleanConverter}, ConverterParameter=NEEDS_MAPPING, Mode=TwoWay}" Checked="Filter_Checked" Tag="NEEDS_MAPPING" Style="{StaticResource DashboardPipelineFilter}"/>
                         </Grid>
                     </Border>
 
                     <ListBox Grid.Row="2" 
                               x:Name="EventsListBox"
+                              Background="#09192F"
                               ItemsSource="{Binding DashboardModel.FilteredProcessedEvents}"
                               SelectedItem="{Binding DashboardModel.SelectedEvent}"
                               SelectionChanged="EventsListBox_SelectionChanged"
                               Style="{StaticResource VirtualizedListBoxStyle}"
+                              ItemContainerStyle="{StaticResource DashboardPipelineRow}"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               utils:ScrollHelper.BubbleMouseWheel="False">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="0,4,8,4">
+                                <Border Padding="0,3,2,3">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="32"/>
@@ -235,23 +357,24 @@
                                             </TextBlock>
                                         </StackPanel>
 
-                                        <Border x:Name="StatusBadge" Grid.Column="2" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
-                                            <TextBlock x:Name="StatusText" FontSize="8" FontWeight="Black"/>
+                                        <Border x:Name="StatusBadge" Grid.Column="2" CornerRadius="5"
+                                                Width="92" Height="23" Padding="3,2" VerticalAlignment="Center"
+                                                Background="#132138" BorderBrush="Transparent" BorderThickness="1">
+                                            <TextBlock x:Name="StatusText" FontSize="8" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                         </Border>
 
                                         <Button x:Name="CreateRuleButton"
                                                 Grid.Column="3"
                                                 Click="CreateRule_Click"
-                                                Visibility="Collapsed"
+                                                Visibility="Hidden"
                                                 Style="{StaticResource AccentActionButton}"
+                                                Width="28"
                                                 Height="28"
                                                 Padding="4,3"
-                                                Margin="8,0,0,0"
+                                                Margin="6,0,0,0"
                                                 ToolTip="Open the rule editor with this unmapped event pre-filled">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="FilePlusOutline" Width="12" Height="12" Margin="0,0,4,0"/>
-                                                <TextBlock Text="CREATE RULE" FontSize="8" FontWeight="Black" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                            <materialDesign:PackIcon Kind="FilePlusOutline" Width="15" Height="15"/>
                                         </Button>
 
                                         <!-- Delete Button -->
@@ -259,7 +382,7 @@
                                                 Click="DeleteEvent_Click"
                                                 Style="{StaticResource DangerIconButton}"
                                                 Width="28" Height="28"
-                                                Margin="12,0,0,0"
+                                                Margin="4,0,0,0"
                                                 ToolTip="Remove event from pipeline">
                                             <materialDesign:PackIcon Kind="DeleteOutline" Width="14" Height="14"/>
                                         </Button>
@@ -269,14 +392,12 @@
                                     <DataTrigger Binding="{Binding Status}" Value="Ready">
                                         <Setter TargetName="StatusBadge" Property="Background" Value="{StaticResource SuccessPillBgBrush}"/>
                                         <Setter TargetName="StatusBadge" Property="BorderBrush" Value="{StaticResource SuccessPillBorderBrush}"/>
-                                        <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
                                         <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource SuccessBrush}"/>
                                         <Setter TargetName="StatusText" Property="Text" Value="READY"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Status}" Value="Needs Mapping">
                                         <Setter TargetName="StatusBadge" Property="Background" Value="{StaticResource WarningPillBgBrush}"/>
                                         <Setter TargetName="StatusBadge" Property="BorderBrush" Value="{StaticResource WarningPillBorderBrush}"/>
-                                        <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
                                         <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource WarningBrush}"/>
                                         <Setter TargetName="StatusText" Property="Text" Value="NEEDS MAPPING"/>
                                         <Setter TargetName="CreateRuleButton" Property="Visibility" Value="Visible"/>
@@ -284,14 +405,12 @@
                                     <DataTrigger Binding="{Binding Status}" Value="Missing Icon">
                                         <Setter TargetName="StatusBadge" Property="Background" Value="{StaticResource WarningPillBgBrush}"/>
                                         <Setter TargetName="StatusBadge" Property="BorderBrush" Value="{StaticResource WarningPillBorderBrush}"/>
-                                        <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
                                         <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource WarningBrush}"/>
                                         <Setter TargetName="StatusText" Property="Text" Value="MISSING ICON"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Status}" Value="No Audio">
                                         <Setter TargetName="StatusBadge" Property="Background" Value="{StaticResource ErrorPillBgBrush}"/>
                                         <Setter TargetName="StatusBadge" Property="BorderBrush" Value="{StaticResource ErrorPillBorderBrush}"/>
-                                        <Setter TargetName="StatusBadge" Property="BorderThickness" Value="1"/>
                                         <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource ErrorBrush}"/>
                                         <Setter TargetName="StatusText" Property="Text" Value="NO AUDIO"/>
                                     </DataTrigger>
@@ -299,6 +418,27 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+                    <Border Grid.Row="2" IsHitTestVisible="False" Background="Transparent" Padding="18">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding DashboardModel.HasVisibleEvents}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="290">
+                            <materialDesign:PackIcon Kind="FileSearchOutline" Width="40" Height="40"
+                                                     HorizontalAlignment="Center" Foreground="{StaticResource AccentBrushLight}" Opacity="0.75"/>
+                            <TextBlock Text="No events to show" FontSize="15" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}" TextAlignment="Center" Margin="0,14,0,4"/>
+                            <TextBlock Text="Choose a source folder and scan it, or adjust your active filters."
+                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextAlignment="Center" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
 
@@ -322,7 +462,7 @@
                 <Border Grid.Row="0" Style="{StaticResource WorkspaceCanvasContainer}">
                     <Grid>
                         <Viewbox Stretch="Uniform" VerticalAlignment="Center" Margin="24">
-                            <Grid Width="1920" Height="1080" Background="#0D0D0F">
+                            <Grid Width="1920" Height="1080" Background="{StaticResource PrimaryBackgroundBrush}">
                                 <Image Source="{Binding DashboardModel.PreviewImageSource}" 
                                        Stretch="Uniform" 
                                        UseLayoutRounding="True"
@@ -410,6 +550,7 @@
                                   Style="{StaticResource ModernComboBoxStyle}"
                                   Height="40" Margin="0,0,0,12">
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">champion</System:String>
+                            <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">skinline</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">item</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">monster</System:String>
                             <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">structure</System:String>
@@ -428,7 +569,7 @@
 
                         <Button Grid.Row="2" Grid.Column="2" Click="Transcribe_Click"
                                 IsEnabled="{Binding Source={x:Static services:AppSettings.Instance}, Path=EnableTranscriptions}"
-                                Style="{StaticResource ModernPrimaryButton}" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                Style="{StaticResource ModernPrimaryButton}"
                                 Height="40" Padding="16,0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -460,7 +601,7 @@
                             ToolTip="Run Whisper speech-to-text transcription to generate subtitles for audio files">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <materialDesign:PackIcon Kind="MicrophoneOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
-                            <TextBlock Text="1. PREPARE DIALOGUES" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                            <TextBlock Text="2. PREPARE DIALOGUES" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
                         </StackPanel>
                     </Button>
 
@@ -475,7 +616,7 @@
                             ToolTip="Open Dialogue Segment Editor to review and correct transcripts">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <materialDesign:PackIcon Kind="PlaylistEdit" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
-                            <TextBlock Text="REVIEW" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                            <TextBlock Text="3. REVIEW" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
                         </StackPanel>
                     </Button>
 
@@ -489,7 +630,7 @@
                             ToolTip="Generate and lossless compile final .mp4 videos using FFmpeg">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <materialDesign:PackIcon Kind="PlayCircleOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="20" Height="20"/>
-                            <TextBlock Text="2. RENDER VIDEOS" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
+                            <TextBlock Text="4. RENDER VIDEOS" VerticalAlignment="Center" FontSize="11" FontWeight="Black"/>
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -497,13 +638,16 @@
         </Grid>
 
         <!-- 4. TERMINAL LOGS (COMPACT) -->
-        <Border Grid.Row="3" Style="{StaticResource ConsolePanelContainer}" Margin="0,12,0,0">
+        <Border Grid.Row="2" Style="{StaticResource ConsolePanelContainer}" Margin="0,12,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Border Background="{StaticResource SurfaceBrush}" Padding="16,8" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                <!-- Both content surfaces live INSIDE the single rounded frame.
+                     The parent panel clips this Grid; no inset second outline. -->
+                <Border Background="#10233F" Padding="16,8" CornerRadius="12,12,0,0"
+                        BorderBrush="#254362" BorderThickness="0,0,0,1">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Terminal" Foreground="{StaticResource TextMutedBrush}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="ENGINE CONSOLE" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
@@ -515,13 +659,14 @@
                     <RichTextBox.Style>
                         <Style TargetType="RichTextBox" BasedOn="{StaticResource ModernRichTextBox}">
                             <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="RichTextBox">
                                         <Border x:Name="border"
                                                 Background="{TemplateBinding Background}"
                                                 BorderThickness="0"
-                                                CornerRadius="0,0,7,7"
+                                                CornerRadius="0"
                                                 Padding="{TemplateBinding Padding}"
                                                 SnapsToDevicePixels="True">
                                             <ScrollViewer x:Name="PART_ContentHost" 

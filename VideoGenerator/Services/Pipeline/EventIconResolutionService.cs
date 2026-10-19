@@ -10,10 +10,10 @@ namespace VideoGenerator.Services
     public sealed class EventIconResolutionService
     {
         private readonly DataFetcher _dataFetcher;
-        private readonly IconManager _iconManager;
+        private readonly LocalGameIconManager _iconManager;
         private readonly LogService _logger;
 
-        public EventIconResolutionService(DataFetcher dataFetcher, IconManager iconManager, LogService logger)
+        public EventIconResolutionService(DataFetcher dataFetcher, LocalGameIconManager iconManager, LogService logger)
         {
             _dataFetcher = dataFetcher;
             _iconManager = iconManager;
@@ -25,29 +25,26 @@ namespace VideoGenerator.Services
             return _dataFetcher.ResolveItemNameToIdAsync(itemName);
         }
 
+        public static bool RequiresIcon(ParsedEvent parsedEvent)
+        {
+            string iconType = parsedEvent?.IconType?.Trim();
+            return !string.IsNullOrWhiteSpace(iconType) &&
+                   !iconType.Equals("generic", StringComparison.OrdinalIgnoreCase) &&
+                   !string.IsNullOrWhiteSpace(parsedEvent.IconLookupName);
+        }
+
         public async Task<string> ResolveAsync(ParsedEvent parsedEvent)
         {
-            if (parsedEvent == null || parsedEvent.IconType == "generic")
-            {
+            if (!RequiresIcon(parsedEvent))
                 return null;
-            }
+
+            // Imported/user-defined rules may vary in casing and whitespace.
+            // Normalize routing without mutating the event's stored mapping.
+            string iconType = parsedEvent.IconType?.Trim().ToLowerInvariant();
 
             try
             {
-                string lolVersion = parsedEvent.IconType is "champion" or "region"
-                    ? await _dataFetcher.GetLatestLolVersionAsync()
-                    : null;
-
-                return parsedEvent.IconType switch
-                {
-                    "champion" => await _iconManager.GetChampionIconAsync(parsedEvent.IconLookupName, lolVersion),
-                    "item" => await _iconManager.GetItemIconAsync(parsedEvent.IconLookupName),
-                    "monster" => await _iconManager.GetMonsterIconAsync(parsedEvent.IconLookupName),
-                    "region" => await _iconManager.GetChampionIconAsync(parsedEvent.IconLookupName, lolVersion),
-                    "structure" => await _iconManager.GetStructureIconAsync(parsedEvent.IconLookupName),
-                    "system" => await _iconManager.GetSystemIconAsync(parsedEvent.IconLookupName),
-                    _ => null
-                };
+                return await _iconManager.FindIconAsync(iconType, parsedEvent.IconLookupName);
             }
             catch (Exception ex)
             {
