@@ -1,66 +1,158 @@
-# VideoGenerator
+<div align="center">
+  <img src="VideoGenerator/Resources/logo.png" alt="VideoGenerator logo" width="104">
+</div>
+
+# 🎬 VideoGenerator
 
 [![Latest Release](https://img.shields.io/github/v/release/Neinndall/VideoGenerator?color=yellow&logo=github&logoColor=white&label=Release&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![Downloads](https://img.shields.io/github/downloads/Neinndall/VideoGenerator/total?color=blue&logo=github&logoColor=white&label=Downloads&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
-[![License](https://img.shields.io/github/license/Neinndall/VideoGenerator)](https://github.com/Neinndall/VideoGenerator/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/Neinndall/VideoGenerator)](LICENSE)
 
-VideoGenerator is a Windows WPF application that turns League of Legends voice-over event folders into localized 1080p HUD showcase videos. The **v2.0.0.0 development build** uses LeagueToolkit and the user's installed WAD archives for game art. The version is set in `VideoGenerator/VideoGenerator.csproj` and displayed as **v2.0.0**; a nonzero fourth component is displayed (for example, `2.0.0.1` → `v2.0.0.1`). **This does not imply that a v2 release or installer has been published.**
+VideoGenerator is a Windows application for turning **League of Legends voice-over event folders into polished, localized 1080p showcase videos**. It brings folder analysis, event recognition, voice transcription, HUD design, dialogue review, and video rendering together in one production workspace.
 
-**Development reference:** the current Event Mapping data contract is documented below, with changes recorded in the [development changelog](CHANGELOG.md). The project also keeps a private, local `VideoGenerator.md` maintainer manifest **outside this Git repository**, not uploaded to GitHub. Older v1.x patch notes are historical.
+The app uses the League of Legends files installed on your PC to find champion portraits, skin artwork, items, monsters, structures, and other game imagery. No external image or hash catalog service is required for game assets.
 
-## Production workflow
+## 🚀 Getting Started
 
-1. **Scan Folders** scans the selected media directory, parses event names, associates audio files/families and builds the Detected Pipeline (including supported `_cast2D` and `_cast3D` events).
-2. **Prepare Dialogues** resolves icons from local WADs, transcribes pending audio with Whisper, stores dialogue segments and prepares HUD images.
-3. **Review** opens the segment editor for playback, correction, validation and retranscription.
-4. **Render Videos** combines prepared images/audio into MP4s; a successful render atomically publishes the output.
+### Requirements
 
-An event flagged **Needs Mapping** shows a button in Detected Pipeline. This already opens **Event Mapping → Event Rules** and pre-fills a suggested keyword/category/dictionary key. The user can complete and save the rule and its translations. This is an *existing workflow*, not a future wizard. Reanalyzing the affected folders applies the new recognition rule; automatic in-place reprocessing of the Pipeline after saving is **not yet implemented**.
+- **Windows x64**.
+- **.NET 10 Desktop Runtime** for framework-dependent builds.
+- A local **League of Legends installation** containing Game and Plugins WAD archives for game image and metadata extraction.
+- Voice-over audio files to process (including `.ogg`, `.wav`, and `.mp3`).
+- Internet access only when needed to obtain a Whisper transcription model; transcription then runs locally.
 
-After scanning, **Export Manifest** saves a lightweight JSON report with discovered event names, language, champion, mapping results, icon choices, and audio counts. The report omits audio files, dialogue transcripts, and absolute source paths, making it practical to compare large champion collections and report unknown events.
+### Installation and first launch
 
-The global status bar uses deterministic work budgets for preparation, family merging, review, and rendering. Progress only reaches 100% after all planned work has completed or been explicitly skipped.
+1. Check the [Releases page](https://github.com/Neinndall/VideoGenerator/releases) for an available build. **VideoGenerator 2.0 is not yet available as a published installer.**
+2. When using a packaged build, extract the complete archive and launch `VideoGenerator.exe`.
+3. Open **Settings → General & Media** and select your League of Legends installation directory, containing the **Game** and **Plugins** folders. The application checks whether the WAD files are available.
+4. Choose your media source and preferred dictionary language, then adjust audio and transcription settings as needed.
+5. Open **Dashboard** and select **SCAN FOLDERS** to analyze your voice-over folders.
 
-## Key features
+VideoGenerator never replaces the game installation path you chose with an automatic default. Previously saved settings and locally cached assets are reused.
 
-- Dynamic event rules with simple, target and interaction behavior, plus editable Event Mapping lists for groups, champions/aliases, monsters and structures.
-- English, Spanish, and Turkish translations with non-destructive local merging.
-- Offline transcription through Whisper.net with selectable model, language, thread count, forced batch retranscription, and optional ambient-tag cleanup.
-- Segmented multi-audio dialogue using `||`, with one HUD image and video segment per dialogue part.
-- Optional audio-family merging. Bracketed family folders remain attached to their parent event:
-  - **OFF:** source audios remain consecutive tracks.
-  - **ON:** each family becomes one cached WAV track.
-- Champion, skin, **skinline (thematic)**, item, monster, structure, region and system icon lookup. Event Mapping and Dashboard Quick Edit both expose `skinline` as an icon category. An event such as `FirstEncounter3DEternalAspects` resolves the official **The Eternal Aspects** theme and uses one of its real skin members rather than pretending it is a champion. A **Missing Icon** result is distinct from **Needs Mapping**; the app does not substitute an unrelated image to silence the warning.
-- Offline artwork from installed `.wad`/`.wad.client` archives, using metadata paths → xxHash64 → chunk → PNG cache, and **RETRY ICONS** without rescanning audio. Verified WAD paths cover Baron, Dragon, Rift Herald, Elder Dragon, **Blue Sentinel, Red Brambleback, Gromp, Krugs, Razorbeak, Murk Wolf, Rift Scuttler and Atakhan**, Turret/Nexus and several ping textures (including `on_my_way`). Unknown names can be tested against conventional WAD paths but are **not guaranteed** to have a discoverable image.
-- Riot patch freshness: a new game version refreshes official skin/skinline/item/`champion-summary.json` caches and invalidates affected in-memory lookups at startup or before Scan Folders/splash search. Champions are merged into the single `champion_aliases.json` catalog, including internal aliases and available Riot class roles; personal mappings are preserved.
-- The WAD reader computes xxHash64 locally. External CommunityDragon `hashes.game.txt`/`hashes.lcu.txt` synchronization and its Settings panel **were removed**; previously downloaded user catalogs are not deleted. A hash alone cannot reveal an unknown original filename.
-- Canonical skinline matching across punctuation variants such as `KDA`, `K D A`, and `K/DA`.
-- **Official thematic families:** Riot's local `skinlines.json` separates `Arcade: Heroes` and `Arcade: Battle Bosses`. A folder target `Arcade` now recognizes both official sub-lines (18 retail skins at validation time), while `ArcadeHeroes` and `ArcadeBattleBosses` keep their specific line. `EternalAspects` continues to resolve `The Eternal Aspects`. These map to `skinline` in Event Mapping/Quick Edit, then try actual member skin paths in local WADs.
-- **New champion-qualified skinline VO patterns:** `FirstEncounter3DEkkoSkinlineTrueDamage` and corresponding Kayn/Qiyana/Senna/Yasuo interactions now keep both the champion and its official thematic line. `Hearsteel` normalizes to Riot's `HEARTSTEEL`; `TrueDamageX` can fall back to `True Damage` when no distinct official line exists. The icon reader **filters the theme's members by champion**, rather than guessing a nonexistent `EkkoTrueDamage` champion or selecting somebody else's skin. A retail-WAD smoke test extracted PNG tiles for all six reported cases.
-- **Legacy rule icon audit (October 19):** of 71 saved event rules, 45 use `generic` (no icon requested); the 16 fixed-icon rules were rechecked against the installed WADs. **14/16 currently resolve**, including all existing ping rules after adding local All In/Bait/Hold/Push/Retreat textures. The two remaining entries are `Shop` and `ShopOpen`, both configured as `system:Gold`: a verified shop-currency icon was not identified, and unrelated gold-coloured graphics are intentionally rejected. All 10 target-driven rule families have representative parser/category tests, but actual icon availability depends on the individual target.
-- Live 1920x1080 preview with quick editing, keyboard navigation, cached rendering, and cancellable background work.
-- Background Design Studio with custom art, typography, icon alignment, dialogue bubble controls, brightness, contrast, and saturation.
-- Deterministic FFmpeg render progress covering images, silence tracks, temporary clips, audio joins, encoding, and final concatenation.
-- Quiet batch console with detailed diagnostics retained in local log files.
-- Ambiguous targeted attack events remain pending manual mapping instead of being incorrectly labeled as monsters.
-- **Less duplicated classification:** a shared `LeagueMonsterAssets` catalog supplies official monster aliases and their verified WAD icon paths, while `LeagueSkinlineIdentity` handles skinline aliases/families consistently in the parser, skin catalog and icon resolver. `EventNameParser` invokes the rule matching engine only once. Unknown custom monsters still use their local Mapping list and checked HUD path conventions.
-- Workspace shortcuts (Ctrl+1–5), event search (Ctrl+F), and collapsible sidebar (Ctrl+B).
-- Settings has three tabs: **General & Media** (game installation, media source, dictionary language), **Processing** (silence, audio-family merging), and **Transcription** (Whisper). Browsers, toggles, path inputs and hero headers share a midnight-navy/cyan/violet visual system. The game directory is **never filled with an automatic default**; an existing user-saved path is preserved.
-- Reusable WPF styles for buttons, tabs, ComboBoxes, sliders, input focus and sidebar. The original six-card mockup is historical reference, not the current Settings layout.
+## 🏛️ Main Workspaces
 
-## Requirements
+### 🎬 Dashboard — Production Studio
 
-- Windows x64.
-- .NET 10 SDK for source builds.
-- A locally installed League of Legends client, with its Game and Plugins WAD files, to obtain new game images and catalogs. Existing cached images and editable rules are preserved.
-- A sibling `LeagueToolkit-4.1.0-beta.53` source checkout for development builds, as referenced by `VideoGenerator/VideoGenerator.csproj`.
-- Optional internet access may be required to download a Whisper model. **Game icon/splash/catalog extraction and hash resolution are local**, with no remote image or hash-dictionary downloads.
+The central workspace for turning a collection of voice-over folders into finished videos.
 
-FFmpeg binaries are embedded and extracted automatically when required. Whisper transcription runs locally after its model has been downloaded.
+- **Folder Analysis:** Scan voice-over event directories, including supported `_cast2D` and `_cast3D` folders, and associate their audio tracks with the correct events.
+- **Detected Pipeline:** Review recognized events, audio availability, missing images, and events that need a new mapping. Filter by **All**, **Errors**, **Pending**, or **Mapping**.
+- **Selection and Search:** Search events, select individual entries or all currently visible events, and process the chosen selection.
+- **Live Preview:** See the final HUD composition at **1920 × 1080**, with the selected event text and icon.
+- **Quick Edit:** Correct the HUD text, icon category, or image lookup for an individual event and apply the changes.
+- **Retry Icons:** Reattempt missing game artwork without repeating the audio folder scan.
+- **Export Manifest:** Save an event analysis report as JSON without including source audio, transcripts, or absolute media paths.
+- **Batch Rendering:** Prepare, review, and render videos with a global progress indicator and cancellation support.
 
-## Build and run
+#### Production workflow
 
-From the repository root (with the sibling LeagueToolkit checkout available):
+| Stage | What it does |
+| --- | --- |
+| **1. Scan Folders** | Discovers audio and interprets event folder names |
+| **2. Prepare Dialogues** | Resolves game icons, transcribes audio using Whisper when enabled, and prepares HUD images |
+| **3. Review** | Opens the dialogue editor to correct, listen to, and validate each segment |
+| **4. Render Videos** | Combines images and audio with FFmpeg and produces the finished MP4 files |
+
+Audio-family merging is optional. When enabled, related tracks are joined into a cached WAV; when disabled, they remain separate tracks in sequence. Configurable silence padding is respected during rendering.
+
+#### Dialogue Editor
+
+The **Review** stage opens a dedicated editor with audio playback, editable transcripts, pending/validated status, and navigation between segments. Multi-audio events can be represented as separate dialogue parts, with each part receiving its own HUD frame and video segment. You can review or retranscribe pending content before rendering the final video.
+
+### 🎨 Visual Design — HUD Studio
+
+Customize the look of your video overlay while watching an interactive preview.
+
+- **Background Artwork:** Select your own background or search available champion and skin splashes from the installed game files.
+- **Typography:** Adjust text appearance, fonts, and visual hierarchy.
+- **Icon Placement:** Change icon alignment, position, borders, and presentation.
+- **Dialogue Bubble:** Configure the subtitle area, its size, position, opacity, and border styling.
+- **Image Adjustments:** Tune brightness, contrast, and saturation.
+- **Live Preview:** Inspect the composition at 1080p and expand the preview area for closer adjustments.
+
+Design settings are saved and applied to subsequently generated HUD frames.
+
+### 🧩 Event Mapping
+
+Teach VideoGenerator how to interpret different League of Legends voice-over event names and which icon category to request.
+
+| Mapping section | Purpose |
+| --- | --- |
+| **Event Rules** | Define actions, interactions, target behavior, HUD text keys, and icon categories |
+| **Groups** | Organize champions into custom regions, classes, roles, and thematic groups |
+| **Champions** | Manage displayed champion names and internal aliases; view official Riot class roles |
+| **Monsters** | Recognize jungle camps and epic monsters, including personal entries |
+| **Structures** | Recognize structures and map event keywords to the appropriate targets |
+
+- **Ready-to-use mappings:** VideoGenerator comes with built-in rules and catalogs. Personal entries can be added alongside them; protected **BUILT-IN** records cannot be deleted from the relevant catalog lists.
+- **Automatically updated champions:** With a configured League installation, Riot's local `champion-summary.json` fills in current champions, internal aliases, and available class roles. New champions can therefore be recognized without a manual application update.
+- **Create a rule from an event:** A **Needs Mapping** event in Dashboard provides a shortcut to Event Mapping with suggested values already filled in. Rescan the affected folders after saving the rule to apply it.
+- **Accurate image categories:** Recognize champions, items, monsters, structures, skins, and **skinlines** as distinct targets. A recognized event can still show **Missing Icon** when its actual image is unavailable.
+
+Riot roles such as *fighter*, *mage*, and *tank* describe champion classes; they are not automatically treated as lane assignments such as ADC or Jungle.
+
+### 🌐 Dictionary
+
+Manage the text shown in the HUD across **English, Spanish, and Turkish**.
+
+- **Multilingual Entries:** View and edit localized event text by dictionary key.
+- **Search and Filters:** Find translations quickly and focus on a selected language.
+- **Custom Text:** Add new keys or correct existing phrases without losing other languages.
+- **Integrated Mapping:** Event Rules can reference dictionary keys so the same event receives the appropriate localized description.
+
+Built-in translations are merged with personal changes, preserving existing custom text.
+
+### ⚙️ Settings
+
+Three dedicated sections keep game paths, media handling, and transcription controls organized.
+
+- **General & Media:** Configure the local League installation, review Game/Plugins WAD availability, select media directories, and set dictionary preferences.
+- **Processing:** Adjust silence handling and optional audio-family merging.
+- **Transcription:** Enable or disable Whisper, choose language/model options, configure processing performance, and control batch retranscription or ambient-tag cleanup.
+
+Settings persist between sessions and do not require editing configuration files manually.
+
+## 🖼️ Local Game Assets and Automatic Updates
+
+VideoGenerator extracts imagery and metadata directly from your League of Legends `.wad` / `.wad.client` archives using LeagueToolkit. Official caches support champion aliases, skins, skinlines, item IDs, and the associated icon lookups.
+
+- **Champion portraits and skins:** Match champion identities and skin data to local artwork.
+- **Thematic skinlines:** Recognize groups such as *True Damage*, *HEARTSTEEL*, and *Arcade* without confusing them with champion names.
+- **Items and objectives:** Resolve object IDs, monsters, structures, and supported game-system icons using local data and verified asset paths.
+- **Patch-aware refresh:** Detect changes to installed game archives and refresh the affected cached catalogs and in-memory lookups.
+- **Honest missing-image handling:** If the required artwork cannot be found, report **Missing Icon** rather than displaying an unrelated image.
+
+The game installation is the source of official metadata. Your custom event rules, aliases, groups, and other settings remain separate and editable.
+
+## 💾 Files and Output
+
+User configuration and cached game data live under `%LOCALAPPDATA%\VideoGenerator\`:
+
+| Folder | Contains |
+| --- | --- |
+| `Config\` | Saved settings, translations, dialogue data, and editable Event Mapping catalogs |
+| `Cache\` | Locally extracted Riot metadata and reusable assets |
+
+Each Event Mapping section has one editable catalog, such as `event_rules.json`, `groups.json`, `champion_aliases.json`, `monsters.json`, or `structures.json`. Factory defaults and personal additions coexist in those files.
+
+Generated HUD images and MP4 videos are organized in the application's `Generated/Images/` and `Generated/Media/` output folders, grouped by champion.
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| **Ctrl + 1–5** | Switch between the five workspaces |
+| **Ctrl + F** | Focus event search in Dashboard |
+| **Ctrl + B** | Collapse or expand the navigation sidebar |
+
+## 🛠️ Build from Source
+
+The repository targets **.NET 10 / WPF** and references the sibling `LeagueToolkit-4.1.0-beta.53` source checkout. Keep that checkout beside the VideoGenerator project when compiling.
+
+From the repository root:
 
 ```powershell
 dotnet restore VideoGenerator/VideoGenerator.csproj
@@ -68,64 +160,18 @@ dotnet build VideoGenerator/VideoGenerator.csproj -c Release
 dotnet run --project VideoGenerator/VideoGenerator.csproj -c Release
 ```
 
-## Developer validation
-
-Run deterministic tests with xUnit:
+To run the test suite:
 
 ```powershell
 dotnet test VideoGenerator.Tests/VideoGenerator.Tests.csproj -c Release
 ```
 
-Regular xUnit tests cover parser, Mapping, rendering, cache refresh, event/icon resolution, and synthetic WAD fixtures without downloading game art. Optional retail-WAD smoke tests and separate WPF render harnesses are **not** substitutes for a live 100/125/150% DPI review. There are outstanding ImageSharp NuGet advisories to resolve before publishing.
+## 🤝 Contributing
 
-## Configuration and game-data catalogs
+Open an issue or submit a pull request with a clear description of the problem or feature. For new event-name patterns, include representative folder names and the expected HUD text and icon behavior.
 
-VideoGenerator keeps user-editable data under
-`%LOCALAPPDATA%/VideoGenerator/Config/`. Each Mapping tab uses **one combined
-JSON** (built-in defaults plus personal additions):
+See [CHANGELOG.md](CHANGELOG.md) for version notes.
 
-| Event Mapping tab | Shipped source in `VideoGenerator/Services/Defaults/` | Editable JSON in `Config/` |
-| --- | --- | --- |
-| Event Rules | `DefaultRules.cs` | `event_rules.json` |
-| Groups | `DefaultGroups.cs` | `groups.json` |
-| Champions | `DefaultChampions.cs` + `DefaultAliases.cs` | `champion_aliases.json` |
-| Monsters | `DefaultMonsters.cs` | `monsters.json` |
-| Structures | `DefaultStructures.cs` | `structures.json` |
+## 📄 License
 
-Defaults are C# code, not extra JSON catalogs. Models such as `ChampionAlias.cs`
-stay under `Views/Models/`; the `MonsterDatabase.cs` class is only the
-`Epic`/`Large` schema under `Services/Configuration/`, **not a second file**
-in AppData.
-
-**Champions on a fresh installation:** `DefaultChampions` constructs a
-starter roster from the app's `DefaultGroups` and `DefaultAliases`. When
-League of Legends is installed and configured, the local WAD
-`champion-summary.json` supplies the fuller current roster, official internal
-names and optional **class roles** (`fighter`, `tank`, etc.). Those classes are
-not lane positions such as `ADC`/`Jungle`; Groups is independently editable.
-New official champions can be recognized in event folder names without
-hardcoding each one in a release. The requested icon must still exist in
-the game's assets.
-
-Other editable files include `settings.json`, `translations.json`,
-`dialogues.json` and the application's existing localization/validation files.
-Official Riot metadata and artwork live under `%LOCALAPPDATA%/VideoGenerator/Cache/`,
-for example `champion_summary_data_default.json`,
-`items_data_default.json`, `skins_data_default.json` and
-`skinlines_data_default.json`. **Do not** recreate
-`Config/champions.json`, `Config/MonsterDatabase.json` or
-`Config/items.json`.
-
-There is **no automatic migration** from these retired Config filenames;
-existing personal AppData is not deleted. On updates, newly added default
-Mapping entries are merged into the same active JSON, while personal entries
-are retained. `RuleManager` preserves existing user-saved values for an
-official keyword and adds new keywords; it cannot yet distinguish untouched
-old defaults from deliberately edited overrides.
-
-On updates, always preserve custom Mapping entries and the `Default*.cs`
-seeds, validate new rules against the relevant parser, and verify local WAD
-asset paths instead of inventing artwork. Before a development commit run
-the Release build, full xUnit suite and `git diff --check`. The private local
-`VideoGenerator.md` holds the detailed maintainer contract and is not
-included in version control.
+VideoGenerator is licensed under the [GNU General Public License v3.0](LICENSE). Bundled third-party dependencies retain their respective licenses.
