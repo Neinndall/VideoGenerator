@@ -46,7 +46,7 @@ public sealed class LocalWadCatalogBootstrapperTests
 
         int created = await bootstrapper.PrepareAsync();
 
-        Assert.Equal(11, created);
+        Assert.Equal(10, created);
         foreach (string locale in new[] { "default", "es_es", "tr_tr" })
         {
             Assert.Equal(Encoding.UTF8.GetBytes(ValidSkins),
@@ -57,9 +57,7 @@ public sealed class LocalWadCatalogBootstrapperTests
                 await File.ReadAllBytesAsync(AppConfig.GetItemsCachePath(locale, fixture.Root)));
         }
 
-        string championsPath = AppConfig.GetChampionsFilePath(fixture.Root);
-        string[] champions = JsonSerializer.Deserialize<string[]>(await File.ReadAllTextAsync(championsPath))!;
-        Assert.Equal(new[] { "Ahri", "MonkeyKing", "Wukong" }, champions);
+        Assert.False(File.Exists(Path.Combine(fixture.Root, "Config", "champions.json")));
         Assert.Equal(Encoding.UTF8.GetBytes(ValidChampionSummary),
             await File.ReadAllBytesAsync(SummaryCachePath(fixture.Root)));
 
@@ -88,17 +86,15 @@ public sealed class LocalWadCatalogBootstrapperTests
         var bootstrapper = fixture.CreateBootstrapper();
         var databaseBuilder = new DatabaseBuilder(new LogService(), fixture.Root);
 
-        Assert.Equal(5, await bootstrapper.PrepareAsync());
+        Assert.Equal(4, await bootstrapper.PrepareAsync());
         await databaseBuilder.InitializeDatabasesAsync("local");
         await databaseBuilder.ReadyTask.WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.True(databaseBuilder.IsReady);
-        var items = JsonSerializer.Deserialize<Dictionary<string, string>>(
-            await File.ReadAllTextAsync(AppConfig.GetItemsFilePath(fixture.Root)))!;
-        Assert.Equal("3031", items["Infinity Edge"]);
-        Assert.Equal(new[] { "Ahri", "MonkeyKing", "Wukong" },
-            JsonSerializer.Deserialize<string[]>(
-                await File.ReadAllTextAsync(AppConfig.GetChampionsFilePath(fixture.Root))));
+        var items = new DataFetcher(new LogService(), fixture.Root);
+        Assert.Equal("3031", await items.ResolveItemNameToIdAsync("InfinityEdge"));
+        Assert.False(File.Exists(Path.Combine(fixture.Root, "Config", "items.json")));
+        Assert.False(File.Exists(Path.Combine(fixture.Root, "Config", "champions.json")));
         using (var monsters = JsonDocument.Parse(await File.ReadAllTextAsync(
                    AppConfig.GetMonstersFilePath(fixture.Root))))
             Assert.Equal(JsonValueKind.Object, monsters.RootElement.ValueKind);
@@ -124,10 +120,8 @@ public sealed class LocalWadCatalogBootstrapperTests
                 Encoding.UTF8.GetBytes("[{\"id\":9999,\"name\":\"Personal Item\"}]"));
         }
 
-        originals.Add(AppConfig.GetChampionsFilePath(fixture.Root),
+        originals.Add(Path.Combine(fixture.Root, "Config", "champions.json"),
             Encoding.UTF8.GetBytes("[\"Custom Champion\",\"Ahri\"]"));
-        originals.Add(AppConfig.GetItemsFilePath(fixture.Root),
-            Encoding.UTF8.GetBytes("{\"Custom Item\":\"12345\"}"));
         originals.Add(AppConfig.GetMonstersFilePath(fixture.Root),
             Encoding.UTF8.GetBytes("{\"Epic\":[\"Custom Dragon\"]}"));
         originals.Add(AppConfig.GetStructuresFilePath(fixture.Root),
@@ -169,7 +163,7 @@ public sealed class LocalWadCatalogBootstrapperTests
         fixture.AddWad(BuildFullCatalog());
         string existingSkins = AppConfig.GetSkinsCachePath("default", fixture.Root);
         string existingItems = AppConfig.GetItemsCachePath("es_es", fixture.Root);
-        string existingChampions = AppConfig.GetChampionsFilePath(fixture.Root);
+        string existingChampions = Path.Combine(fixture.Root, "Config", "champions.json");
         byte[] editedSkins = Encoding.UTF8.GetBytes("{\"custom\":{\"name\":\"User skin\"}}");
         byte[] editedItems = Encoding.UTF8.GetBytes("[{\"id\":123,\"name\":\"User item\"}]");
         byte[] editedChampions = Encoding.UTF8.GetBytes("[\"Custom\"]");
@@ -198,7 +192,7 @@ public sealed class LocalWadCatalogBootstrapperTests
         using var fixture = new CatalogFixture();
         fixture.AddWad(BuildDefaultCatalog());
 
-        Assert.Equal(5, await fixture.CreateBootstrapper().PrepareAsync());
+        Assert.Equal(4, await fixture.CreateBootstrapper().PrepareAsync());
         string skinsPath = AppConfig.GetSkinsCachePath("default", fixture.Root);
         string skinsSidecar = skinsPath + ".wad-source";
         string initialProvenance = await File.ReadAllTextAsync(skinsSidecar);
@@ -220,14 +214,17 @@ public sealed class LocalWadCatalogBootstrapperTests
             JsonAsset("default", "items.json", newItems),
             JsonAsset("default", "champion-summary.json", newChampions));
 
-        Assert.Equal(5, await fixture.CreateBootstrapper().PrepareAsync());
+        Assert.Equal(4, await fixture.CreateBootstrapper().PrepareAsync());
         Assert.Equal(Encoding.UTF8.GetBytes(newSkins), await File.ReadAllBytesAsync(skinsPath));
         Assert.NotEqual(initialProvenance, await File.ReadAllTextAsync(skinsSidecar));
         Assert.Equal(Encoding.UTF8.GetBytes(newChampions),
             await File.ReadAllBytesAsync(SummaryCachePath(fixture.Root)));
-        Assert.Equal(new[] { "Ahri", "New Champion", "NewChampion" },
-            JsonSerializer.Deserialize<string[]>(await File.ReadAllTextAsync(
-                AppConfig.GetChampionsFilePath(fixture.Root))));
+        Assert.False(File.Exists(Path.Combine(fixture.Root, "Config", "champions.json")));
+        var aliases = new AliasManager(new LogService(),
+            Path.Combine(fixture.Root, "Config", "champion_aliases.json"),
+            SummaryCachePath(fixture.Root));
+        Assert.True(aliases.IsValidChampion("New Champion"));
+        Assert.Equal("NewChampion", aliases.GetInternalName("New Champion"));
 
         var catalog = new OfflineSkinCatalog(fixture.Root);
         Assert.Single(catalog.GetSkinAssetPaths("Ahri", 8));
@@ -244,14 +241,13 @@ public sealed class LocalWadCatalogBootstrapperTests
     {
         using var fixture = new CatalogFixture();
         fixture.AddWad(BuildDefaultCatalog());
-        Assert.Equal(5, await fixture.CreateBootstrapper().PrepareAsync());
+        Assert.Equal(4, await fixture.CreateBootstrapper().PrepareAsync());
         string[] tracked = new[]
         {
             AppConfig.GetSkinsCachePath("default", fixture.Root),
             AppConfig.GetSkinLinesCachePath("default", fixture.Root),
             AppConfig.GetItemsCachePath("default", fixture.Root),
-            SummaryCachePath(fixture.Root),
-            AppConfig.GetChampionsFilePath(fixture.Root)
+            SummaryCachePath(fixture.Root)
         };
         var originals = tracked.ToDictionary(path => path,
             path => File.ReadAllBytes(path));
@@ -277,8 +273,8 @@ public sealed class LocalWadCatalogBootstrapperTests
     {
         using var fixture = new CatalogFixture();
         fixture.AddWad(BuildDefaultCatalog());
-        Assert.Equal(5, await fixture.CreateBootstrapper().PrepareAsync());
-        string configChampions = AppConfig.GetChampionsFilePath(fixture.Root);
+        Assert.Equal(4, await fixture.CreateBootstrapper().PrepareAsync());
+        string configChampions = Path.Combine(fixture.Root, "Config", "champions.json");
         byte[] customNames = Encoding.UTF8.GetBytes("""["My Champion","Ahri"]""");
         fixture.WriteFile(configChampions, customNames);
         fixture.AddWad(JsonAsset("default", "champion-summary.json",
@@ -295,7 +291,7 @@ public sealed class LocalWadCatalogBootstrapperTests
     {
         using var fixture = new CatalogFixture();
         fixture.AddWad(BuildFullCatalog());
-        Assert.Equal(11, await fixture.CreateBootstrapper().PrepareAsync());
+        Assert.Equal(10, await fixture.CreateBootstrapper().PrepareAsync());
         string esSkins = AppConfig.GetSkinsCachePath("es_es", fixture.Root);
         string defaultSkins = AppConfig.GetSkinsCachePath("default", fixture.Root);
         byte[] originalDefault = await File.ReadAllBytesAsync(defaultSkins);
@@ -316,7 +312,7 @@ public sealed class LocalWadCatalogBootstrapperTests
     {
         using var fixture = new CatalogFixture();
         string wad = fixture.AddWad(BuildDefaultCatalog());
-        Assert.Equal(5, await fixture.CreateBootstrapper().PrepareAsync());
+        Assert.Equal(4, await fixture.CreateBootstrapper().PrepareAsync());
         string skins = AppConfig.GetSkinsCachePath("default", fixture.Root);
         byte[] original = await File.ReadAllBytesAsync(skins);
         File.Delete(wad);
@@ -355,7 +351,7 @@ public sealed class LocalWadCatalogBootstrapperTests
             "skins.json" => AppConfig.GetSkinsCachePath("default", fixture.Root),
             "skinlines.json" => AppConfig.GetSkinLinesCachePath("default", fixture.Root),
             "items.json" => AppConfig.GetItemsCachePath("default", fixture.Root),
-            _ => AppConfig.GetChampionsFilePath(fixture.Root)
+            _ => SummaryCachePath(fixture.Root)
         };
 
         int created = await fixture.CreateBootstrapper().PrepareAsync();
@@ -397,7 +393,7 @@ public sealed class LocalWadCatalogBootstrapperTests
             """));
 
         Assert.Equal(0, await fixture.CreateBootstrapper().PrepareAsync());
-        Assert.False(File.Exists(AppConfig.GetChampionsFilePath(fixture.Root)));
+        Assert.False(File.Exists(Path.Combine(fixture.Root, "Config", "champions.json")));
     }
 
     [Fact]
@@ -422,10 +418,10 @@ public sealed class LocalWadCatalogBootstrapperTests
 
         int[] created = await Task.WhenAll(first.PrepareAsync(), second.PrepareAsync());
 
-        Assert.Equal(11, created.Sum());
+        Assert.Equal(10, created.Sum());
         Assert.Equal(0, await first.PrepareAsync());
-        Assert.Equal(11, Directory.GetFiles(Path.Combine(fixture.Root, "Cache"), "*.json").Length +
-            Directory.GetFiles(Path.Combine(fixture.Root, "Config"), "*.json").Length);
+        Assert.Equal(10, Directory.GetFiles(Path.Combine(fixture.Root, "Cache"), "*.json").Length);
+        Assert.False(Directory.Exists(Path.Combine(fixture.Root, "Config")));
         AssertNoTemporaryFiles(fixture.Root);
     }
 

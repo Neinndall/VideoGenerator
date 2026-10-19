@@ -12,8 +12,8 @@ namespace VideoGenerator.Services
 {
     /// <summary>
     /// Refreshes Riot's official JSON caches from the installed game-data WAD.
-    /// Config files are user-owned; a generated champions list is refreshed only
-    /// while its content still matches the list this bootstrapper previously wrote.
+    /// Config files are user-owned. The Riot champion summary stays in Cache;
+    /// champion_aliases.json is the only editable champion mapping catalog.
     /// </summary>
     public sealed class LocalWadCatalogBootstrapper
     {
@@ -68,14 +68,11 @@ namespace VideoGenerator.Services
                 // catalogs. Never replace preexisting user-maintained Config data.
                 byte[] championSummary = await ReadWadAssetAsync(ChampionSummaryPath, token)
                     .ConfigureAwait(false);
-                if (championSummary != null && TryGetChampionNames(championSummary, out byte[] names))
+                if (championSummary != null && HasUsableChampionNames(championSummary))
                 {
-                    string summaryCache = Path.Combine(AppConfig.GetCacheDirectory(_storageRoot),
-                        "champion_summary_data_default.json");
+                    string summaryCache = AppConfig.GetChampionSummaryCachePath(_storageRoot);
                     updated += await WriteCatalogAsync(summaryCache, championSummary,
                         ChampionSummaryPath, token).ConfigureAwait(false) ? 1 : 0;
-                    updated += await TryRefreshGeneratedChampionsAsync(names, championSummary, token)
-                        .ConfigureAwait(false) ? 1 : 0;
                 }
 
                 _logger.LogInfo($"Local WAD catalog preparation complete: {updated} JSON files created or refreshed.");
@@ -165,14 +162,12 @@ namespace VideoGenerator.Services
             return records > 0 && validRecords > 0 && validRecords * 2 >= records;
         }
 
-        private static bool TryGetChampionNames(byte[] source, out byte[] namesJson)
+        private static bool HasUsableChampionNames(byte[] source)
         {
-            namesJson = null;
             try
             {
                 using var document = JsonDocument.Parse(source);
                 if (document.RootElement.ValueKind != JsonValueKind.Array) return false;
-                var names = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (JsonElement entry in document.RootElement.EnumerateArray())
                 {
                     if (entry.ValueKind != JsonValueKind.Object) continue;
@@ -180,46 +175,15 @@ namespace VideoGenerator.Services
                     {
                         if (entry.TryGetProperty(field, out JsonElement value) &&
                             value.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(value.GetString()))
-                            names.Add(value.GetString());
+                            return true;
                     }
                 }
-                if (names.Count == 0) return false;
-                namesJson = JsonSerializer.SerializeToUtf8Bytes(names);
-                return true;
+                return false;
             }
             catch (JsonException)
             {
                 return false;
             }
-        }
-
-        private async Task<bool> TryRefreshGeneratedChampionsAsync(byte[] names,
-            byte[] summary, CancellationToken token)
-        {
-            string configPath = AppConfig.GetChampionsFilePath(_storageRoot);
-            string trackingPath = Path.Combine(AppConfig.GetCacheDirectory(_storageRoot),
-                "generated_champions.wad-source");
-            string digest = Sha256(summary);
-
-            if (File.Exists(configPath))
-            {
-                // Only edit the original list if we can prove it is unmodified
-                // output of an earlier run. Older installations have no such proof.
-                CacheProvenance prior = await ReadProvenanceAsync(trackingPath, token)
-                    .ConfigureAwait(false);
-                if (prior == null || prior.SourcePath != ChampionSummaryPath ||
-                    prior.Version != ProvenanceVersion ||
-                    !await MatchesDigestAsync(configPath, prior.ContentSha256, token)
-                        .ConfigureAwait(false))
-                    return false;
-            }
-
-            bool changed = await ReplaceIfDifferentAsync(configPath, names, token)
-                .ConfigureAwait(false);
-            await WriteProvenanceAsync(trackingPath,
-                new CacheProvenance(ChampionSummaryPath, digest, Sha256(names)), token)
-                .ConfigureAwait(false);
-            return changed;
         }
 
         private async Task<bool> WriteCatalogAsync(string destination, byte[] contents,

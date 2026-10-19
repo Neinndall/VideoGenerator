@@ -21,16 +21,15 @@ public sealed class DatabaseBuilderIntegrationTests
 
             Assert.True(builder.IsReady);
             await builder.ReadyTask.WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.Empty(JsonSerializer.Deserialize<List<string>>(
-                await File.ReadAllTextAsync(Path.Combine(root, "Config", "champions.json")))!);
-            Assert.Empty(JsonSerializer.Deserialize<Dictionary<string, string>>(
-                await File.ReadAllTextAsync(Path.Combine(root, "Config", "items.json")))!);
+            Assert.False(File.Exists(Path.Combine(root, "Config", "champions.json")));
+            Assert.False(File.Exists(Path.Combine(root, "Config", "items.json")));
             var monsters = JsonSerializer.Deserialize<MonsterDatabase>(
-                await File.ReadAllTextAsync(Path.Combine(root, "Config", "monsters.json")))!;
-            Assert.Empty(monsters.Epic);
-            Assert.Empty(monsters.Large);
-            Assert.Empty(JsonSerializer.Deserialize<List<StructureMapping>>(
-                await File.ReadAllTextAsync(Path.Combine(root, "Config", "structures.json")))!);
+                await File.ReadAllTextAsync(AppConfig.GetMonstersFilePath(root)))!;
+            Assert.Equal(DefaultMonsters.Get().Epic, monsters.Epic);
+            Assert.Equal(DefaultMonsters.Get().Large, monsters.Large);
+            var structures = JsonSerializer.Deserialize<List<StructureMapping>>(
+                await File.ReadAllTextAsync(Path.Combine(root, "Config", "structures.json")))!;
+            Assert.Equal(DefaultStructures.Entries.Count, structures.Count);
             Assert.False(File.Exists(Path.Combine(root, "Config", "version.json")));
             Assert.False(Directory.Exists(Path.Combine(root, "Cache")));
 
@@ -40,7 +39,7 @@ public sealed class DatabaseBuilderIntegrationTests
     }
 
     [Fact]
-    public async Task ExistingUserCatalogsAndVersionArePreservedByteForByte()
+    public async Task ExistingMonsterAndStructureCatalogsMergeNewDefaultsWithoutLosingCustomEntries()
     {
         string root = CreateRoot();
         try
@@ -49,10 +48,8 @@ public sealed class DatabaseBuilderIntegrationTests
             Directory.CreateDirectory(config);
             var originals = new Dictionary<string, string>
             {
-                ["champions.json"] = "[\"MonkeyKing\",\"Wukong\",\"UserChampion\"]",
-                ["items.json"] = "{\"Infinity Edge\":\"3031\",\"Personal Item\":\"1\"}",
-                ["monsters.json"] = "{\"Epic\":[\"Baron Nashor\"],\"Large\":[\"Rift Herald\"]}",
-                ["structures.json"] = "[{\"Keyword\":\"Blue Turret\",\"TargetName\":\"Turret\"}]",
+                ["monsters.json"] = "{\"Epic\":[\"My Custom Boss\"],\"Large\":[\"Rift Herald\",\"Dinosaurio\"]}",
+                ["structures.json"] = "[{\"Keyword\":\"ObsidianGate\",\"TargetName\":\"Nexus\"}]",
                 ["version.json"] = "14.7.1"
             };
             foreach (var entry in originals)
@@ -61,8 +58,21 @@ public sealed class DatabaseBuilderIntegrationTests
             var builder = new DatabaseBuilder(new LogService(), root);
             await builder.InitializeDatabasesAsync("99.9.9");
 
-            foreach (var entry in originals)
-                Assert.Equal(entry.Value, await File.ReadAllTextAsync(Path.Combine(config, entry.Key)));
+            foreach (string name in new[] { "version.json" })
+                Assert.Equal(originals[name], await File.ReadAllTextAsync(Path.Combine(config, name)));
+            Assert.False(File.Exists(Path.Combine(config, "items.json")));
+            var mergedMonsters = JsonSerializer.Deserialize<MonsterDatabase>(
+                await File.ReadAllTextAsync(AppConfig.GetMonstersFilePath(root)))!;
+            Assert.Contains("Dinosaurio", mergedMonsters.Large);
+            Assert.Contains("My Custom Boss", mergedMonsters.Epic);
+            Assert.Contains("Rift Herald", mergedMonsters.Large);
+            Assert.Contains("Atakhan", mergedMonsters.Epic);
+            Assert.Equal(DefaultMonsters.Entries.Count + 2, mergedMonsters.All.Count);
+            var structures = JsonSerializer.Deserialize<List<StructureMapping>>(
+                await File.ReadAllTextAsync(Path.Combine(config, "structures.json")))!;
+            Assert.Contains(structures, s => s.Keyword == "ObsidianGate" && s.TargetName == "Nexus");
+            Assert.Contains(structures, s => s.Keyword == "RedTurret" && s.TargetName == "Turret");
+            Assert.Equal(DefaultStructures.Entries.Count + 1, structures.Count);
             Assert.True(builder.IsReady);
             Assert.Empty(Directory.GetFiles(config, "*.tmp"));
         }
@@ -70,7 +80,76 @@ public sealed class DatabaseBuilderIntegrationTests
     }
 
     [Fact]
-    public async Task BootstrapsItemNamesFromExistingLocalCacheWithoutChangingTheCache()
+    public async Task FullyMergedCatalogsAreNotRewrittenOnSubsequentStartup()
+    {
+        string root = CreateRoot();
+        try
+        {
+            await new DatabaseBuilder(new LogService(), root).InitializeDatabasesAsync("1");
+            string monsterPath = AppConfig.GetMonstersFilePath(root);
+            string structurePath = AppConfig.GetStructuresFilePath(root);
+            string monsterContent = await File.ReadAllTextAsync(monsterPath);
+            string structureContent = await File.ReadAllTextAsync(structurePath);
+
+            await new DatabaseBuilder(new LogService(), root).InitializeDatabasesAsync("2");
+
+            Assert.Equal(monsterContent, await File.ReadAllTextAsync(monsterPath));
+            Assert.Equal(structureContent, await File.ReadAllTextAsync(structurePath));
+        }
+        finally { DeleteRoot(root); }
+    }
+
+    [Fact]
+    public async Task InvalidMonsterJsonIsPreservedWithoutCreatingAnotherDatabase()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string canonical = AppConfig.GetMonstersFilePath(root);
+            Directory.CreateDirectory(Path.GetDirectoryName(canonical)!);
+            const string damaged = "{ user data was interrupted";
+            await File.WriteAllTextAsync(canonical, damaged);
+
+            await new DatabaseBuilder(new LogService(), root).InitializeDatabasesAsync("1");
+
+            Assert.Equal(damaged, await File.ReadAllTextAsync(canonical));
+            Assert.False(File.Exists(Path.Combine(root, "Config", "MonsterDatabase.json")));
+        }
+        finally { DeleteRoot(root); }
+    }
+
+    [Fact]
+    public async Task ExistingUnifiedJsonGetsNewDefaultsWithoutLosingUserMappings()
+    {
+        string root = CreateRoot();
+        try
+        {
+            string monster = AppConfig.GetMonstersFilePath(root);
+            string structure = AppConfig.GetStructuresFilePath(root);
+            Directory.CreateDirectory(Path.GetDirectoryName(monster)!);
+            await File.WriteAllTextAsync(monster,
+                """{"Epic":["My Custom Boss"],"Large":["Dinosaurio"]}""");
+            await File.WriteAllTextAsync(structure,
+                """[{"Keyword":"ObsidianGate","TargetName":"Nexus"}]""");
+
+            await new DatabaseBuilder(new LogService(), root).InitializeDatabasesAsync("1");
+
+            var saved = JsonSerializer.Deserialize<MonsterDatabase>(
+                await File.ReadAllTextAsync(monster))!;
+            Assert.Contains("My Custom Boss", saved.Epic);
+            Assert.Contains("Dinosaurio", saved.Large);
+            Assert.Contains("Atakhan", saved.Epic);
+            Assert.Equal(DefaultMonsters.Entries.Count + 2, saved.All.Count);
+            var structures = JsonSerializer.Deserialize<List<StructureMapping>>(
+                await File.ReadAllTextAsync(structure))!;
+            Assert.Equal(DefaultStructures.Entries.Count + 1, structures.Count);
+            Assert.Contains(structures, item => item.Keyword == "ObsidianGate");
+        }
+        finally { DeleteRoot(root); }
+    }
+
+    [Fact]
+    public async Task DoesNotCopyRiotItemCacheIntoConfig()
     {
         string root = CreateRoot();
         try
@@ -83,10 +162,10 @@ public sealed class DatabaseBuilderIntegrationTests
             var builder = new DatabaseBuilder(new LogService(), root);
             await builder.InitializeDatabasesAsync("15.9.1");
 
-            var items = JsonSerializer.Deserialize<Dictionary<string, string>>(
-                await File.ReadAllTextAsync(AppConfig.GetItemsFilePath(root)))!;
-            Assert.Equal("3031", items["Infinity Edge"]);
-            Assert.Equal("3340", items["Stealth Ward"]);
+            Assert.False(File.Exists(Path.Combine(root, "Config", "items.json")));
+            var fetcher = new DataFetcher(new LogService(), root);
+            Assert.Equal("3031", await fetcher.ResolveItemNameToIdAsync("InfinityEdge"));
+            Assert.Equal("3340", await fetcher.ResolveItemNameToIdAsync("StealthWard"));
             Assert.Equal(json, await File.ReadAllTextAsync(path));
         }
         finally { DeleteRoot(root); }
@@ -150,7 +229,9 @@ public sealed class DatabaseBuilderIntegrationTests
 
             Assert.True(first.IsReady);
             Assert.True(second.IsReady);
-            foreach (string file in new[] { "champions.json", "items.json", "monsters.json", "structures.json" })
+            Assert.False(File.Exists(Path.Combine(root, "Config", "champions.json")));
+            Assert.False(File.Exists(Path.Combine(root, "Config", "items.json")));
+            foreach (string file in new[] { "monsters.json", "structures.json" })
             {
                 using var document = JsonDocument.Parse(
                     await File.ReadAllTextAsync(Path.Combine(root, "Config", file)));

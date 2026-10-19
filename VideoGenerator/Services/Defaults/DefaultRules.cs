@@ -1,6 +1,7 @@
+using VideoGenerator.Views.Models;
 using System.Collections.Generic;
 
-namespace VideoGenerator.Views.Models
+namespace VideoGenerator.Services
 {
     public static class DefaultRules
     {

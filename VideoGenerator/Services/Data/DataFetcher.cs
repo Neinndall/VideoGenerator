@@ -37,7 +37,6 @@ namespace VideoGenerator.Services
                 _loadedSkinsLocale = null;
                 _loadedSkinlinesLocale = null;
                 _loadedItemsLocale = null;
-                _itemNameIdCache = null;
                 _communityItemNameToIdCache = null;
                 _loadedCommunityItemsLocale = null;
             }
@@ -66,8 +65,8 @@ namespace VideoGenerator.Services
         private string GetItemsCachePath(string locale) =>
             AppConfig.GetItemsCachePath(locale, _storageRoot);
 
-        private string ItemsFilePath => AppConfig.GetItemsFilePath(_storageRoot);
         private string MonstersFilePath => AppConfig.GetMonstersFilePath(_storageRoot);
+        private string StructuresFilePath => AppConfig.GetStructuresFilePath(_storageRoot);
 
         // A Mapping edit must be observed by the next scan, without
         // rebuilding the EventNameParser or restarting VideoGenerator.
@@ -88,6 +87,61 @@ namespace VideoGenerator.Services
                 {
                     return "<unavailable>";
                 }
+            }
+        }
+
+        // Structure catalog edits are reloaded on the next folder scan.
+        internal string StructureCatalogRevision
+        {
+            get
+            {
+                try
+                {
+                    var info = new FileInfo(StructuresFilePath);
+                    return info.Exists ? $"{info.LastWriteTimeUtc.Ticks}:{info.Length}" : "<missing>";
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    return "<unavailable>";
+                }
+            }
+        }
+
+        public bool TryLoadStructureMappings(out List<StructureMapping> personalMappings)
+        {
+            personalMappings = DefaultStructures.Get();
+            if (!File.Exists(StructuresFilePath)) return true;
+            try
+            {
+                string json = File.ReadAllText(StructuresFilePath);
+                using var document = JsonDocument.Parse(json);
+                if (document.RootElement.ValueKind != JsonValueKind.Array)
+                    throw new JsonException("Structure mapping catalog must be a JSON array.");
+                foreach (var element in document.RootElement.EnumerateArray())
+                {
+                    if (element.ValueKind != JsonValueKind.Object)
+                        throw new JsonException("Invalid structure mapping entry.");
+                    foreach (var property in element.EnumerateObject())
+                    {
+                        if (!property.NameEquals("Keyword") && !property.NameEquals("TargetName"))
+                            throw new JsonException("Unrecognized structure mapping field.");
+                    }
+                }
+
+                var loaded = JsonSerializer.Deserialize<List<StructureMapping>>(json)
+                    ?? throw new JsonException("Invalid structure mapping catalog.");
+                if (loaded.Any(item => item == null ||
+                    string.IsNullOrWhiteSpace(item.Keyword) ||
+                    string.IsNullOrWhiteSpace(item.TargetName)))
+                    throw new JsonException("Structure mapping keywords and target names are required.");
+                personalMappings = StructureCatalogEditor.Merge(loaded);
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or JsonException or NotSupportedException)
+            {
+                _logger.LogError("Failed to read structures.json. Original file preserved.", ex);
+                return false;
             }
         }
 
@@ -336,7 +390,6 @@ namespace VideoGenerator.Services
             }
         }
 
-        private Dictionary<string, string> _itemNameIdCache;
         private Dictionary<string, int> _communityItemNameToIdCache;
         private string _loadedCommunityItemsLocale;
 
@@ -396,34 +449,47 @@ namespace VideoGenerator.Services
 
         public MonsterDatabase LoadMonsterDatabase()
         {
+            TryLoadMonsterDatabase(out MonsterDatabase database);
+            return database;
+        }
+
+        /// <summary>
+        /// Read the unified monster catalog, merging in newly introduced app
+        /// defaults while retaining existing Epic/Large membership.
+        /// Invalid data is never overwritten by the Mapping editor.
+        /// </summary>
+        public bool TryLoadMonsterDatabase(out MonsterDatabase database)
+        {
+            database = DefaultMonsters.Get();
+            if (!File.Exists(MonstersFilePath)) return true;
             try
             {
-                if (File.Exists(MonstersFilePath))
+                string json = File.ReadAllText(MonstersFilePath);
+                using var document = JsonDocument.Parse(json);
+                if (document.RootElement.ValueKind != JsonValueKind.Object)
+                    throw new JsonException("Monster catalog must contain Epic and Large arrays.");
+                foreach (var property in document.RootElement.EnumerateObject())
                 {
-                    string json = File.ReadAllText(MonstersFilePath);
-                    var db = JsonSerializer.Deserialize<MonsterDatabase>(json);
-                    if (db != null) return db;
+                    if (!property.NameEquals("Epic") && !property.NameEquals("Large"))
+                        throw new JsonException("Unrecognized monster catalog field.");
                 }
+                MonsterDatabase saved = JsonSerializer.Deserialize<MonsterDatabase>(json)
+                    ?? throw new JsonException("Invalid monster catalog.");
+                if (saved.Epic == null || saved.Large == null)
+                    throw new JsonException("Monster catalog categories must be arrays.");
+                if (saved.Epic.Concat(saved.Large)
+                    .Any(name => string.IsNullOrWhiteSpace(name)))
+                    throw new JsonException("Monster names must be nonempty.");
+                database = MonsterCatalogEditor.Merge(saved);
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or JsonException or NotSupportedException)
             {
-                _logger.LogError("Failed to load the monsters database. Trying the legacy format.", ex);
-                // Legacy flat list fallback
-                try
-                {
-                    if (File.Exists(MonstersFilePath))
-                    {
-                        string json = File.ReadAllText(MonstersFilePath);
-                        var list = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
-                        return new MonsterDatabase { Large = list };
-                    }
-                }
-                catch (Exception legacyEx)
-                {
-                    _logger.LogError("Failed to load the legacy monsters database format.", legacyEx);
-                }
+                _logger.LogError("Failed to read the monster catalog; the saved file is preserved.", ex);
+                database = DefaultMonsters.Get();
+                return false;
             }
-            return new MonsterDatabase();
         }
 
         public async Task<(int Id, string Name)?> GetItemInfoAsync(string itemName, string language = null)
@@ -481,7 +547,8 @@ namespace VideoGenerator.Services
             if (string.IsNullOrEmpty(itemName)) return null;
             if (int.TryParse(itemName, out _)) return itemName; // already an ID
 
-            // 1. Read the installed game's items catalog from its local JSON cache.
+            // The Riot cache is the one source of item names and IDs. No
+            // duplicate Config/items.json database is created or consulted.
             try
             {
                 var info = await GetItemInfoAsync(itemName);
@@ -490,81 +557,9 @@ namespace VideoGenerator.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarn("Failed to resolve the item through the local game catalog. The local item database will be used as fallback.");
+                _logger.LogWarn("Failed to resolve the item through the installed game's local catalog.");
                 _logger.LogDebug($"Local item catalog details: {ex.Message}");
             }
-
-            // 2. Fallback to the preserved local item name-to-ID database.
-            Dictionary<string, string> itemNameIdCache;
-            while (true)
-            {
-                int version;
-                lock (_cacheLock)
-                {
-                    itemNameIdCache = _itemNameIdCache;
-                    version = _cacheVersion;
-                }
-
-                if (itemNameIdCache != null || !File.Exists(ItemsFilePath)) break;
-
-                try
-                {
-                    string jsonStr = await File.ReadAllTextAsync(ItemsFilePath);
-                    var baseMap = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonStr) ?? new Dictionary<string, string>();
-
-                    var tempMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var kvp in baseMap)
-                    {
-                        tempMap[kvp.Key] = kvp.Value;
-                        string normalized = Regex.Replace(kvp.Key, @"[^A-Za-z0-9]", "");
-                        if (!tempMap.ContainsKey(normalized))
-                        {
-                            tempMap[normalized] = kvp.Value;
-                        }
-                    }
-
-                    lock (_cacheLock)
-                    {
-                        if (version != _cacheVersion) continue;
-                        itemNameIdCache = _itemNameIdCache ??= tempMap;
-                    }
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError("Failed to load the local item name-to-ID database.", ex);
-                    return null;
-                }
-            }
-
-            if (itemNameIdCache != null)
-            {
-                // 1. Direct exact or normalized match
-                if (itemNameIdCache.TryGetValue(itemName, out string id))
-                {
-                    return id;
-                }
-
-                string cleanSearch = Regex.Replace(itemName, @"[^A-Za-z0-9]", "");
-                if (itemNameIdCache.TryGetValue(cleanSearch, out id))
-                {
-                    return id;
-                }
-
-                // 2. Partial match
-                var bestMatch = itemNameIdCache.Keys.FirstOrDefault(k => k.Contains(itemName, StringComparison.OrdinalIgnoreCase));
-                if (bestMatch != null)
-                {
-                    return itemNameIdCache[bestMatch];
-                }
-
-                var bestMatchClean = itemNameIdCache.Keys.FirstOrDefault(k => k.Contains(cleanSearch, StringComparison.OrdinalIgnoreCase));
-                if (bestMatchClean != null)
-                {
-                    return itemNameIdCache[bestMatchClean];
-                }
-            }
-
             return null;
         }
     }

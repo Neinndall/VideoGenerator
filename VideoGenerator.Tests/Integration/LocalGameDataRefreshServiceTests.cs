@@ -66,7 +66,55 @@ public sealed class LocalGameDataRefreshServiceTests
         }
     }
 
-    private static void WriteCatalogWad(string path, string skinId, string name)
+    [Fact]
+    public async Task NewGamePatchAddsChampionsAndRolesToOneAliasCatalogWithoutRestart()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.ChampionPatch.").FullName;
+        try
+        {
+            string wad = Path.Combine(root, "Plugins", "rcp-be-lol-game-data", "default-assets.wad");
+            Directory.CreateDirectory(Path.GetDirectoryName(wad)!);
+            WriteCatalogWad(wad, "103007", "Arcade Ahri");
+
+            var logger = new LogService();
+            var source = new LeagueWadAssetSource(logger, root, Path.Combine(root, "icons"));
+            var bootstrap = new LocalWadCatalogBootstrapper(source, logger, root);
+            var fetcher = new DataFetcher(logger, root);
+            var aliases = new AliasManager(logger,
+                Path.Combine(root, "Config", "champion_aliases.json"));
+            var groups = new GroupManager(logger, Path.Combine(root, "Config", "groups.json"));
+            var skinlines = new SkinlineManager(fetcher, aliases, logger);
+            var hashes = new LeagueWadHashResolver(source);
+            var icons = new LocalGameIconManager(source, fetcher, aliases,
+                groups, skinlines, logger, Path.Combine(root, "icons"), hashes,
+                new OfflineSkinCatalog(root, logger));
+            var refresh = new LocalGameDataRefreshService(
+                source, bootstrap, fetcher, skinlines, icons, hashes, logger, aliases);
+
+            Assert.False(aliases.IsValidChampion("Zaahen"));
+            Assert.True(await refresh.RefreshAsync());
+            Assert.False(aliases.IsValidChampion("Zaahen"));
+
+            WriteCatalogWad(wad, "103008", "New Ahri Skin", includeZaahen: true);
+            Assert.True(await refresh.RefreshAsync());
+
+            Assert.True(aliases.IsValidChampion("Zaahen"));
+            var zaahen = Assert.Single(aliases.Aliases, a => a.DisplayName == "Zaahen");
+            Assert.Equal("Zaahen", zaahen.InternalName);
+            Assert.Equal(new[] { "fighter", "tank" }, zaahen.Roles);
+            Assert.True(zaahen.IsOfficial);
+            Assert.True(File.Exists(Path.Combine(root, "Config", "champion_aliases.json")));
+            Assert.False(File.Exists(Path.Combine(root, "Config", "champions.json")));
+            Assert.False(await refresh.RefreshAsync());
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static void WriteCatalogWad(string path, string skinId, string name,
+        bool includeZaahen = false)
     {
         const string tile = "/lol-game-data/assets/ASSETS/Characters/Ahri/Skins/Skin08/Images/Ahri_Splash_Tile_8.jpg";
         string skins = JsonSerializer.Serialize(
@@ -78,7 +126,10 @@ public sealed class LocalGameDataRefreshServiceTests
         {
             (Prefix + "skins.json", Encoding.UTF8.GetBytes(skins)),
             (Prefix + "skinlines.json", Encoding.UTF8.GetBytes("""[{"id":42,"name":"Star Guardian"}]""")),
-            (Prefix + "items.json", Encoding.UTF8.GetBytes("""[{"id":3031,"name":"Infinity Edge"}]"""))
+            (Prefix + "items.json", Encoding.UTF8.GetBytes("""[{"id":3031,"name":"Infinity Edge"}]""")),
+            (Prefix + "champion-summary.json", Encoding.UTF8.GetBytes(includeZaahen
+                ? """[{"id":62,"name":"Wukong","alias":"MonkeyKing"},{"id":901,"name":"Zaahen","alias":"Zaahen","roles":["fighter","tank"]}]"""
+                : """[{"id":62,"name":"Wukong","alias":"MonkeyKing"}]"""))
         };
 
         string temporary = path + ".tmp";

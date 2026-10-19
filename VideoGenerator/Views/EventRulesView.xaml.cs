@@ -22,16 +22,23 @@ namespace VideoGenerator.Views
         private readonly GroupManager _groupManager;
         private readonly AliasManager _aliasManager;
         private readonly TranslationService _translationService;
+        private readonly DataFetcher _dataFetcher;
         private EventRule _editingRule;
         private bool _isPopulatingRule;
+        private bool _monsterCatalogWritable = true;
+        private string _monsterRevisionAtLoad;
+        private bool _structureCatalogWritable = true;
+        private string _structureRevisionAtLoad;
 
-        public EventRulesView(RuleManager ruleManager, GroupManager groupManager, AliasManager aliasManager, TranslationService translationService)
+        public EventRulesView(RuleManager ruleManager, GroupManager groupManager,
+            AliasManager aliasManager, TranslationService translationService, DataFetcher dataFetcher)
         {
             InitializeComponent();
             _ruleManager = ruleManager;
             _groupManager = groupManager;
             _aliasManager = aliasManager;
             _translationService = translationService;
+            _dataFetcher = dataFetcher;
             
             DataContext = this;
             
@@ -434,7 +441,13 @@ namespace VideoGenerator.Views
                 insertIndex++;
             }
             _groupManager.Groups.Insert(insertIndex, newGroup);
-            _groupManager.SaveGroups();
+            if (!_groupManager.SaveGroups())
+            {
+                _groupManager.Groups.Remove(newGroup);
+                ModernMessageBox.Show("The groups.json file could not be saved. Your existing data has been preserved.",
+                    "Groups Unavailable", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             GroupNameBox.Text = "";
             ChampionsBox.Text = "";
@@ -447,12 +460,19 @@ namespace VideoGenerator.Views
             {
                 if (group.IsOfficial)
                 {
-                    var result = ModernMessageBox.Show($"'{group.Name}' is an official group. Are you sure you want to delete it?", "Delete Official Group", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    ModernMessageBox.Show($"'{group.Name}' is a built-in group. You cannot remove the application's defaults.",
+                        "Built-in Group", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
                 }
 
+                int previous = _groupManager.Groups.IndexOf(group);
                 _groupManager.Groups.Remove(group);
-                _groupManager.SaveGroups();
+                if (!_groupManager.SaveGroups())
+                {
+                    _groupManager.Groups.Insert(previous, group);
+                    ModernMessageBox.Show("The groups.json file could not be saved. Your existing data has been preserved.",
+                        "Groups Unavailable", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             }
         }
 
@@ -475,9 +495,10 @@ namespace VideoGenerator.Views
             }
 
             // Duplicate Prevention
-            if (_aliasManager.Aliases.Any(a => a.InternalName.Equals(internalName, StringComparison.OrdinalIgnoreCase)))
+            if (_aliasManager.Aliases.Any(a =>
+                a.DisplayName.Equals(display, StringComparison.OrdinalIgnoreCase)))
             {
-                ModernMessageBox.Show($"An alias with the Internal Name '{internalName}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show($"A champion alias named '{display}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -494,7 +515,13 @@ namespace VideoGenerator.Views
                 insertIndex++;
             }
             _aliasManager.Aliases.Insert(insertIndex, newAlias);
-            _aliasManager.SaveAliases();
+            if (!_aliasManager.SaveAliases())
+            {
+                _aliasManager.Aliases.Remove(newAlias);
+                ModernMessageBox.Show("The champion_aliases.json file could not be saved. Existing aliases have been preserved.",
+                    "Champions Unavailable", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             AliasDisplayBox.Text = "";
             AliasInternalBox.Text = "";
@@ -506,78 +533,71 @@ namespace VideoGenerator.Views
             {
                 if (alias.IsOfficial)
                 {
-                    var result = ModernMessageBox.Show($"'{alias.DisplayName}' is an official mapping. Delete anyway?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    ModernMessageBox.Show($"'{alias.DisplayName}' is a built-in champion alias and cannot be deleted.",
+                        "Built-in Champion", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
                 }
+                int previous = _aliasManager.Aliases.IndexOf(alias);
                 _aliasManager.Aliases.Remove(alias);
-                _aliasManager.SaveAliases();
+                if (!_aliasManager.SaveAliases())
+                {
+                    _aliasManager.Aliases.Insert(previous, alias);
+                    ModernMessageBox.Show("The champion_aliases.json file could not be saved. Existing aliases have been preserved.",
+                        "Champions Unavailable", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             }
         }
 
         // --- Monsters Logic ---
 
-        public ObservableCollection<string> MonsterList { get; } = new();
+        public ObservableCollection<MonsterCatalogRow> MonsterList { get; } = new();
 
         private void LoadMonsters()
         {
             MonsterList.Clear();
             var db = new MonsterDatabase();
+            _monsterCatalogWritable = _dataFetcher.TryLoadMonsterDatabase(out db);
+            _monsterRevisionAtLoad = _dataFetcher.MonsterCatalogRevision;
+            foreach (var entry in MonsterCatalogEditor.CreateRows(db))
+                MonsterList.Add(entry);
+        }
 
+        private bool SaveMonsters()
+        {
+            if (!_monsterCatalogWritable ||
+                _monsterRevisionAtLoad != _dataFetcher.MonsterCatalogRevision)
+            {
+                ModernMessageBox.Show(
+                    "monsters.json could not be read or was changed elsewhere. Your original data is untouched. Reopen Event Mapping to refresh the list.",
+                    "Monster Catalog Unavailable", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
             try
             {
                 string path = AppConfig.MonstersPath;
-                if (System.IO.File.Exists(path))
-                {
-                    string json = System.IO.File.ReadAllText(path);
-                    var loaded = System.Text.Json.JsonSerializer.Deserialize<MonsterDatabase>(json);
-                    if (loaded != null) db = loaded;
-                }
-            }
-            catch
-            {
-                // Legacy flat list fallback
+                DirectoriesCreator.CreateParentDirectory(path);
+                MonsterDatabase db = MonsterCatalogEditor.ToDatabase(MonsterList);
+                string json = System.Text.Json.JsonSerializer.Serialize(db,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                string temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
                 try
                 {
-                    string path = AppConfig.MonstersPath;
-                    if (System.IO.File.Exists(path))
-                    {
-                        string json = System.IO.File.ReadAllText(path);
-                        var list = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json);
-                        if (list != null) db.Large = list;
-                    }
+                    System.IO.File.WriteAllText(temp, json);
+                    System.IO.File.Move(temp, path, overwrite: true);
                 }
-                catch { }
-            }
-
-            foreach (var m in db.All) MonsterList.Add(m);
-        }
-
-        private void SaveMonsters()
-        {
-            try
-            {
-                    string path = AppConfig.MonstersPath;
-                DirectoriesCreator.CreateParentDirectory(path);
-
-                var db = new MonsterDatabase();
-                foreach (var m in MonsterList)
+                finally
                 {
-                    // Heuristic: dragons/heralds/baron/voidgrub go to Epic, the rest to Large
-                    bool isEpic = m.Contains("Baron", StringComparison.OrdinalIgnoreCase) ||
-                                  m.Contains("Dragon", StringComparison.OrdinalIgnoreCase) ||
-                                  m.Contains("Drake", StringComparison.OrdinalIgnoreCase) ||
-                                  m.Contains("Herald", StringComparison.OrdinalIgnoreCase) ||
-                                  m.Contains("Voidgrub", StringComparison.OrdinalIgnoreCase);
-
-                    var targetList = isEpic ? db.Epic : db.Large;
-                    if (!targetList.Contains(m, StringComparer.OrdinalIgnoreCase))
-                        targetList.Add(m);
+                    if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp);
                 }
-
-                string json = System.Text.Json.JsonSerializer.Serialize(db, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                System.IO.File.WriteAllText(path, json);
+                _monsterRevisionAtLoad = _dataFetcher.MonsterCatalogRevision;
+                return true;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show($"The monsters list could not be saved: {ex.Message}",
+                    "Save Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
         }
 
         private void AddMonster_Click(object sender, RoutedEventArgs e)
@@ -589,7 +609,16 @@ namespace VideoGenerator.Views
                 return;
             }
 
-            if (MonsterList.Contains(name, StringComparer.OrdinalIgnoreCase))
+            if (DefaultMonsters.Normalize(name).Length == 0)
+            {
+                ModernMessageBox.Show("Enter a valid monster name using letters or numbers.",
+                    "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (DefaultMonsters.TryResolveName(name, out _) ||
+                MonsterList.Any(row =>
+                    DefaultMonsters.Normalize(row.Name) == DefaultMonsters.Normalize(name)))
             {
                 ModernMessageBox.Show($"'{name}' is already in the monster list.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
@@ -597,78 +626,86 @@ namespace VideoGenerator.Views
 
             // Find insert index alphabetically
             int insertIndex = 0;
-            while (insertIndex < MonsterList.Count && string.Compare(MonsterList[insertIndex], name, StringComparison.OrdinalIgnoreCase) < 0)
+            while (insertIndex < MonsterList.Count && string.Compare(
+                       MonsterList[insertIndex].Name, name, StringComparison.OrdinalIgnoreCase) < 0)
             {
                 insertIndex++;
             }
 
-            MonsterList.Insert(insertIndex, name);
-            SaveMonsters();
+            var newRow = new MonsterCatalogRow(name, false, MonsterCatalogSection.Large);
+            MonsterList.Insert(insertIndex, newRow);
+            if (!SaveMonsters())
+            {
+                MonsterList.Remove(newRow);
+                return;
+            }
             NewMonsterBox.Text = "";
         }
 
         private void DeleteMonster_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.CommandParameter is string monsterName)
+            if (sender is Button button &&
+                button.CommandParameter is MonsterCatalogRow row && row.CanDelete)
             {
-                MonsterList.Remove(monsterName);
-                SaveMonsters();
+                int index = MonsterList.IndexOf(row);
+                if (index < 0) return;
+                MonsterList.RemoveAt(index);
+                if (!SaveMonsters()) MonsterList.Insert(index, row);
             }
         }
 
         // --- Structures Logic ---
 
-        public ObservableCollection<StructureMapping> StructureList { get; } = new();
+        public ObservableCollection<StructureCatalogRow> StructureList { get; } = new();
 
         private void LoadStructures()
         {
             StructureList.Clear();
-            var defaults = new List<StructureMapping> {
-                new StructureMapping { Keyword = "Turret", TargetName = "Turret" },
-                new StructureMapping { Keyword = "Tower", TargetName = "Turret" },
-                new StructureMapping { Keyword = "Inhibitor", TargetName = "Inhibitor" },
-                new StructureMapping { Keyword = "Nexus", TargetName = "Nexus" }
-            };
-
-            List<StructureMapping> loadedList = new();
-            try
-            {
-                string path = AppConfig.StructuresPath;
-                if (System.IO.File.Exists(path))
-                {
-                    string json = System.IO.File.ReadAllText(path);
-                    var list = System.Text.Json.JsonSerializer.Deserialize<List<StructureMapping>>(json);
-                    if (list != null) loadedList = list;
-                }
-            }
-            catch { }
-
-            // Smart Merge
-            bool anyMerged = false;
-            foreach (var d in defaults)
-            {
-                if (!loadedList.Any(s => s.Keyword.Equals(d.Keyword, StringComparison.OrdinalIgnoreCase)))
-                {
-                    loadedList.Add(d);
-                    anyMerged = true;
-                }
-            }
-
-            foreach (var s in loadedList.OrderBy(x => x.Keyword)) StructureList.Add(s);
-            
-            if (anyMerged || StructureList.Count == 0) SaveStructures();
+            _structureCatalogWritable = _dataFetcher.TryLoadStructureMappings(
+                out List<StructureMapping> userMappings);
+            _structureRevisionAtLoad = _dataFetcher.StructureCatalogRevision;
+            foreach (var row in StructureCatalogEditor.CreateRows(userMappings))
+                StructureList.Add(row);
+            // App defaults are merged into structures.json during startup and
+            // the Mapping editor saves that same merged list.
         }
 
-        private void SaveStructures()
+        private bool SaveStructures()
         {
+            if (!_structureCatalogWritable ||
+                _structureRevisionAtLoad != _dataFetcher.StructureCatalogRevision)
+            {
+                ModernMessageBox.Show(
+                    "structures.json could not be read or was modified elsewhere. Its existing content has been preserved. Please reopen Event Mapping before editing.",
+                    "Structure Catalog Unavailable", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
             try
             {
                 string path = AppConfig.StructuresPath;
                 DirectoriesCreator.CreateParentDirectory(path);
-                string json = System.Text.Json.JsonSerializer.Serialize(StructureList.ToList(), new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                System.IO.File.WriteAllText(path, json);
+                string json = System.Text.Json.JsonSerializer.Serialize(
+                    StructureCatalogEditor.ToDatabaseMappings(StructureList),
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                string temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                try
+                {
+                    System.IO.File.WriteAllText(temp, json);
+                    System.IO.File.Move(temp, path, overwrite: true);
+                }
+                finally
+                {
+                    if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp);
+                }
+                _structureRevisionAtLoad = _dataFetcher.StructureCatalogRevision;
+                return true;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show($"The structure mappings could not be saved: {ex.Message}",
+                    "Save Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
         }
 
         private void AddStructure_Click(object sender, RoutedEventArgs e)
@@ -682,17 +719,21 @@ namespace VideoGenerator.Views
                 return;
             }
 
-            if (StructureList.Any(s => s.Keyword.Equals(keyword, StringComparison.OrdinalIgnoreCase)))
+            if (DefaultStructures.Normalize(keyword).Length == 0)
+            {
+                ModernMessageBox.Show("Enter a keyword containing letters or numbers.",
+                    "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (StructureList.Any(s =>
+                DefaultStructures.Normalize(s.Keyword) == DefaultStructures.Normalize(keyword)))
             {
                 ModernMessageBox.Show($"A structure mapping with keyword '{keyword}' already exists.", "Duplicate Detected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            var newMapping = new StructureMapping
-            {
-                Keyword = keyword,
-                TargetName = targetName
-            };
+            var newMapping = new StructureCatalogRow(keyword, targetName, false);
 
             // Insert alphabetically by keyword
             int insertIndex = 0;
@@ -702,7 +743,11 @@ namespace VideoGenerator.Views
             }
 
             StructureList.Insert(insertIndex, newMapping);
-            SaveStructures();
+            if (!SaveStructures())
+            {
+                StructureList.Remove(newMapping);
+                return;
+            }
 
             NewStructureKeywordBox.Text = "";
             NewStructureTargetBox.SelectedIndex = 0;
@@ -710,10 +755,17 @@ namespace VideoGenerator.Views
 
         private void DeleteStructure_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.DataContext is StructureMapping mapping)
+            if (sender is Button button &&
+                button.DataContext is StructureCatalogRow mapping && mapping.CanDelete)
             {
-                StructureList.Remove(mapping);
-                SaveStructures();
+                int index = StructureList.IndexOf(mapping);
+                if (index < 0) return;
+                StructureList.RemoveAt(index);
+                if (!SaveStructures()) StructureList.Insert(index, mapping);
+                else if (DefaultStructures.Entries.Any(entry =>
+                    DefaultStructures.Normalize(entry.Keyword) ==
+                    DefaultStructures.Normalize(mapping.Keyword)))
+                    LoadStructures(); // After removing an override, reveal its built-in.
             }
         }
     }

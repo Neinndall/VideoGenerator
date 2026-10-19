@@ -195,7 +195,7 @@ public sealed class DataFetcherTests
     }
 
     [Fact]
-    public void LoadsLegacyMonsterListsFromAnIsolatedConfig()
+    public void LoadsCurrentMonsterCatalogFromAnIsolatedConfig()
     {
         string root = CreateRoot();
 
@@ -203,14 +203,17 @@ public sealed class DataFetcherTests
         {
             string databasePath = Path.Combine(root, "Config", "monsters.json");
             Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
-            File.WriteAllText(databasePath, "[\"Baron Nashor\", \"Dragon\"]");
+            File.WriteAllText(databasePath,
+                """{"Epic":["Baron Nashor"],"Large":["Dragon"]}""");
 
             var fetcher = new DataFetcher(new LogService(), root);
 
             MonsterDatabase database = fetcher.LoadMonsterDatabase();
 
-            Assert.Equal(new[] { "Baron Nashor", "Dragon" }, database.Large);
-            Assert.Empty(database.Epic);
+            Assert.Contains("Baron Nashor", database.Epic);
+            Assert.Contains("Dragon", database.Large);
+            Assert.Contains("Cloud Drake", database.Epic);
+            Assert.Equal(DefaultMonsters.Entries.Count, database.All.Count);
         }
         finally
         {
@@ -277,7 +280,7 @@ public sealed class DataFetcherTests
             Assert.Empty(await fetcher.GetSkinLinesAsync("EN"));
             Assert.Null(await fetcher.GetItemInfoAsync("UnknownItem", "EN"));
             Assert.Null(await fetcher.ResolveItemNameToIdAsync("UnknownItem"));
-            Assert.Empty(fetcher.LoadMonsterDatabase().All);
+            Assert.Equal(DefaultMonsters.Entries.Count, fetcher.LoadMonsterDatabase().All.Count);
         }
         finally
         {
@@ -361,19 +364,21 @@ public sealed class DataFetcherTests
     }
 
     [Fact]
-    public async Task InvalidateCachesAlsoReloadsLegacyItemFallback()
+    public async Task InvalidateCachesReloadsUpdatedOfficialItems()
     {
         string root = CreateRoot();
         try
         {
-            string config = Path.Combine(root, "Config");
-            Directory.CreateDirectory(config);
-            string itemsPath = Path.Combine(config, "items.json");
-            await File.WriteAllTextAsync(itemsPath, """{"Old Artifact":"9001"}""");
+            string cache = Path.Combine(root, "Cache");
+            Directory.CreateDirectory(cache);
+            string itemsPath = Path.Combine(cache, "items_data_default.json");
+            await File.WriteAllTextAsync(itemsPath,
+                """[{"id":9001,"name":"Old Artifact","nameSlug":"OldArtifact"}]""");
             var fetcher = new DataFetcher(new LogService(), root);
             Assert.Equal("9001", await fetcher.ResolveItemNameToIdAsync("OldArtifact"));
 
-            await File.WriteAllTextAsync(itemsPath, """{"New Artifact":"9002"}""");
+            await File.WriteAllTextAsync(itemsPath,
+                """[{"id":9002,"name":"New Artifact","nameSlug":"NewArtifact"}]""");
             fetcher.InvalidateCaches();
 
             Assert.Null(await fetcher.ResolveItemNameToIdAsync("OldArtifact"));
@@ -386,7 +391,7 @@ public sealed class DataFetcherTests
     }
 
     [Fact]
-    public async Task ResolvesItemsFromLegacyLocalFileWhenItemCacheIsMissing()
+    public async Task DoesNotConsultConfigItemsJsonWithoutOfficialCache()
     {
         string root = CreateRoot();
         try
@@ -397,9 +402,10 @@ public sealed class DataFetcherTests
                 """{"Zhonya's Hourglass":"3157","Guardian Angel":"3026"}""");
 
             var fetcher = new DataFetcher(new LogService(), root);
-            Assert.Equal("3157", await fetcher.ResolveItemNameToIdAsync("ZhonyasHourglass"));
-            Assert.Equal("3026", await fetcher.ResolveItemNameToIdAsync("Guardian Angel"));
+            Assert.Null(await fetcher.ResolveItemNameToIdAsync("ZhonyasHourglass"));
+            Assert.Null(await fetcher.ResolveItemNameToIdAsync("Guardian Angel"));
             Assert.Equal("3026", await fetcher.ResolveItemNameToIdAsync("3026"));
+            Assert.True(File.Exists(Path.Combine(config, "items.json"))); // untouched by the app
         }
         finally
         {
@@ -443,8 +449,10 @@ public sealed class DataFetcherTests
 
             var fetcher = new DataFetcher(new LogService(), root);
             var result = fetcher.LoadMonsterDatabase();
-            Assert.Equal(new[] { "Baron Nashor", "Elder Dragon" }, result.Epic);
-            Assert.Equal(new[] { "Blue Sentinel" }, result.Large);
+            Assert.Contains("Baron Nashor", result.Epic);
+            Assert.Contains("Elder Dragon", result.Epic);
+            Assert.Contains("Blue Sentinel", result.Large);
+            Assert.Contains("Void Grub", result.Epic);
         }
         finally
         {

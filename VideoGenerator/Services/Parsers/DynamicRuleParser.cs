@@ -212,7 +212,11 @@ namespace VideoGenerator.Services.Parsers
                 string displayTargetName = Regex.Replace(iconTarget, @"(?<!^)(?=[A-Z])", " ").Trim();
                 string cleanDisplayName = Regex.Replace(displayTargetName, @"Skin\d+", "", RegexOptions.IgnoreCase).Trim();
 
-                var matchedGroup = _groupManager.Groups.FirstOrDefault(g => g.Name.Equals(displayTargetName, StringComparison.OrdinalIgnoreCase));
+                // Match against the original target, before inserting spaces
+                // between uppercase characters (ADC/APC must not become A D C).
+                var matchedGroup = _groupManager.Groups.FirstOrDefault(g =>
+                    DefaultChampions.Normalize(g.Name).Equals(
+                        DefaultChampions.Normalize(iconTarget), StringComparison.OrdinalIgnoreCase));
                 
                 if (string.IsNullOrWhiteSpace(rule.IconLookup) &&
                     LeagueSkinlineIdentity.TrySplitChampionQualified(
@@ -237,6 +241,13 @@ namespace VideoGenerator.Services.Parsers
                     {
                         iconTarget = displayTargetName;
                         iconType = "region";
+                    }
+                    else if (matchedGroup.Category.Equals("Skinline", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Legacy/custom thematic groups must not borrow an
+                        // unrelated champion's portrait.
+                        iconTarget = matchedGroup.Name;
+                        iconType = "skinline";
                     }
                     else
                     {
@@ -300,11 +311,10 @@ namespace VideoGenerator.Services.Parsers
                                 @"(?<=[a-z0-9])(?=[A-Z])", "_");
                             displayTargetName = monsterName;
                         }
-                        else if (IsStructure(iconTarget))
+                        else if (TryResolveStructure(iconTarget, out string structureIcon))
                         {
                             iconType = "structure";
-                            iconTarget = GetStructureLookupName(iconTarget);
-                            displayTargetName = iconTarget;
+                            iconTarget = structureIcon;
                         }
                         else if (iconType != "system" &&
                                  iconType != "item" &&
@@ -387,49 +397,44 @@ namespace VideoGenerator.Services.Parsers
             return !string.IsNullOrEmpty(resolvedItemId);
         }
 
-        private List<StructureMapping> _cachedStructures;
+        private IReadOnlyList<StructureMapping> _cachedStructures;
+        private string _structureCatalogRevision;
         private readonly object _structureLock = new();
 
-        private bool IsStructure(string target)
+        private bool TryResolveStructure(string target, out string lookup)
         {
-            EnsureStructuresLoaded();
-            return _cachedStructures.Any(s => target.Contains(s.Keyword, StringComparison.OrdinalIgnoreCase));
+            string normalized = DefaultStructures.Normalize(target);
+            StructureMapping match = CurrentStructures().FirstOrDefault(mapping =>
+                DefaultStructures.Normalize(mapping.Keyword) is string keyword &&
+                keyword.Length > 0 && normalized.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+            lookup = match?.TargetName;
+            return match != null;
         }
 
-        private string GetStructureLookupName(string target)
+        private IReadOnlyList<StructureMapping> CurrentStructures()
         {
-            EnsureStructuresLoaded();
-            var match = _cachedStructures.FirstOrDefault(s => target.Contains(s.Keyword, StringComparison.OrdinalIgnoreCase));
-            return match?.TargetName ?? "Turret";
-        }
-
-        private void EnsureStructuresLoaded()
-        {
-            if (_cachedStructures == null)
+            string revision = _dataFetcher.StructureCatalogRevision;
+            lock (_structureLock)
             {
-                lock (_structureLock)
+                if (_cachedStructures != null &&
+                    (revision is "<missing>" or "<unavailable>"))
+                    return _cachedStructures;
+                if (_cachedStructures == null ||
+                    !string.Equals(_structureCatalogRevision, revision, StringComparison.Ordinal))
                 {
-                    if (_cachedStructures == null) _cachedStructures = LoadStructuresList();
+                    if (_dataFetcher.TryLoadStructureMappings(out List<StructureMapping> mergedMappings))
+                    {
+                        _cachedStructures = StructureCatalogEditor.ForRecognition(mergedMappings);
+                        _structureCatalogRevision = revision;
+                    }
+                    else if (_cachedStructures == null)
+                    {
+                        // Invalid config cannot erase built-in structure knowledge.
+                        _cachedStructures = StructureCatalogEditor.ForRecognition(null);
+                    }
                 }
+                return _cachedStructures;
             }
-        }
-
-        private List<StructureMapping> LoadStructuresList()
-        {
-            try
-            {
-                string path = AppConfig.StructuresPath;
-                if (File.Exists(path))
-                {
-                    // Use FileStream with ReadWrite share to avoid "File in use" errors during sync
-                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var reader = new StreamReader(stream);
-                    string json = reader.ReadToEnd();
-                    return JsonSerializer.Deserialize<List<StructureMapping>>(json) ?? new List<StructureMapping>();
-                }
-            }
-            catch { }
-            return new List<StructureMapping>();
         }
 
         private string NormalizeFolderName(string folderName)

@@ -33,8 +33,6 @@ namespace VideoGenerator.Models
         public static readonly string MonstersPath = Path.Combine(ConfigDir, "monsters.json");
         public static readonly string StructuresPath = Path.Combine(ConfigDir, "structures.json");
         public static readonly string SkinlineCachePath = Path.Combine(ConfigDir, "skinlines.json");
-        public static readonly string ChampionsPath = Path.Combine(ConfigDir, "champions.json");
-        public static readonly string ItemsPath = Path.Combine(ConfigDir, "items.json");
         public static readonly string SettingsPath = Path.Combine(ConfigDir, "settings.json");
         public static readonly string EventRulesPath = Path.Combine(ConfigDir, "event_rules.json");
         public static readonly string AliasesPath = Path.Combine(ConfigDir, "champion_aliases.json");
@@ -62,14 +60,12 @@ namespace VideoGenerator.Models
         public static string GetDialogueValidationsFilePath(string storageRoot = null) =>
             Path.Combine(GetConfigDirectory(storageRoot), "dialogue_validations.json");
 
-        public static string GetChampionsFilePath(string storageRoot = null) =>
-            Path.Combine(GetConfigDirectory(storageRoot), "champions.json");
-
-        public static string GetItemsFilePath(string storageRoot = null) =>
-            Path.Combine(GetConfigDirectory(storageRoot), "items.json");
+        public static string GetChampionSummaryCachePath(string storageRoot = null) =>
+            Path.Combine(GetCacheDirectory(storageRoot), "champion_summary_data_default.json");
 
         public static string GetMonstersFilePath(string storageRoot = null) =>
             Path.Combine(GetConfigDirectory(storageRoot), "monsters.json");
+
 
         public static string GetStructuresFilePath(string storageRoot = null) =>
             Path.Combine(GetConfigDirectory(storageRoot), "structures.json");

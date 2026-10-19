@@ -18,6 +18,7 @@ namespace VideoGenerator.Services
         private readonly LocalGameIconManager _icons;
         private readonly LeagueWadHashResolver _hashes;
         private readonly LogService _logger;
+        private readonly AliasManager _aliases;
         private readonly SemaphoreSlim _refreshGate = new(1, 1);
         private bool _initialized;
 
@@ -28,7 +29,8 @@ namespace VideoGenerator.Services
             SkinlineManager skinlines,
             LocalGameIconManager icons,
             LeagueWadHashResolver hashes,
-            LogService logger)
+            LogService logger,
+            AliasManager aliases = null)
         {
             _gameAssets = gameAssets;
             _catalogBootstrapper = catalogBootstrapper;
@@ -37,6 +39,7 @@ namespace VideoGenerator.Services
             _icons = icons;
             _hashes = hashes;
             _logger = logger;
+            _aliases = aliases;
         }
 
         /// <summary>
@@ -64,6 +67,17 @@ namespace VideoGenerator.Services
                 if (archivesChanged || updated > 0 || !_initialized)
                 {
                     _dataFetcher.InvalidateCaches();
+                    if (_aliases != null)
+                    {
+                        _aliases.InvalidateChampionCatalog();
+                        // Alias collections are bound to the Mapping view:
+                        // never reset an ObservableCollection on a worker thread.
+                        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+                        if (dispatcher != null && !dispatcher.CheckAccess())
+                            await dispatcher.InvokeAsync(_aliases.LoadAliases);
+                        else
+                            _aliases.LoadAliases();
+                    }
                     _skinlines.InvalidateCatalog();
                     _hashes.InvalidateCachedMetadata();
                     _icons.RefreshCatalogs();

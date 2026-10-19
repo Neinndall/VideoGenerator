@@ -10,11 +10,9 @@ namespace VideoGenerator.Services.Parsers
 {
     public class MonsterEventParser : IEventParser
     {
-        private static readonly HashSet<string> StructureNames = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "Turret", "Tower", "BlueTurret", "RedTurret", "BlueTower", "RedTower",
-            "Inhibitor", "BlueInhibitor", "RedInhibitor", "Nexus", "BlueNexus", "RedNexus"
-        };
+        private static readonly HashSet<string> StructureNames = new(
+            DefaultStructures.Entries.Select(entry => DefaultStructures.Normalize(entry.Keyword)),
+            StringComparer.OrdinalIgnoreCase);
 
         private static readonly HashSet<string> BundledChampionNames = new(
             DefaultGroups.Get().SelectMany(group => group.GetChampionsList()).Select(NormalizeMonsterName),
@@ -125,7 +123,16 @@ namespace VideoGenerator.Services.Parsers
                 return true;
             }
 
-            // The offline catalog can be empty; keep common neutral monsters and aliases usable.
+            // DefaultMonsters is the application's versioned vocabulary, independent
+            // of the personal catalog and whether the installed WAD has artwork.
+            if (DefaultMonsters.TryResolveName(normalized, out string knownName))
+            {
+                monsterName = knownName;
+                return true;
+            }
+
+            // Preserve any verified WAD-only aliases until they are rolled into
+            // a future default-catalog update.
             if (LeagueMonsterAssets.TryResolveName(normalized, out string fallbackName))
             {
                 monsterName = fallbackName;

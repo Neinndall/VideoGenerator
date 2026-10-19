@@ -20,6 +20,7 @@ namespace VideoGenerator.Services
     /// </summary>
     public class DatabaseBuilder
     {
+        private static readonly SemaphoreSlim CatalogMergeGate = new(1, 1);
         private readonly LogService _logger;
         private readonly string _storageRoot;
         private readonly SemaphoreSlim _initializationGate = new(1, 1);
@@ -35,8 +36,6 @@ namespace VideoGenerator.Services
             _storageRoot = storageRoot;
         }
 
-        private string ChampionsFilePath => AppConfig.GetChampionsFilePath(_storageRoot);
-        private string ItemsFilePath => AppConfig.GetItemsFilePath(_storageRoot);
         private string MonstersFilePath => AppConfig.GetMonstersFilePath(_storageRoot);
         private string StructuresFilePath => AppConfig.GetStructuresFilePath(_storageRoot);
 
@@ -50,11 +49,13 @@ namespace VideoGenerator.Services
 
                 // version.json represents a previously synchronized version. Never
                 // change it merely because a different client version was detected.
-                await CreateCatalogIfMissingAsync(ChampionsFilePath, new List<string>());
-                if (!File.Exists(ItemsFilePath))
-                    await CreateCatalogIfMissingAsync(ItemsFilePath, await GetLocallyCachedItemsAsync());
-                await CreateCatalogIfMissingAsync(MonstersFilePath, new MonsterDatabase());
-                await CreateCatalogIfMissingAsync(StructuresFilePath, new List<StructureMapping>());
+                await CatalogMergeGate.WaitAsync();
+                try
+                {
+                    await InitializeMonsterCatalogAsync();
+                    await InitializeStructureCatalogAsync();
+                }
+                finally { CatalogMergeGate.Release(); }
 
                 _logger.LogInfo("Local game catalogs initialized without network synchronization.");
             }
@@ -71,53 +72,85 @@ namespace VideoGenerator.Services
             }
         }
 
-        private async Task<Dictionary<string, string>> GetLocallyCachedItemsAsync()
+        private async Task InitializeMonsterCatalogAsync()
         {
-            var items = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            string[] locales = { AppConfig.GetCdragonLocale(), "default", "es_es", "tr_tr" };
+            var data = new DataFetcher(_logger, _storageRoot);
 
-            foreach (string locale in locales.Distinct(StringComparer.OrdinalIgnoreCase))
+            if (!File.Exists(MonstersFilePath))
             {
-                string path = AppConfig.GetItemsCachePath(locale, _storageRoot);
-                if (!File.Exists(path))
-                    continue;
-
-                try
-                {
-                    using JsonDocument document = JsonDocument.Parse(await File.ReadAllTextAsync(path));
-                    if (document.RootElement.ValueKind != JsonValueKind.Array)
-                        throw new JsonException("Expected an array of item records.");
-
-                    foreach (JsonElement entry in document.RootElement.EnumerateArray())
-                    {
-                        if (entry.ValueKind != JsonValueKind.Object ||
-                            !entry.TryGetProperty("id", out JsonElement id) ||
-                            id.ValueKind != JsonValueKind.Number ||
-                            !id.TryGetInt32(out int itemId) ||
-                            !entry.TryGetProperty("name", out JsonElement name) ||
-                            name.ValueKind != JsonValueKind.String ||
-                            string.IsNullOrWhiteSpace(name.GetString()))
-                            continue;
-
-                        items[name.GetString()] = itemId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    }
-
-                    if (items.Count > 0)
-                    {
-                        _logger.LogDebug($"Prepared {items.Count} item names from the existing local cache '{Path.GetFileName(path)}'.");
-                        return items;
-                    }
-                }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
-                {
-                    _logger.LogWarn($"Local item cache '{Path.GetFileName(path)}' could not be read; original file preserved.");
-                    _logger.LogDebug($"Local item cache details: {ex.Message}");
-                }
+                await CreateCatalogIfMissingAsync(MonstersFilePath, DefaultMonsters.Get());
+                return;
             }
+            if (!data.TryLoadMonsterDatabase(out MonsterDatabase merged))
+                return;
 
-            // No WAD reader is wired into DatabaseBuilder yet. A schema-compatible
-            // empty catalog keeps first-run parsing safe until local assets are indexed.
-            return items;
+            // When a future app update adds a new built-in monster, only append
+            // missing defaults; existing categories and personal entries win.
+            string previous = await File.ReadAllTextAsync(MonstersFilePath);
+            bool missingDefault = DefaultMonsters.Entries.Any(entry =>
+                !ContainsMonster(previous, entry.Name));
+            if (missingDefault)
+                await ReplaceCatalogIfUnchangedAsync(MonstersFilePath, previous, merged);
+        }
+
+        private static bool ContainsMonster(string json, string name)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(json);
+                IEnumerable<JsonElement> values = new[] { "Epic", "Large" }
+                    .Where(key => document.RootElement.TryGetProperty(key, out _))
+                    .SelectMany(key => document.RootElement.GetProperty(key).EnumerateArray());
+                return values.Any(value => value.ValueKind == JsonValueKind.String &&
+                    DefaultMonsters.Normalize(value.GetString()) ==
+                    DefaultMonsters.Normalize(name));
+            }
+            catch (JsonException) { return false; }
+        }
+
+        private async Task InitializeStructureCatalogAsync()
+        {
+            if (!File.Exists(StructuresFilePath))
+            {
+                await CreateCatalogIfMissingAsync(StructuresFilePath, DefaultStructures.Get());
+                return;
+            }
+            var data = new DataFetcher(_logger, _storageRoot);
+            if (!data.TryLoadStructureMappings(out List<StructureMapping> merged))
+                return;
+            string previous = await File.ReadAllTextAsync(StructuresFilePath);
+            using var document = JsonDocument.Parse(previous);
+            var saved = JsonSerializer.Deserialize<List<StructureMapping>>(previous) ??
+                new List<StructureMapping>();
+            bool missingDefault = DefaultStructures.Entries.Any(entry =>
+                !saved.Any(item => DefaultStructures.Normalize(item.Keyword) ==
+                    DefaultStructures.Normalize(entry.Keyword)));
+            if (missingDefault)
+                await ReplaceCatalogIfUnchangedAsync(StructuresFilePath, previous, merged);
+        }
+
+        private async Task ReplaceCatalogIfUnchangedAsync<T>(
+            string path, string previous, T merged)
+        {
+            string temp = null;
+            try
+            {
+                string json = JsonSerializer.Serialize(merged, new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
+                temp = $"{path}.{Guid.NewGuid():N}.tmp";
+                await File.WriteAllTextAsync(temp, json, Encoding.UTF8);
+                // Avoid replacing a file edited while we were preparing data.
+                if (await File.ReadAllTextAsync(path) == previous)
+                    File.Move(temp, path, overwrite: true);
+            }
+            finally
+            {
+                if (temp != null && File.Exists(temp))
+                    File.Delete(temp);
+            }
         }
 
         private async Task CreateCatalogIfMissingAsync<T>(string path, T catalog)

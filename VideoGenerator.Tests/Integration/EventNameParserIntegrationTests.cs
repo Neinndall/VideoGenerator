@@ -112,6 +112,70 @@ public sealed class EventNameParserIntegrationTests
     }
 
     [Theory]
+    [InlineData("Play_vo_Aatrox_Kill3DADC")]
+    [InlineData("Play_vo_Aatrox_Kill3DAPC")]
+    public async Task BuiltInRoleAcronymsResolveAsGroupsNotUnknownTargets(string folder)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.DefaultRoles.").FullName;
+        try
+        {
+            ParsedEvent parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("champion", parsed.IconType);
+            Assert.NotEqual("ADC", parsed.IconLookupName);
+            Assert.NotEqual("APC", parsed.IconLookupName);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_Aatrox_Kill3DBlueTurret", "Turret")]
+    [InlineData("Play_vo_Aatrox_Kill3DRedTower", "Turret")]
+    [InlineData("Play_vo_Aatrox_Kill3DInhibitorTurret", "Turret")]
+    [InlineData("Play_vo_Aatrox_Kill3DBlueInhibitor", "Inhibitor")]
+    [InlineData("Play_vo_Aatrox_Kill3DRedNexus", "Nexus")]
+    public async Task BuiltInStructuresResolveWithoutPersonalJson(
+        string folder, string expectedIcon)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.DefaultStructures.").FullName;
+        try
+        {
+            ParsedEvent parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("structure", parsed.IconType);
+            Assert.Equal(expectedIcon, parsed.IconLookupName);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+            Assert.False(File.Exists(Path.Combine(root, "Config", "structures.json")));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public async Task PersonalStructureMappingRefreshesWithinExistingParser()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.StructureRefresh.").FullName;
+        try
+        {
+            string path = Path.Combine(root, "Config", "structures.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            await File.WriteAllTextAsync(path, "[]");
+            var parser = CreateParser(root);
+            const string folder = "Play_vo_Aatrox_Kill3DObsidianGate";
+            Assert.NotEqual("structure",
+                (await parser.ParseFolderNameAsync(folder, "EN")).IconType);
+
+            await File.WriteAllTextAsync(path,
+                "[{\"Keyword\":\"ObsidianGate\",\"TargetName\":\"Nexus\"}]");
+            File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddSeconds(4));
+            ParsedEvent parsed = await parser.ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("structure", parsed.IconType);
+            Assert.Equal("Nexus", parsed.IconLookupName);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
     [InlineData("Assist3DAhri", "champion")]
     [InlineData("Death3DAhri", "champion")]
     [InlineData("FirstEncounter3DAhri", "champion")]
@@ -317,6 +381,30 @@ public sealed class EventNameParserIntegrationTests
         {
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_Aatrox_FirstEncounter3DZaahen")]
+    [InlineData("Play_vo_Aatrox_Kill3DZaahen")]
+    public async Task NewRiotChampionFromSummaryIsRecognizedWithoutHardcodedGroup(
+        string folder)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.NewChampion.").FullName;
+        try
+        {
+            string cache = Path.Combine(root, "Cache");
+            Directory.CreateDirectory(cache);
+            File.WriteAllText(Path.Combine(cache, "champion_summary_data_default.json"), """
+                [{"id":901,"name":"Zaahen","alias":"Zaahen","roles":["fighter","tank"]}]
+                """);
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("champion", parsed.IconType);
+            Assert.Equal("Zaahen", parsed.IconLookupName);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+            Assert.False(File.Exists(Path.Combine(root, "Config", "champions.json")));
+        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Theory]
@@ -603,6 +691,11 @@ public sealed class EventNameParserIntegrationTests
     [InlineData("Play_vo_Aatrox_Attack2DDrake", "Dragon")]
     [InlineData("Play_vo_Aatrox_Attack3DBaronNashor", "Baron_Nashor")]
     [InlineData("Play_vo_Aatrox_Attack3DRiftHerald", "Rift_Herald")]
+    [InlineData("Play_vo_Aatrox_Attack2DCloudDragon", "Cloud_Drake")]
+    [InlineData("Play_vo_Aatrox_Attack3DVoidGrub", "Void_Grub")]
+    [InlineData("Play_vo_Aatrox_Attack3DAtakhanRuinous", "Ruinous_Atakhan")]
+    [InlineData("Play_vo_Aatrox_Attack3DRaptor", "Raptor")]
+    [InlineData("Play_vo_Aatrox_Attack2DKrug", "Krug")]
     public async Task RecognizesCommonMonsterAliasesWithoutDownloadedCatalog(string folderName, string expectedIcon)
     {
         string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
@@ -623,16 +716,39 @@ public sealed class EventNameParserIntegrationTests
     }
 
     [Theory]
-    [InlineData("{\"Epic\":[\"Void Leviathan\"],\"Large\":[]}")]
-    [InlineData("[\"Void Leviathan\"]")]
-    public async Task RecognizesCustomMonsterFromCurrentOrLegacyCatalog(string monsterJson)
+    [InlineData("Play_vo_Aatrox_Kill3DVoidGrub", "Void_Grub")]
+    [InlineData("Play_vo_Aatrox_Kill3DHextechDragon", "Hextech_Drake")]
+    [InlineData("Play_vo_Aatrox_Kill3DAtakhanVoracious", "Voracious_Atakhan")]
+    public async Task BuiltInMonsterVocabularyWorksForKillWithoutUserCatalog(
+        string folderName, string iconLookup)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.DefaultMonsters.").FullName;
+        try
+        {
+            var parser = CreateParser(root);
+            ParsedEvent result = await parser.ParseFolderNameAsync(folderName, "EN");
+            Assert.True(result.IsMapped);
+            Assert.Equal("monster", result.IconType);
+            Assert.Equal(iconLookup, result.IconLookupName);
+            Assert.True(EventIconResolutionService.RequiresIcon(result));
+            Assert.False(File.Exists(Path.Combine(root, "Config", "monsters.json")));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RecognizesCustomMonsterFromMonstersCatalog()
     {
         string root = Directory.CreateTempSubdirectory("VideoGenerator.ParserIntegration.").FullName;
         try
         {
             string monsterPath = Path.Combine(root, "Config", "monsters.json");
             Directory.CreateDirectory(Path.GetDirectoryName(monsterPath)!);
-            await File.WriteAllTextAsync(monsterPath, monsterJson);
+            await File.WriteAllTextAsync(monsterPath,
+                """{"Epic":["Void Leviathan"],"Large":[]}""");
             var parser = CreateParser(root);
 
             ParsedEvent parsed = await parser.ParseFolderNameAsync(

@@ -1,5 +1,69 @@
 # VideoGenerator — v2.0.0.0 development changelog
 
+## Current development work — 19 October 2026
+
+This section takes precedence over superseded v2 prototypes and the archived
+v1.x notes below. The current installation and configuration contract is in
+[README.md](README.md); the full maintainer manifest `VideoGenerator.md`
+is kept locally above the repository and is intentionally **not committed**.
+No v2 release is implied.
+
+### Event Mapping catalog consolidation
+
+- Moved the C# shipped seeds `DefaultRules`, `DefaultGroups`,
+  `DefaultAliases`, `DefaultChampions`, `DefaultMonsters` and
+  `DefaultStructures` into `VideoGenerator/Services/Defaults/`.
+  UI data models remain under `Views/Models/`;
+  `MonsterDatabase` is a schema in `Services/Configuration/`.
+- Standardized exactly one editable JSON per Mapping tab:
+  `event_rules.json`, `groups.json`, `champion_aliases.json`,
+  `monsters.json` and `structures.json`. On clean startup these contain
+  shipped defaults, and user additions are persisted in the **same** file.
+  Newly added shipped defaults merge without discarding personal entries.
+- Monster (`Epic`/`Large`) and structure catalogs now seed from dedicated
+  code defaults, show `BUILT-IN` protected rows, normalize duplicate
+  identities, and allow custom additions through Mapping. Structure keyword
+  recognition prefers more specific/longer keywords.
+- `GroupManager` and `AliasManager` protect corrupted user catalogs,
+  detect external file modifications, write updates atomically and retain
+  user-added entries. Mapping refuses/rolls back saves when the backing
+  file cannot safely be written.
+
+### Riot champion updates and event recognition
+
+- `DefaultChampions` builds an offline fallback roster from built-in Groups
+  and Aliases; the installed Riot `champion-summary.json` provides the
+  authoritative updated display names, internal aliases and optional
+  champion **class roles**.
+- WAD metadata is cached at `Cache/champion_summary_data_default.json`,
+  then merged into the single editable `Config/champion_aliases.json`.
+  The Champions tab now displays **DISPLAY**, **INT NAME** and **RIOT ROLES**.
+  Riot class roles are **not** automatically mapped to lane/position groups.
+- The game-data refresh coordinator reloads champion names and roles after
+  an installed WAD patch, without restarting. Regression fixtures cover
+  a previously unknown champion (e.g. `FirstEncounter3DZaahen`), aliases,
+  role persistence and WAD updates in one application session.
+- Champion recognition and actual portrait extraction remain separate:
+  a valid champion name does not guarantee that the current WAD includes its
+  icon. Missing art is reported instead of using an unrelated portrait.
+
+### Removed duplicate Config catalogs and safeguards
+
+- Stopped creating or reading `Config/champions.json`,
+  `Config/MonsterDatabase.json` and `Config/items.json`.
+  The active monsters catalog is **`Config/monsters.json`**; item name/ID
+  resolution reads official Riot `Cache/items_data_*.json`.
+- **No migration logic** was retained for those retired Config formats,
+  per the clean-AppData installation design. The application does not delete
+  user AppData. Game-asset cache provenance is independent of these Mapping
+  files and continues to protect user-edited cache data.
+- Added/expanded startup, configuration, parser and local WAD integration
+  tests. Historical claims elsewhere in this changelog about downloading
+  images, a manual full champion list or creating extra Config catalogs are
+  **not** descriptions of the current v2 implementation.
+
+---
+
 MAJOR UPDATE
 Current direction: removed the optional CommunityDragon hash-dictionary downloader, its weekly startup job and the Hash Catalogs Settings panel. The installed WAD reader, xxHash64 path resolver, metadata refresh and icon cache remain operational; existing user caches and settings files are not deleted.
 

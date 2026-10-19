@@ -85,20 +85,12 @@ namespace VideoGenerator
             services.AddSingleton(provider => new LeagueWadAssetSource(
                 provider.GetRequiredService<LogService>(),
                 provider.GetRequiredService<AppSettings>().LeagueGameDirectory));
-            services.AddSingleton(provider => new LeagueWadHashResolver(
-                provider.GetRequiredService<LeagueWadAssetSource>()));
+            // The container injects already-registered singleton dependencies.
+            services.AddSingleton<LeagueWadHashResolver>();
             services.AddSingleton(provider => new OfflineSkinCatalog(logger:
                 provider.GetRequiredService<LogService>()));
             services.AddSingleton<LocalWadCatalogBootstrapper>();
-            services.AddSingleton(provider => new LocalGameIconManager(
-                provider.GetRequiredService<LeagueWadAssetSource>(),
-                provider.GetRequiredService<DataFetcher>(),
-                provider.GetRequiredService<AliasManager>(),
-                provider.GetRequiredService<GroupManager>(),
-                provider.GetRequiredService<SkinlineManager>(),
-                provider.GetRequiredService<LogService>(),
-                hashes: provider.GetRequiredService<LeagueWadHashResolver>(),
-                offlineSkins: provider.GetRequiredService<OfflineSkinCatalog>()));
+            services.AddSingleton<LocalGameIconManager>();
             services.AddSingleton<LocalGameDataRefreshService>();
             services.AddSingleton<IEventNameParser, EventNameParser>();
             services.AddSingleton<ImageGenerator>();
@@ -125,7 +117,8 @@ namespace VideoGenerator
                 provider.GetRequiredService<RuleManager>(),
                 provider.GetRequiredService<GroupManager>(),
                 provider.GetRequiredService<AliasManager>(),
-                provider.GetRequiredService<TranslationService>()
+                provider.GetRequiredService<TranslationService>(),
+                provider.GetRequiredService<DataFetcher>()
             ));
             services.AddSingleton<TranslationsView>();
             services.AddSingleton<SettingsView>();

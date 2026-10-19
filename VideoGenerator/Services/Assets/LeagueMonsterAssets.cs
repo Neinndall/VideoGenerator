@@ -5,10 +5,10 @@ using System.Linq;
 namespace VideoGenerator.Services
 {
     /// <summary>
-    /// Shared, declarative catalog of verified local Riot HUD assets.
-    /// The parser uses the names; the WAD reader uses the *same* entries for
-    /// image paths. New user Mapping names still work with WAD conventions.
-    /// New official irregular paths need only one entry here, not two switches.
+    /// Verified local Riot HUD artwork only. The broader built-in vocabulary
+    /// belongs in DefaultMonsters (like DefaultRules); not every known monster
+    /// has a reliably identified icon path in the installed WAD files.
+    /// New official irregular asset paths can be added here separately.
     /// </summary>
     public static class LeagueMonsterAssets
     {
@@ -25,9 +25,11 @@ namespace VideoGenerator.Services
             new("Blue Sentinel", "assets/characters/sru_blue/hud/bluesentinel_square.tex", new[] {"BlueSentinel", "BlueBuff"}),
             new("Red Brambleback", "assets/characters/sru_red/hud/brambleback_square.tex", new[] {"RedBrambleback", "RedBuff"}),
             new("Gromp", "assets/characters/sru_gromp/hud/gromp_square.tex", new[] {"Gromp"}),
-            new("Ancient Krug", "assets/characters/sru_krug/hud/ancientkrug_square.tex", new[] {"AncientKrug", "Krug", "Krugs"}),
-            new("Razorbeak", "assets/characters/sru_razorbeak/hud/razorbeak_square.tex", new[] {"Razorbeak", "Raptor", "Raptors"}),
-            new("Greater Murk Wolf", "assets/characters/sru_murkwolf/hud/greatermurkwolf_square.tex", new[] {"GreaterMurkWolf", "MurkWolf", "Wolves"}),
+            // Smaller units are separate creatures: don't substitute their HUD
+            // portraits with the large camp creature's verified icon.
+            new("Ancient Krug", "assets/characters/sru_krug/hud/ancientkrug_square.tex", new[] {"AncientKrug", "Krugs"}),
+            new("Razorbeak", "assets/characters/sru_razorbeak/hud/razorbeak_square.tex", new[] {"Razorbeak", "Raptors"}),
+            new("Greater Murk Wolf", "assets/characters/sru_murkwolf/hud/greatermurkwolf_square.tex", new[] {"GreaterMurkWolf", "Wolves"}),
             new("Rift Scuttler", "assets/characters/sru_crab/hud/crab_square_0.tex", new[] {"RiftScuttler", "ScuttleCrab", "Scuttler"})
         };
 
@@ -37,6 +39,13 @@ namespace VideoGenerator.Services
                 .GroupBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.First().Entry,
                     StringComparer.OrdinalIgnoreCase);
+
+        // Verified image owners, not the complete recognition vocabulary.
+        // Event Mapping displays the merged DefaultMonsters/monsters.json.
+        public static IReadOnlyList<string> OfficialNames { get; } =
+            Array.AsReadOnly(Entries.Select(entry => entry.Display)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray());
 
         public static string Normalize(string name) =>
             new string((name ?? "").Where(char.IsLetterOrDigit)

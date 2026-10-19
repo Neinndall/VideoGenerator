@@ -6,6 +6,8 @@
 
 VideoGenerator is a Windows WPF application that turns League of Legends voice-over event folders into localized 1080p HUD showcase videos. The **v2.0.0.0 development build** uses LeagueToolkit and the user's installed WAD archives for game art. The version is set in `VideoGenerator/VideoGenerator.csproj` and displayed as **v2.0.0**; a nonzero fourth component is displayed (for example, `2.0.0.1` → `v2.0.0.1`). **This does not imply that a v2 release or installer has been published.**
 
+**Development reference:** the current Event Mapping data contract is documented below, with changes recorded in the [development changelog](CHANGELOG.md). The project also keeps a private, local `VideoGenerator.md` maintainer manifest **outside this Git repository**, not uploaded to GitHub. Older v1.x patch notes are historical.
+
 ## Production workflow
 
 1. **Scan Folders** scans the selected media directory, parses event names, associates audio files/families and builds the Detected Pipeline (including supported `_cast2D` and `_cast3D` events).
@@ -30,7 +32,7 @@ The global status bar uses deterministic work budgets for preparation, family me
   - **ON:** each family becomes one cached WAV track.
 - Champion, skin, **skinline (thematic)**, item, monster, structure, region and system icon lookup. Event Mapping and Dashboard Quick Edit both expose `skinline` as an icon category. An event such as `FirstEncounter3DEternalAspects` resolves the official **The Eternal Aspects** theme and uses one of its real skin members rather than pretending it is a champion. A **Missing Icon** result is distinct from **Needs Mapping**; the app does not substitute an unrelated image to silence the warning.
 - Offline artwork from installed `.wad`/`.wad.client` archives, using metadata paths → xxHash64 → chunk → PNG cache, and **RETRY ICONS** without rescanning audio. Verified WAD paths cover Baron, Dragon, Rift Herald, Elder Dragon, **Blue Sentinel, Red Brambleback, Gromp, Krugs, Razorbeak, Murk Wolf, Rift Scuttler and Atakhan**, Turret/Nexus and several ping textures (including `on_my_way`). Unknown names can be tested against conventional WAD paths but are **not guaranteed** to have a discoverable image.
-- Riot patch freshness: a new game version refreshes official `skins.json`/skinline/item caches and invalidates affected in-memory lookups at startup or before Scan Folders/splash search. Custom rules and settings are preserved.
+- Riot patch freshness: a new game version refreshes official skin/skinline/item/`champion-summary.json` caches and invalidates affected in-memory lookups at startup or before Scan Folders/splash search. Champions are merged into the single `champion_aliases.json` catalog, including internal aliases and available Riot class roles; personal mappings are preserved.
 - The WAD reader computes xxHash64 locally. External CommunityDragon `hashes.game.txt`/`hashes.lcu.txt` synchronization and its Settings panel **were removed**; previously downloaded user catalogs are not deleted. A hash alone cannot reveal an unknown original filename.
 - Canonical skinline matching across punctuation variants such as `KDA`, `K D A`, and `K/DA`.
 - **Official thematic families:** Riot's local `skinlines.json` separates `Arcade: Heroes` and `Arcade: Battle Bosses`. A folder target `Arcade` now recognizes both official sub-lines (18 retail skins at validation time), while `ArcadeHeroes` and `ArcadeBattleBosses` keep their specific line. `EternalAspects` continues to resolve `The Eternal Aspects`. These map to `skinline` in Event Mapping/Quick Edit, then try actual member skin paths in local WADs.
@@ -76,19 +78,54 @@ dotnet test VideoGenerator.Tests/VideoGenerator.Tests.csproj -c Release
 
 Regular xUnit tests cover parser, Mapping, rendering, cache refresh, event/icon resolution, and synthetic WAD fixtures without downloading game art. Optional retail-WAD smoke tests and separate WPF render harnesses are **not** substitutes for a live 100/125/150% DPI review. There are outstanding ImageSharp NuGet advisories to resolve before publishing.
 
-## Configuration files
+## Configuration and game-data catalogs
 
-The application creates and maintains its editable configuration under `%LOCALAPPDATA%/VideoGenerator/Config/`, including:
+VideoGenerator keeps user-editable data under
+`%LOCALAPPDATA%/VideoGenerator/Config/`. Each Mapping tab uses **one combined
+JSON** (built-in defaults plus personal additions):
 
-- `settings.json`
-- `event_rules.json`
-- `translations.json`
-- `dialogues.json`
-- `groups.json`
-- `champion_aliases.json`
-- `skinlines.json`
-- `monsters.json` and `structures.json`
+| Event Mapping tab | Shipped source in `VideoGenerator/Services/Defaults/` | Editable JSON in `Config/` |
+| --- | --- | --- |
+| Event Rules | `DefaultRules.cs` | `event_rules.json` |
+| Groups | `DefaultGroups.cs` | `groups.json` |
+| Champions | `DefaultChampions.cs` + `DefaultAliases.cs` | `champion_aliases.json` |
+| Monsters | `DefaultMonsters.cs` | `monsters.json` |
+| Structures | `DefaultStructures.cs` | `structures.json` |
 
-**Mapping persistence:** `RuleManager.LoadRules()` now preserves saved custom settings even when their keyword coincides with an official rule, appends newly introduced default keywords, and leaves invalid user files intact rather than replacing them. **Migration caveat:** existing saved official-keyword entries cannot yet be distinguished from user-edited overrides, so updates to an already-saved official keyword are not auto-applied. A provenance-aware merge is a future migration task.
+Defaults are C# code, not extra JSON catalogs. Models such as `ChampionAlias.cs`
+stay under `Views/Models/`; the `MonsterDatabase.cs` class is only the
+`Epic`/`Large` schema under `Services/Configuration/`, **not a second file**
+in AppData.
 
-Historical investigation documents describe earlier CDN/Wiki behavior. They are not the active asset architecture: the live application uses installed Riot WADs and cached official metadata.
+**Champions on a fresh installation:** `DefaultChampions` constructs a
+starter roster from the app's `DefaultGroups` and `DefaultAliases`. When
+League of Legends is installed and configured, the local WAD
+`champion-summary.json` supplies the fuller current roster, official internal
+names and optional **class roles** (`fighter`, `tank`, etc.). Those classes are
+not lane positions such as `ADC`/`Jungle`; Groups is independently editable.
+New official champions can be recognized in event folder names without
+hardcoding each one in a release. The requested icon must still exist in
+the game's assets.
+
+Other editable files include `settings.json`, `translations.json`,
+`dialogues.json` and the application's existing localization/validation files.
+Official Riot metadata and artwork live under `%LOCALAPPDATA%/VideoGenerator/Cache/`,
+for example `champion_summary_data_default.json`,
+`items_data_default.json`, `skins_data_default.json` and
+`skinlines_data_default.json`. **Do not** recreate
+`Config/champions.json`, `Config/MonsterDatabase.json` or
+`Config/items.json`.
+
+There is **no automatic migration** from these retired Config filenames;
+existing personal AppData is not deleted. On updates, newly added default
+Mapping entries are merged into the same active JSON, while personal entries
+are retained. `RuleManager` preserves existing user-saved values for an
+official keyword and adds new keywords; it cannot yet distinguish untouched
+old defaults from deliberately edited overrides.
+
+On updates, always preserve custom Mapping entries and the `Default*.cs`
+seeds, validate new rules against the relevant parser, and verify local WAD
+asset paths instead of inventing artwork. Before a development commit run
+the Release build, full xUnit suite and `git diff --check`. The private local
+`VideoGenerator.md` holds the detailed maintainer contract and is not
+included in version control.

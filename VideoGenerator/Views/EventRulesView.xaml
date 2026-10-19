@@ -352,7 +352,7 @@
                                         <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="100"/>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="50"/>
+                                        <ColumnDefinition Width="76"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="NAME" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
                                     <TextBlock Grid.Column="1" Text="CATEGORY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
@@ -371,16 +371,22 @@
                                                     <ColumnDefinition Width="150"/>
                                                     <ColumnDefinition Width="100"/>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="76"/>
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                 </StackPanel>
                                                 <TextBlock Grid.Column="1" Text="{Binding Category}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
                                                 <TextBlock Grid.Column="2" Text="{Binding ChampionsRaw}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" FontFamily="{StaticResource AppMonoFontFamily}"/>
-                                                <Button Grid.Column="3" Click="DeleteGroup_Click" Style="{StaticResource DangerIconButton}" Width="30" Height="30">
-                                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
-                                                </Button>
+                                                <Grid Grid.Column="3">
+                                                    <TextBlock Text="BUILT-IN" FontSize="8" VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"
+                                                               Visibility="{Binding IsOfficial, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                    <Button Click="DeleteGroup_Click" Style="{StaticResource DangerIconButton}" Width="30" Height="30"
+                                                            HorizontalAlignment="Center" Visibility="{Binding CanDelete, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                                    </Button>
+                                                </Grid>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -434,7 +440,7 @@
                                                 <materialDesign:PackIcon Kind="Information" Foreground="{StaticResource InfoBrush}" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                                 <TextBlock Text="SYSTEM NOTE" FontSize="10" FontWeight="Black" Foreground="{StaticResource InfoBrush}" />
                                             </StackPanel>
-                                            <TextBlock Text="Add custom champions or custom spellings. For official Riot names, specify the exact internal system name if it differs (e.g. display Wukong -> internal MonkeyKing)." 
+                                            <TextBlock Text="Champions and their class roles are imported from the installed Riot game data. Add only custom champions or spellings here. Riot class tags are not lane positions such as Jungle or ADC (e.g. Wukong -> MonkeyKing)."
                                                        TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Opacity="0.8" LineHeight="16"/>
                                         </StackPanel>
                                     </Border>
@@ -458,7 +464,7 @@
                             <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="AccountBoxMultiple" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                    <TextBlock Text="ALIASES REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                            <TextBlock Text="CHAMPIONS REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -468,10 +474,11 @@
                                         <ColumnDefinition Width="1.2*"/>
                                         <ColumnDefinition Width="1.2*"/>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="50"/>
+                                        <ColumnDefinition Width="76"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="DISPLAY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
                                     <TextBlock Grid.Column="1" Text="INT NAME" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
+                                    <TextBlock Grid.Column="2" Text="RIOT ROLES" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
                                 </Grid>
                             </Border>
 
@@ -486,15 +493,22 @@
                                                     <ColumnDefinition Width="1.2*"/>
                                                     <ColumnDefinition Width="1.2*"/>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="76"/>
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                 </StackPanel>
                                                 <TextBlock Grid.Column="1" Text="{Binding InternalName}" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" FontFamily="{StaticResource AppMonoFontFamily}" FontSize="11"/>
-                                                <Button Grid.Column="3" Click="DeleteAlias_Click" Style="{StaticResource DangerIconButton}" Width="30" Height="30">
-                                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
-                                                </Button>
+                                                <TextBlock Grid.Column="2" Text="{Binding RolesDisplay}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10"/>
+                                                <Grid Grid.Column="3">
+                                                    <TextBlock Text="BUILT-IN" FontSize="8" VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"
+                                                               Visibility="{Binding IsOfficial, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                    <Button Click="DeleteAlias_Click" Style="{StaticResource DangerIconButton}" Width="30" Height="30"
+                                                            HorizontalAlignment="Center" Visibility="{Binding CanDelete, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                                    </Button>
+                                                </Grid>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -567,7 +581,7 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="50"/>
+                                        <ColumnDefinition Width="76"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="MONSTER NAME" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
                                 </Grid>
@@ -582,12 +596,19 @@
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="76"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                                                <Button Grid.Column="1" Click="DeleteMonster_Click" CommandParameter="{Binding}" Style="{StaticResource DangerIconButton}" Width="30" Height="30">
-                                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
-                                                </Button>
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                <Grid Grid.Column="1">
+                                                    <TextBlock Text="BUILT-IN" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                               FontSize="8" Foreground="{StaticResource TextMutedBrush}"
+                                                               Visibility="{Binding IsOfficial, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                    <Button Click="DeleteMonster_Click" CommandParameter="{Binding}" Style="{StaticResource DangerIconButton}"
+                                                            Width="30" Height="30" HorizontalAlignment="Center"
+                                                            Visibility="{Binding CanDelete, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                                    </Button>
+                                                </Grid>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -668,7 +689,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1.5*"/>
                                         <ColumnDefinition Width="1.5*"/>
-                                        <ColumnDefinition Width="50"/>
+                                        <ColumnDefinition Width="76"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="KEYWORD" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
                                     <TextBlock Grid.Column="1" Text="MAP TARGET ICON" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10"/>
@@ -685,13 +706,20 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1.5*"/>
                                                     <ColumnDefinition Width="1.5*"/>
-                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="76"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding Keyword}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding TargetName}" VerticalAlignment="Center" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
-                                                <Button Grid.Column="2" Click="DeleteStructure_Click" Style="{StaticResource DangerIconButton}" Width="30" Height="30">
-                                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
-                                                </Button>
+                                                <Grid Grid.Column="2">
+                                                    <TextBlock Text="BUILT-IN" FontSize="8" VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"
+                                                               Visibility="{Binding IsOfficial, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                    <Button Click="DeleteStructure_Click" Style="{StaticResource DangerIconButton}"
+                                                            Width="30" Height="30" HorizontalAlignment="Center"
+                                                            Visibility="{Binding CanDelete, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                                    </Button>
+                                                </Grid>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
