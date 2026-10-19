@@ -8,10 +8,10 @@
     <Style x:Key="ModernTextBox" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="9"/>
-        <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="1"/>
+        <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="1.5"/>
         <Setter Property="CaretBrush" Value="{StaticResource AccentBrushLight}"/>
         <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
         <Setter Property="SelectionOpacity" Value="0.34"/>
@@ -21,14 +21,15 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="materialDesign:HintAssist.IsFloating" Value="True"/>
         <Setter Property="materialDesign:HintAssist.Foreground" Value="{StaticResource TextSecondaryBrush}"/>
-        <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{StaticResource InputBorderHoverBrush}"/>
         <Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="True"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
             </Trigger>
-            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                <Setter Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+            <Trigger Property="IsFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Opacity" Value="0.47"/>
@@ -43,14 +44,13 @@
         <Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="False"/>
     </Style>
 
-
-
     <!-- TextBox with custom clear button (especially for ReadOnly text boxes) -->
     <Style x:Key="ModernTextBoxWithClear" TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="Padding" Value="10,0,32,0"/>
@@ -110,10 +110,10 @@
                             <Setter TargetName="ClearBtn" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="TextBorder" Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
+                            <Setter TargetName="TextBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="TextBorder" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                            <Setter TargetName="TextBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="TextBorder" Property="Opacity" Value="0.45"/>
@@ -168,8 +168,8 @@
     <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox">
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="Height" Value="44"/>
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
@@ -231,10 +231,10 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsDropDownOpen" Value="True">
-                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="HasItems" Value="False">
                             <Setter TargetName="PopupSurface" Property="MinHeight" Value="44"/>
@@ -251,9 +251,10 @@
     <!-- Modern Search TextBox Style -->
     <Style x:Key="ModernSearchTextBox" TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="Padding" Value="10,0,32,0"/>
@@ -331,10 +332,10 @@
                             <Setter TargetName="ClearBtn" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="SearchBorder" Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
+                            <Setter TargetName="SearchBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="SearchBorder" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                            <Setter TargetName="SearchBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="SearchBorder" Property="Opacity" Value="0.45"/>

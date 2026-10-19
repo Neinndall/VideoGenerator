@@ -46,6 +46,8 @@
     <!-- Border & Dividers -->
     <Color x:Key="BorderColor">#0E223D</Color>
     <Color x:Key="BorderColorBright">#1A467E</Color>
+    <Color x:Key="InputBorderColor">#29466C</Color>
+    <Color x:Key="InputBorderHoverColor">#3D6898</Color>
     <Color x:Key="DividerColor">#0D203A</Color>
     <Color x:Key="FocusColor">#2570EB</Color>
     
@@ -143,6 +145,8 @@
     <SolidColorBrush x:Key="HextechGoldBrush" Color="{StaticResource HextechGoldColor}"/>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
     <SolidColorBrush x:Key="BorderBrightBrush" Color="{StaticResource BorderColorBright}"/>
+    <SolidColorBrush x:Key="InputBorderBrush" Color="{StaticResource InputBorderColor}"/>
+    <SolidColorBrush x:Key="InputBorderHoverBrush" Color="{StaticResource InputBorderHoverColor}"/>
     <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}"/>
     <SolidColorBrush x:Key="FocusBrush" Color="{StaticResource FocusColor}"/>
     

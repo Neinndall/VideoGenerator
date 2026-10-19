@@ -213,8 +213,8 @@
         <Setter Property="Height" Value="40"/>
         <Setter Property="MinWidth" Value="94"/>
         <Setter Property="Background" Value="{StaticResource SettingsBrowseBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="#29466C"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -240,6 +240,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Chrome" Property="Background" Value="{StaticResource SettingsBrowseHoverBrush}"/>
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
