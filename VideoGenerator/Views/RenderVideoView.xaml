@@ -39,9 +39,9 @@
     <Grid Margin="{StaticResource WorkspacePagePadding}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*" MinHeight="200"/>
+            <RowDefinition Height="1.2*" MinHeight="220"/>
             <RowDefinition Height="8"/>
-            <RowDefinition Height="350" MinHeight="260"/>
+            <RowDefinition Height="1*" MinHeight="220"/>
         </Grid.RowDefinitions>
 
         <!-- 1. TOP TOOLBAR: Non-destructive project manager -->
@@ -165,7 +165,28 @@
                 </Grid>
             </Border>
 
-            <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" Background="Transparent"/>
+            <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
+                          Background="Transparent" Cursor="SizeWE">
+                <GridSplitter.Template>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Border Background="Transparent" Padding="2,0">
+                            <Border x:Name="ColGrip1" Width="3" Height="36" CornerRadius="1.5"
+                                    Background="#142B4C" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ColGrip1" Property="Background" Value="{StaticResource AccentBrushLight}"/>
+                                <Setter TargetName="ColGrip1" Property="Height" Value="54"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ColGrip1" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="ColGrip1" Property="Height" Value="72"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </GridSplitter.Template>
+            </GridSplitter>
 
             <!-- CENTER: PROGRAM MONITOR -->
             <Border Grid.Column="2" Style="{StaticResource WorkspacePanelContainer}">
@@ -257,7 +278,28 @@
                 </Grid>
             </Border>
 
-            <GridSplitter Grid.Column="3" Width="8" HorizontalAlignment="Stretch" Background="Transparent"/>
+            <GridSplitter Grid.Column="3" Width="8" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
+                          Background="Transparent" Cursor="SizeWE">
+                <GridSplitter.Template>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Border Background="Transparent" Padding="2,0">
+                            <Border x:Name="ColGrip2" Width="3" Height="36" CornerRadius="1.5"
+                                    Background="#142B4C" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ColGrip2" Property="Background" Value="{StaticResource AccentBrushLight}"/>
+                                <Setter TargetName="ColGrip2" Property="Height" Value="54"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ColGrip2" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="ColGrip2" Property="Height" Value="72"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </GridSplitter.Template>
+            </GridSplitter>
 
             <!-- RIGHT: CLIP & AUDIO PROPERTIES -->
             <Border Grid.Column="4" Style="{StaticResource WorkspacePanelContainer}">
@@ -349,6 +391,36 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- 2.5. TIMELINE HORIZONTAL RESIZE SPLITTER -->
+        <GridSplitter Grid.Row="2"
+                      Height="8"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Center"
+                      ResizeDirection="Rows"
+                      ResizeBehavior="PreviousAndNext"
+                      Background="Transparent"
+                      Cursor="SizeNS">
+            <GridSplitter.Template>
+                <ControlTemplate TargetType="GridSplitter">
+                    <Border Background="Transparent" Padding="0,2">
+                        <!-- Visual Grip Pill Handle -->
+                        <Border x:Name="GripHandle" Height="4" Width="64" CornerRadius="2"
+                                Background="#1E3A5F" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="GripHandle" Property="Background" Value="{StaticResource AccentBrushLight}"/>
+                            <Setter TargetName="GripHandle" Property="Width" Value="90"/>
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="GripHandle" Property="Background" Value="{StaticResource AccentBrush}"/>
+                            <Setter TargetName="GripHandle" Property="Width" Value="120"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </GridSplitter.Template>
+        </GridSplitter>
 
         <!-- 3. TIMELINE STUDIO (Sony Vegas Style Multi-Track NLE) -->
         <Border Grid.Row="3" Style="{StaticResource WorkspacePanelContainer}">
