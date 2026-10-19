@@ -3,7 +3,7 @@
 
     <!-- Modern RichTextBox (Terminal/Log Style) -->
     <Style x:Key="ModernRichTextBox" TargetType="RichTextBox">
-        <Setter Property="Background" Value="#061021"/>
+        <Setter Property="Background" Value="{StaticResource RichTextConsoleBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>

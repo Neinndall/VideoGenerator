@@ -1,11 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Cool, quiet thumb on midnight surfaces; cyan signals hover and dragging. -->
-    <SolidColorBrush x:Key="ScrollBarThumbBackground" Color="#536D99" />
-    <SolidColorBrush x:Key="ScrollBarThumbHoverBackground" Color="#75C9FF" />
-    <SolidColorBrush x:Key="ScrollBarThumbPressedBackground" Color="#9ADFFF" />
-    <SolidColorBrush x:Key="ScrollBarBackground" Color="Transparent" />
+    <!-- Scrollbar colors live in Colors.xaml with the other interaction surfaces. -->
 
     <Style x:Key="ScrollBarButton" TargetType="{x:Type RepeatButton}">
         <Setter Property="Focusable" Value="False"/>
@@ -125,7 +121,7 @@
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Bg" Property="Background" Value="#16243B"/>
+                    <Setter TargetName="Bg" Property="Background" Value="{StaticResource ScrollBarArrowHoverBrush}"/>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
@@ -156,7 +152,7 @@
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Bg" Property="Background" Value="#16243B"/>
+                    <Setter TargetName="Bg" Property="Background" Value="{StaticResource ScrollBarArrowHoverBrush}"/>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>

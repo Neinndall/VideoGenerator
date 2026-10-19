@@ -73,6 +73,14 @@
                                    VerticalAlignment="Center"/>
                     </StackPanel>
                 </ListBoxItem>
+                <ListBoxItem Tag="RenderVideo">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="MovieOpenPlayOutline" Style="{StaticResource SidebarNavIcon}" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,19,0"/>
+                        <TextBlock Text="Render video" FontSize="13" FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ListBoxItem>
                 <ListBoxItem Tag="EventRules">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Cogs" Style="{StaticResource SidebarNavIcon}" Width="22" Height="22"

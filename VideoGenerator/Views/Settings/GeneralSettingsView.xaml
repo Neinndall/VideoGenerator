@@ -7,7 +7,7 @@
         <Style x:Key="GeneralSectionPanel" TargetType="Border" BasedOn="{StaticResource SettingsSectionPanel}">
             <Setter Property="Margin" Value="0,0,0,14"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Background" Value="{StaticResource SettingsCardSurfaceBrush}"/>
+            <Setter Property="Background" Value="{StaticResource WorkspacePanelSurfaceBrush}"/>
         </Style>
         <Style x:Key="GeneralFieldLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>

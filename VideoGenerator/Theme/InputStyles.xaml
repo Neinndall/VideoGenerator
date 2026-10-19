@@ -145,15 +145,15 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ItemSurface" Property="Background" Value="#17365C"/>
+                            <Setter TargetName="ItemSurface" Property="Background" Value="{StaticResource ComboItemHoverBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="ItemSurface" Property="Background" Value="#193E66"/>
+                            <Setter TargetName="ItemSurface" Property="Background" Value="{StaticResource ComboItemHighlightedBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="ItemSurface" Property="Background" Value="#173C60"/>
+                            <Setter TargetName="ItemSurface" Property="Background" Value="{StaticResource ComboItemSelectedBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -214,7 +214,7 @@
                                IsOpen="{TemplateBinding IsDropDownOpen}">
                             <Border x:Name="PopupSurface"
                                     MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
-                                    MaxHeight="310" Background="#0B1C37"
+                                    MaxHeight="310" Background="{StaticResource ComboPopupBackgroundBrush}"
                                     BorderBrush="#31577F" BorderThickness="1"
                                     CornerRadius="10" Padding="5" SnapsToDevicePixels="True">
                                 <ScrollViewer x:Name="DropDownScrollViewer"
@@ -374,11 +374,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#1C2B48"/>
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource TextInputHoverBrush}"/>
                             <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#193653"/>
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource TextInputFocusBrush}"/>
                             <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">

@@ -95,6 +95,7 @@ namespace VideoGenerator
             services.AddSingleton<IEventNameParser, EventNameParser>();
             services.AddSingleton<ImageGenerator>();
             services.AddSingleton<VideoService>();
+            services.AddSingleton<VideoTimelineRenderService>();
             services.AddSingleton<TranscriptionService>();
             services.AddSingleton<DialogueService>();
             services.AddSingleton<IDialogueStore>(provider => provider.GetRequiredService<DialogueService>());
@@ -113,6 +114,7 @@ namespace VideoGenerator
             services.AddSingleton<MainWindow>();
             services.AddSingleton<DashboardView>();
             services.AddSingleton<BackgroundDesignView>();
+            services.AddSingleton<RenderVideoView>();
             services.AddSingleton<EventRulesView>(provider => new EventRulesView(
                 provider.GetRequiredService<RuleManager>(),
                 provider.GetRequiredService<GroupManager>(),

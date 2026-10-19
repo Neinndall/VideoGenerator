@@ -57,7 +57,7 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="WORKSPACE" FontSize="10" FontWeight="Medium"
                                Foreground="#A9BFF1" VerticalAlignment="Center" Margin="0,0,17,0"/>
-                    <Border Width="1" Height="23" Background="#254471" Margin="0,0,17,0"
+                    <Border Width="1" Height="23" Background="{StaticResource ShellTopBarLabelDividerBrush}" Margin="0,0,17,0"
                             VerticalAlignment="Center"/>
                     <TextBlock x:Name="ActiveWorkspaceTitle" Text="Production studio"
                                FontSize="14" FontWeight="SemiBold"
@@ -75,7 +75,7 @@
                             <TextBlock Text="{Binding VisibleEventCount}" Style="{StaticResource AppShellTopMetricValue}"/>
                         </StackPanel>
                     </Border>
-                    <Border Width="1" Height="17" Background="#264572" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <Border Width="1" Height="17" Background="{StaticResource ShellTopBarMetricDividerBrush}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     <Border Style="{StaticResource AppShellTopMetricPill}">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="SELECTED" Style="{StaticResource AppShellTopMetricLabel}"/>
@@ -84,7 +84,7 @@
                             <TextBlock Text="{Binding VisibleEventCount}" Style="{StaticResource AppShellTopMetricValue}"/>
                         </StackPanel>
                     </Border>
-                    <Border Width="1" Height="17" Background="#264572" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <Border Width="1" Height="17" Background="{StaticResource ShellTopBarMetricDividerBrush}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     <Border Style="{StaticResource AppShellTopMetricPill}">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="MAPPING" Style="{StaticResource AppShellTopMetricLabel}"/>
@@ -93,7 +93,7 @@
                                        Foreground="{StaticResource WarningBrush}"/>
                         </StackPanel>
                     </Border>
-                    <Border Width="1" Height="17" Background="#264572" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <Border Width="1" Height="17" Background="{StaticResource ShellTopBarMetricDividerBrush}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     <Border Style="{StaticResource AppShellTopMetricPill}" Margin="0">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="ELIGIBLE" Style="{StaticResource AppShellTopMetricLabel}"/>

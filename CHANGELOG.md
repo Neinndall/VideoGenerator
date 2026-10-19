@@ -4,6 +4,7 @@ MAJOR UPDATE
 Current direction: removed the optional CommunityDragon hash-dictionary downloader, its weekly startup job and the Hash Catalogs Settings panel. The installed WAD reader, xxHash64 path resolver, metadata refresh and icon cache remain operational; existing user caches and settings files are not deleted.
 
 New Features
+  - Render Video / Timeline Studio: Added a standalone video montage workspace with clip importing, timeline ordering/trimming, program preview, background music, editable project files and FFmpeg export quality presets.
   - Mapping / Unified Catalogs: Added built-in defaults for Champions, Monsters and Structures alongside Rules and Groups, with one editable JSON per Mapping section and protected BUILT-IN entries.
   - Champions / Riot Roster: Imports champions, internal aliases and class roles from installed game WADs, automatically recognizing new champions and displaying RIOT ROLES in Event Mapping.
   - Sidebar / Uniform Full-Height Surface: Removed inset vignette and radial overlays that created vertical shade boundaries; the whole navigation column now uses one opaque midnight-navy background, with gradients reserved for the selected workspace.
@@ -30,6 +31,10 @@ New Features
   - Assets / Local WAD Hashes: The virtual path → xxHash64 resolver remains; the earlier optional external hash dictionary downloader was removed after confirming that the normal icon pipeline never consumed those catalogs.
 
 Improvements
+  - UI / Centralized Background Palette: Moved shared panel, header, content, Settings and control-state backgrounds into named Colors.xaml brushes so workspaces use consistent surfaces.
+  - Dashboard / Unified Content Backgrounds: Live Preview, Detected Pipeline and Engine Console now share a single navy content brush, removing the mismatched empty-preview rectangle.
+  - UI / Workspace Canvas: Deepened the main content background to a muted ink-navy gradient with a subtle midnight-blue lift, keeping panel and sidebar colors unchanged.
+  - Architecture / Organized View Models: Grouped UI models under Views/Models by Dashboard, VisualDesign, EventMapping, Dictionary and RenderVideo responsibilities without changing their existing public namespaces.
   - Architecture / Default Catalogs: Organized shipped Mapping data under Services/Defaults, separate from UI models; user-created mappings remain in the same JSON as built-in entries.
   - Game Data / Champion Refresh: New Riot champions and roles become available after an installed WAD update, without manual roster edits.
   - UI / Midnight Neon Theme: Introduced a ChatWork-inspired navy, cyan and violet palette, a more prominent workspace header, clear workflow stages, mapping/eligible counters, empty pipeline guidance and keyboard focus outlines.

@@ -5,21 +5,11 @@
          These settings resources are also consumed by real secondary panels. -->
     <SolidColorBrush x:Key="SettingsCyanBrush" Color="{StaticResource AccentColor}"/>
     <SolidColorBrush x:Key="SettingsVioletBrush" Color="{StaticResource AccentColorDark}"/>
-    <LinearGradientBrush x:Key="SettingsCardSurfaceBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#0B1C37" Offset="0"/>
-        <GradientStop Color="#0A1730" Offset="0.64"/>
-        <GradientStop Color="#0C1C39" Offset="1"/>
-    </LinearGradientBrush>
     <SolidColorBrush x:Key="SettingsCardBorderBrush" Color="{StaticResource BorderColor}"/>
     <SolidColorBrush x:Key="SettingsInsetBrush" Color="{StaticResource InputBackgroundColor}"/>
     <SolidColorBrush x:Key="SettingsIconCyanSurfaceBrush" Color="{StaticResource AccentSoftColor}"/>
     <SolidColorBrush x:Key="SettingsIconVioletSurfaceBrush" Color="{StaticResource ElevatedSurfaceColor}"/>
 
-    <LinearGradientBrush x:Key="SettingsFeaturedBrush" StartPoint="0,0" EndPoint="1,0.85">
-        <GradientStop Color="#102B54" Offset="0"/>
-        <GradientStop Color="#101F42" Offset="0.62"/>
-        <GradientStop Color="#161D48" Offset="1"/>
-    </LinearGradientBrush>
 
     <!-- Settings category navigation is a text/icon rail: selection, hover and
          keyboard focus are communicated by foreground color alone. -->
@@ -112,7 +102,7 @@
                           HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Border x:Name="Track" Width="46" Height="25"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
-                                CornerRadius="13" Background="#273449"
+                                CornerRadius="13" Background="{StaticResource SettingsSwitchOffBackgroundBrush}"
                                 BorderThickness="0"/>
                         <Ellipse x:Name="Thumb" Width="19" Height="19"
                                  HorizontalAlignment="Left" VerticalAlignment="Center"
@@ -120,7 +110,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Track" Property="Background" Value="#2769F3"/>
+                            <Setter TargetName="Track" Property="Background" Value="{StaticResource SettingsSwitchOnBackgroundBrush}"/>
                             <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="Thumb" Property="Margin" Value="0,0,4,0"/>
                             <Setter TargetName="Thumb" Property="Fill" Value="White"/>
@@ -137,7 +127,7 @@
     </Style>
 
     <Style x:Key="SettingsCard" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource SettingsCardSurfaceBrush}"/>
+        <Setter Property="Background" Value="{StaticResource WorkspacePanelSurfaceBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource SettingsCardBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="12"/>
@@ -181,7 +171,7 @@
         <Setter Property="Width" Value="42"/>
         <Setter Property="Height" Value="42"/>
         <Setter Property="CornerRadius" Value="10"/>
-        <Setter Property="Background" Value="#102B4E"/>
+        <Setter Property="Background" Value="{StaticResource SettingsHeroIconBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="#2C537B"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Margin" Value="0,0,13,0"/>
@@ -222,7 +212,7 @@
     <Style x:Key="SettingsBrowseButton" TargetType="Button">
         <Setter Property="Height" Value="40"/>
         <Setter Property="MinWidth" Value="94"/>
-        <Setter Property="Background" Value="#0B1C38"/>
+        <Setter Property="Background" Value="{StaticResource SettingsBrowseBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="#29466C"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
@@ -249,14 +239,14 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Chrome" Property="Background" Value="#12284A"/>
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource SettingsBrowseHoverBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Chrome" Property="Background" Value="#18385A"/>
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource SettingsBrowsePressedBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.45"/>

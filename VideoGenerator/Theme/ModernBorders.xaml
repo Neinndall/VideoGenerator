@@ -14,15 +14,7 @@
 
     <!-- Canonical card surface for application content. -->
     <Style x:Key="SurfaceContainer" TargetType="Border">
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#0B1D37" Offset="0"/>
-                    <GradientStop Color="#0A1730" Offset="0.63"/>
-                    <GradientStop Color="#101A39" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{StaticResource SurfaceContainerGradientBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="14"/>
@@ -47,14 +39,7 @@
     </Style>
 
     <Style x:Key="SectionHeaderBorder" TargetType="Border">
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#10284B" Offset="0"/>
-                    <GradientStop Color="#101D38" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{StaticResource SectionHeaderGradientBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="Padding" Value="18,13"/>

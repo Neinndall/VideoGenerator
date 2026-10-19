@@ -45,7 +45,7 @@ The central workspace for turning a collection of voice-over folders into finish
 - **Quick Edit:** Correct the HUD text, icon category, or image lookup for an individual event and apply the changes.
 - **Retry Icons:** Reattempt missing game artwork without repeating the audio folder scan.
 - **Export Manifest:** Save an event analysis report as JSON without including source audio, transcripts, or absolute media paths.
-- **Batch Rendering:** Prepare, review, and render videos with a global progress indicator and cancellation support.
+- **Batch Rendering:** Prepare, review, and render individual videos with a global progress indicator and cancellation support.
 
 #### Production workflow
 
@@ -74,6 +74,18 @@ Customize the look of your video overlay while watching an interactive preview.
 - **Live Preview:** Inspect the composition at 1080p and expand the preview area for closer adjustments.
 
 Design settings are saved and applied to subsequently generated HUD frames.
+
+### 🎞️ Render Video — Timeline Studio
+
+Assemble generated MP4 clips into one finished montage without modifying the source videos.
+
+- **Media Library:** Import existing video files or scan `Generated/Media/` for clips rendered in Dashboard.
+- **Timeline:** Add, reorder, remove, and trim clips with a simple video track and an optional background music track.
+- **Program Monitor:** Play clips in sequence, seek through the edit, and navigate between clips.
+- **Editable Projects:** Save or reopen `.vgproject` files; the project records source paths, clip order, trims, and music settings.
+- **Quality Presets:** Export H.264/AAC MP4 at a selected resolution, frame rate, and quality using the bundled FFmpeg engine. Exported files are published only after rendering succeeds.
+
+The initial timeline editor focuses on straightforward sequential montage assembly; it does not yet offer Sony Vegas-style multi-layer compositing, keyframes, or transition effects.
 
 ### 🧩 Event Mapping
 
@@ -144,7 +156,7 @@ Generated HUD images and MP4 videos are organized in the application's `Generate
 
 | Shortcut | Action |
 | --- | --- |
-| **Ctrl + 1–5** | Switch between the five workspaces |
+| **Ctrl + 1–6** | Switch between the six workspaces |
 | **Ctrl + F** | Focus event search in Dashboard |
 | **Ctrl + B** | Collapse or expand the navigation sidebar |
 

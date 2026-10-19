@@ -580,7 +580,7 @@
                  <Border Grid.Row="1" Style="{StaticResource WorkspaceCanvasContainer}" Padding="16">
                      <Grid>
                          <Viewbox x:Name="ViewportBox" Stretch="Uniform" VerticalAlignment="Center">
-                             <Grid Width="1920" Height="1080" Background="#020202" x:Name="RenderCanvas" 
+                             <Grid Width="1920" Height="1080" Background="{StaticResource DesignerRenderCanvasBrush}" x:Name="RenderCanvas"
                                    MouseDown="RenderCanvas_MouseDown" Cursor="Hand" ToolTip="Click to toggle maximize mode (hides/shows inspector sidebar)">
                                  <!-- 1. Fully Rendered Preview Image -->
                                  <Image Source="{Binding PreviewImage}" 
@@ -606,7 +606,7 @@
                          </Viewbox>
                          
                          <!-- Zoom Label -->
-                         <Border Background="#E60D0D0F" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="24" Padding="12,6" CornerRadius="6" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}" IsHitTestVisible="False">
+                         <Border Background="{StaticResource DesignerPreviewLabelBrush}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="24" Padding="12,6" CornerRadius="6" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}" IsHitTestVisible="False">
                              <StackPanel Orientation="Horizontal">
                                  <materialDesign:PackIcon Kind="MagnifyPlus" Width="14" Height="14" Foreground="{StaticResource AccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                  <TextBlock Text="LIVE PREVIEW (CLICK CANVAS TO MAXIMIZE)" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextHighlightBrush}"/>

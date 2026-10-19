@@ -60,6 +60,7 @@ namespace VideoGenerator.Views
                 {
                     "Dashboard" => _serviceProvider.GetRequiredService<DashboardView>(),
                     "Background" => _serviceProvider.GetRequiredService<BackgroundDesignView>(),
+                    "RenderVideo" => _serviceProvider.GetRequiredService<RenderVideoView>(),
                     "EventRules" => _serviceProvider.GetRequiredService<EventRulesView>(),
                     "Translations" => _serviceProvider.GetRequiredService<TranslationsView>(),
                     "Settings" => _serviceProvider.GetRequiredService<SettingsView>(),
@@ -86,6 +87,7 @@ namespace VideoGenerator.Views
                 {
                     "Dashboard" => "Production studio",
                     "Background" => "Visual design",
+                    "RenderVideo" => "Render video",
                     "EventRules" => "Event mapping",
                     "Translations" => "Dictionary",
                     "Settings" => "Settings",
@@ -175,6 +177,7 @@ namespace VideoGenerator.Views
                     Key.D3 or Key.NumPad3 => "EventRules",
                     Key.D4 or Key.NumPad4 => "Translations",
                     Key.D5 or Key.NumPad5 => "Settings",
+                    Key.D6 or Key.NumPad6 => "RenderVideo",
                     _ => null
                 };
 

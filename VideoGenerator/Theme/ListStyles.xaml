@@ -2,15 +2,6 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:utils="clr-namespace:VideoGenerator.Utils">
 
-    <LinearGradientBrush x:Key="NavyListSelectionBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#234365" Offset="0"/>
-        <GradientStop Color="#1C2747" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="NavyListSelectionHoverBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#28577B" Offset="0"/>
-        <GradientStop Color="#282A54" Offset="1"/>
-    </LinearGradientBrush>
-
     <!-- Virtualized list surface used for queues, dictionaries, and navigation collections. -->
     <Style x:Key="VirtualizedListBoxStyle" TargetType="ListBox">
         <Setter Property="Background" Value="Transparent"/>

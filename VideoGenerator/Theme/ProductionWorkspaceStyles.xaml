@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:utils="clr-namespace:VideoGenerator.Utils">
 
-    <!-- Brand-consistent workspace components: used in all five workspaces.
+    <!-- Brand-consistent workspace components: used across all workspaces.
          Colors are navy surfaces and cyan/violet accents rather than gray. -->
     <Thickness x:Key="WorkspacePagePadding">0,14,0,10</Thickness>
     <Style x:Key="WorkspaceEyebrowText" TargetType="TextBlock" BasedOn="{StaticResource SectionLabelText}">
@@ -14,17 +14,9 @@
     </Style>
 
     <Style x:Key="WorkspaceHeaderContainer" TargetType="Border">
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0.6">
-                    <GradientStop Color="#102B54" Offset="0"/>
-                    <GradientStop Color="#101F42" Offset="0.62"/>
-                    <GradientStop Color="#161D48" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{StaticResource WorkspaceHeaderSurfaceBrush}"/>
         <Setter Property="Padding" Value="20,16"/>
-        <Setter Property="BorderBrush" Value="#3566A3"/>
+        <Setter Property="BorderBrush" Value="{StaticResource WorkspaceHeaderBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="15"/>
     </Style>
@@ -36,16 +28,8 @@
     </Style>
 
     <Style x:Key="WorkspacePanelContainer" TargetType="Border">
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#0B1C37" Offset="0"/>
-                    <GradientStop Color="#0A1730" Offset="0.64"/>
-                    <GradientStop Color="#0C1C39" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="BorderBrush" Value="#25456C"/>
+        <Setter Property="Background" Value="{StaticResource WorkspacePanelSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource WorkspacePanelBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="13"/>
         <Setter Property="Padding" Value="0"/>
@@ -57,35 +41,20 @@
     </Style>
 
     <Style x:Key="WorkspacePanelHeader" TargetType="Border" BasedOn="{StaticResource SectionHeaderBorder}">
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#12315A" Offset="0"/>
-                    <GradientStop Color="#0E2242" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{StaticResource WorkspacePanelHeaderBrush}"/>
         <Setter Property="Padding" Value="17,13"/>
         <Setter Property="CornerRadius" Value="12,12,0,0"/>
     </Style>
 
     <Style x:Key="WorkspaceCanvasContainer" TargetType="Border" BasedOn="{StaticResource WorkspacePanelContainer}">
-        <Setter Property="Background" Value="#050C1B"/>
+        <Setter Property="Background" Value="{StaticResource WorkspaceContentWellBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="ClipToBounds" Value="True"/>
     </Style>
 
     <Style x:Key="WorkspaceInspectorContainer" TargetType="Border">
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#10274A" Offset="0"/>
-                    <GradientStop Color="#0C1B37" Offset="0.55"/>
-                    <GradientStop Color="#0C2147" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="BorderBrush" Value="#275581"/>
+        <Setter Property="Background" Value="{StaticResource WorkspaceInspectorSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource WorkspaceInspectorBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="13"/>
         <Setter Property="Margin" Value="0,12,0,0"/>
@@ -151,7 +120,7 @@
 
     <Style x:Key="ConsolePanelContainer" TargetType="Border" BasedOn="{StaticResource WorkspacePanelContainer}">
         <Setter Property="MinHeight" Value="94"/>
-        <Setter Property="Background" Value="#061125"/>
+        <Setter Property="Background" Value="{StaticResource WorkspaceContentWellBrush}"/>
         <Setter Property="BorderBrush" Value="#294B70"/>
     </Style>
 </ResourceDictionary>

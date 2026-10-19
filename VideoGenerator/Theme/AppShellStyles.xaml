@@ -42,15 +42,7 @@
 
     <Style x:Key="AppShellSidebarDivider" TargetType="Border">
         <Setter Property="Height" Value="1"/>
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#395F87" Offset="0"/>
-                    <GradientStop Color="#223C5D" Offset="0.58"/>
-                    <GradientStop Color="#00223C5D" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{StaticResource ShellSidebarDividerBrush}"/>
     </Style>
     <Style x:Key="AppShellSidebarFooterText" TargetType="TextBlock" BasedOn="{StaticResource SectionLabelText}">
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
@@ -126,7 +118,7 @@
     </Style>
 
     <Style x:Key="AppShellTopBarTag" TargetType="Border" BasedOn="{StaticResource StatusPill}">
-        <Setter Property="Background" Value="#141E40AF"/>
+        <Setter Property="Background" Value="{StaticResource ShellTopBarTagBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="#404C6FFF"/>
         <Setter Property="Padding" Value="9,5"/>
         <Setter Property="CornerRadius" Value="7"/>
@@ -151,7 +143,7 @@
     </Style>
 
     <Style x:Key="AppShellStatusBar" TargetType="Border">
-        <Setter Property="Background" Value="#06152E"/>
+        <Setter Property="Background" Value="{StaticResource ShellStatusBarBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="#1B3760"/>
         <Setter Property="BorderThickness" Value="0,1,0,0"/>
         <Setter Property="CornerRadius" Value="0"/>

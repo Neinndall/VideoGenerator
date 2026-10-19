@@ -46,11 +46,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#102642"/>
+                                <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavHoverBackgroundBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#132D4C"/>
+                                <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavSelectedBackgroundBrush}"/>
                             <Setter TargetName="Indicator" Property="Opacity" Value="1"/>
                             <Setter Property="Foreground" Value="#FFFFFF"/>
                         </Trigger>
@@ -59,7 +59,7 @@
                                 <Condition Property="IsSelected" Value="True"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="RootBorder" Property="Background" Value="#193957"/>
+                                <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavFocusedBackgroundBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </MultiTrigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
