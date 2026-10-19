@@ -106,9 +106,10 @@ public partial class RenderExportWindow : Window
 
     private void ApplyFilterAndSearch(string? selectPresetName = null)
     {
-        string query = SearchBox.Text?.Trim() ?? "";
-        bool filterBuiltIn = FilterBuiltInRadio.IsChecked == true;
-        bool filterCustom = FilterCustomRadio.IsChecked == true;
+        if (_loadingPreset || PresetsListBox == null) return;
+        string query = SearchBox?.Text?.Trim() ?? "";
+        bool filterBuiltIn = FilterBuiltInRadio?.IsChecked == true;
+        bool filterCustom = FilterCustomRadio?.IsChecked == true;
 
         var filtered = _allPresets.Where(p =>
         {
@@ -248,7 +249,7 @@ public partial class RenderExportWindow : Window
 
     private void StandardResComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_loadingPreset) return;
+        if (_loadingPreset || StandardResComboBox == null || WidthBox == null || HeightBox == null) return;
         if (StandardResComboBox.SelectedItem is ComboBoxItem item && item.Tag is ValueTuple<int, int> dim)
         {
             WidthBox.Text = dim.Item1.ToString();
@@ -459,8 +460,17 @@ public partial class RenderExportWindow : Window
         }
     }
 
-    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilterAndSearch();
-    private void FilterRadio_Checked(object sender, RoutedEventArgs e) => ApplyFilterAndSearch();
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_loadingPreset) return;
+        ApplyFilterAndSearch();
+    }
+
+    private void FilterRadio_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_loadingPreset) return;
+        ApplyFilterAndSearch();
+    }
 
     private void BrowseDestination_Click(object sender, RoutedEventArgs e)
     {
