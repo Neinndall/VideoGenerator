@@ -9,7 +9,7 @@
         MinHeight="700"
         MinWidth="960"
         Icon="Resources/logo.ico"
-        Background="{StaticResource ShellSidebarUniformBrush}"
+        Background="{StaticResource ShellChromeGradientBrush}"
         TextElement.FontFamily="{StaticResource AppFontFamily}"
         TextElement.Foreground="{StaticResource TextPrimaryBrush}"
         TextOptions.TextFormattingMode="Display"

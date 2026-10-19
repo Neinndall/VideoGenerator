@@ -3,8 +3,8 @@
 
     <!-- Shell geometry and saturation follow the dark navy visual language. -->
     <Style x:Key="AppShellSidebar" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource ShellSidebarUniformBrush}"/>
-        <Setter Property="BorderBrush" Value="#1B3F74"/>
+        <Setter Property="Background" Value="{StaticResource ShellChromeGradientBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,1,0"/>
         <Setter Property="CornerRadius" Value="0"/>
         <Setter Property="Padding" Value="14,18,8,14"/>
@@ -71,8 +71,8 @@
     </Style>
 
     <Style x:Key="AppShellTopBar" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource ShellTopBarGradientBrush}"/>
-        <Setter Property="BorderBrush" Value="#1E3E6F"/>
+        <Setter Property="Background" Value="{StaticResource ShellChromeGradientBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="CornerRadius" Value="0"/>
         <Setter Property="Padding" Value="24,7"/>
@@ -109,7 +109,7 @@
 
     <Style x:Key="AppShellTopMetricPill" TargetType="Border">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderBrush" Value="#264674"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,0"/>
         <Setter Property="CornerRadius" Value="0"/>
         <Setter Property="Padding" Value="6,0"/>
@@ -143,8 +143,8 @@
     </Style>
 
     <Style x:Key="AppShellStatusBar" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource ShellStatusBarBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="#1B3760"/>
+        <Setter Property="Background" Value="{StaticResource ShellChromeGradientBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,1,0,0"/>
         <Setter Property="CornerRadius" Value="0"/>
         <Setter Property="Padding" Value="24,8"/>

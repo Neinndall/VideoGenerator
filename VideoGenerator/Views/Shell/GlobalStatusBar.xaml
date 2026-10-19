@@ -52,7 +52,7 @@
                         <TextBlock Text="SYSTEM STATUS" FontSize="10" FontWeight="Black">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                                     <Setter Property="Visibility" Value="Visible"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Progress.IsBusy}" Value="True">

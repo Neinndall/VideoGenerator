@@ -31,9 +31,11 @@ New Features
   - Assets / Local WAD Hashes: The virtual path → xxHash64 resolver remains; the earlier optional external hash dictionary downloader was removed after confirming that the normal icon pipeline never consumed those catalogs.
 
 Improvements
-  - UI / Centralized Background Palette: Moved shared panel, header, content, Settings and control-state backgrounds into named Colors.xaml brushes so workspaces use consistent surfaces.
-  - Dashboard / Unified Content Backgrounds: Live Preview, Detected Pipeline and Engine Console now share a single navy content brush, removing the mismatched empty-preview rectangle.
-  - UI / Workspace Canvas: Deepened the main content background to a muted ink-navy gradient with a subtle midnight-blue lift, keeping panel and sidebar colors unchanged.
+  - UI / Card Header & Surface Hierarchy: Harmonized card headers across Event Mapping tabs with the Settings featured midnight-navy gradient (`#0C2248` to `#0C1B42`), added distinct filter/column strips (`WorkspaceFilterBarBrush`), and recessed repository lists into obsidian content wells (`WorkspaceContentWellBrush`) to establish clear visual depth between header and card body.
+  - UI / Midnight-Navy Palette: Redesigned the color scheme in Colors.xaml with an ultra-deep midnight canvas, cohesive chrome gradient, and deep obsidian-navy content wells for Live Preview, Pipeline, and Console.
+  - UI / Seamless Sidebar Chrome: Replaced horizontal gradient stops with a smooth top-to-bottom shading in ShellChromeGradientBrush to eliminate vertical color banding.
+  - UI / Refined Navigation Selector: Balanced active workspace selector luminosity and borders with hover states for a cohesive, understated feel.
+  - UI / Status Bar Alignment: Aligned SYSTEM STATUS label typography with top bar workspace headers while retaining the green checkmark indicator.
   - Architecture / Organized View Models: Grouped UI models under Views/Models by Dashboard, VisualDesign, EventMapping, Dictionary and RenderVideo responsibilities without changing their existing public namespaces.
   - Architecture / Default Catalogs: Organized shipped Mapping data under Services/Defaults, separate from UI models; user-created mappings remain in the same JSON as built-in entries.
   - Game Data / Champion Refresh: New Riot champions and roles become available after an installed WAD update, without manual roster edits.

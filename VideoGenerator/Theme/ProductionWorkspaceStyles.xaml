@@ -42,13 +42,16 @@
 
     <Style x:Key="WorkspacePanelHeader" TargetType="Border" BasedOn="{StaticResource SectionHeaderBorder}">
         <Setter Property="Background" Value="{StaticResource WorkspacePanelHeaderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="Padding" Value="17,13"/>
         <Setter Property="CornerRadius" Value="12,12,0,0"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
     <Style x:Key="WorkspaceCanvasContainer" TargetType="Border" BasedOn="{StaticResource WorkspacePanelContainer}">
         <Setter Property="Background" Value="{StaticResource WorkspaceContentWellBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource WorkspacePanelBorderBrush}"/>
         <Setter Property="ClipToBounds" Value="True"/>
     </Style>
 
@@ -121,6 +124,6 @@
     <Style x:Key="ConsolePanelContainer" TargetType="Border" BasedOn="{StaticResource WorkspacePanelContainer}">
         <Setter Property="MinHeight" Value="94"/>
         <Setter Property="Background" Value="{StaticResource WorkspaceContentWellBrush}"/>
-        <Setter Property="BorderBrush" Value="#294B70"/>
+        <Setter Property="BorderBrush" Value="{StaticResource WorkspacePanelBorderBrush}"/>
     </Style>
 </ResourceDictionary>

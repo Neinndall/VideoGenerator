@@ -2,15 +2,14 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
  
-    <!-- Quiet sidebar navigation: a restrained navy wash and a cyan position
-         marker, never a neon rectangle or an indigo/glowing selection box. -->
+    <!-- Quiet sidebar navigation with luminous active state matching the reference concept -->
     <Style x:Key="ModernNavItem" TargetType="ListBoxItem">
         <Setter Property="Height" Value="52"/>
         <Setter Property="Margin" Value="2,1,3,1"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Foreground" Value="#B9CAF1"/>
+        <Setter Property="Foreground" Value="#A9BFE4"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="Padding" Value="0"/>
@@ -20,8 +19,9 @@
                 <ControlTemplate TargetType="ListBoxItem">
                     <Border x:Name="RootBorder"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="9"
-                            BorderThickness="0"
+                            CornerRadius="10"
+                            BorderThickness="1"
+                            BorderBrush="Transparent"
                             SnapsToDevicePixels="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -35,7 +35,7 @@
                                     Width="3"
                                     Height="24"
                                     VerticalAlignment="Center"
-                                    Margin="2,0,0,0"
+                                    Margin="3,0,0,0"
                                     Opacity="0"/>
 
                             <ContentPresenter Grid.Column="1"
@@ -46,20 +46,23 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavHoverBackgroundBrush}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavHoverBackgroundBrush}"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavSelectedBackgroundBrush}"/>
-                            <Setter TargetName="Indicator" Property="Opacity" Value="1"/>
-                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavSelectedBackgroundBrush}"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{StaticResource ShellNavSelectedBorderBrush}"/>
+                            <Setter TargetName="Indicator" Property="Opacity" Value="0.85"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsSelected" Value="True"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                                <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavFocusedBackgroundBrush}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavFocusedBackgroundBrush}"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </MultiTrigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">

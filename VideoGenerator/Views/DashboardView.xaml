@@ -24,7 +24,7 @@
                     <ControlTemplate TargetType="CheckBox">
                         <Grid Background="Transparent">
                             <Border x:Name="SelectionBox" Width="18" Height="18" CornerRadius="4"
-                                    Background="{StaticResource DashboardCheckBackgroundBrush}" BorderBrush="#375B87"
+                                    Background="{StaticResource DashboardCheckBackgroundBrush}" BorderBrush="{StaticResource BorderBrightBrush}"
                                     BorderThickness="1" HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
                                 <TextBlock x:Name="SelectionTick" Text="✓" Visibility="Collapsed"
@@ -131,7 +131,7 @@
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="RowSurface" Property="Background" Value="{StaticResource DashboardRowSelectedBrush}"/>
-                                <Setter TargetName="RowSurface" Property="BorderBrush" Value="#367EC2"/>
+                                <Setter TargetName="RowSurface" Property="BorderBrush" Value="{StaticResource ShellNavSelectedBorderBrush}"/>
                                 <Setter TargetName="RowAccent" Property="Background" Value="{StaticResource AccentBrush}"/>
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
@@ -477,8 +477,8 @@
                                 <!-- Empty State -->
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" 
                                              Visibility="{Binding DashboardModel.PreviewImageSource, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}">
-                                    <materialDesign:PackIcon Kind="ImageSearchOutline" Width="120" Height="120" HorizontalAlignment="Center" Opacity="0.1" Foreground="White"/>
-                                    <TextBlock Text="SELECT AN EVENT TO PREVIEW" FontWeight="Black" FontSize="32" Opacity="0.1" Foreground="White" Margin="0,24,0,0"/>
+                                    <materialDesign:PackIcon Kind="ImageSearchOutline" Width="120" Height="120" HorizontalAlignment="Center" Opacity="0.48" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Text="SELECT AN EVENT TO PREVIEW" FontWeight="Black" FontSize="32" Opacity="0.76" Foreground="{StaticResource TextMutedBrush}" Margin="0,24,0,0"/>
                                 </StackPanel>
                             </Grid>
                         </Viewbox>

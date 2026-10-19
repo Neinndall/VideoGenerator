@@ -19,8 +19,9 @@
     </UserControl.Resources>
     <Border Style="{StaticResource AppShellSidebar}"
             SnapsToDevicePixels="True">
-        <Grid ClipToBounds="True"
-              Background="{StaticResource ShellSidebarUniformBrush}">
+        <!-- Keep the inner grid transparent so the shared chrome gradient is
+             painted exactly once by the full-height sidebar border. -->
+        <Grid ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>

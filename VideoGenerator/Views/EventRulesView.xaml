@@ -159,7 +159,7 @@
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border x:Name="RegisterButtonBar" Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
+                            <Border x:Name="RegisterButtonBar" Grid.Row="2" Background="{StaticResource WorkspaceFilterBarBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -182,7 +182,7 @@
                             </Grid.RowDefinitions>
                             
                             <!-- Repository filtering stays independent from the registration form. -->
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="24,12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="20,12">
                                 <DockPanel LastChildFill="False">
                                     <ComboBox x:Name="RuleRepositoryFilterBox"
                                               DockPanel.Dock="Right" Width="165" Height="36"
@@ -202,13 +202,13 @@
                                     </ComboBox>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <materialDesign:PackIcon Kind="DatabaseOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                    <TextBlock Text="RULES REPOSITORY" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                        <TextBlock Text="RULES REPOSITORY" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </DockPanel>
                             </Border>
 
                             <!-- Column Headers (dark bg, no icons) -->
-                            <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,8">
+                            <Border Grid.Row="1" Background="{StaticResource WorkspaceFilterBarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,9">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1.2*"/>
@@ -227,7 +227,8 @@
 
                             <ListBox Grid.Row="2" 
                                      ItemsSource="{Binding RuleManager.Rules}"
-                                     Style="{StaticResource NonSelectableListBoxStyle}">
+                                     Style="{StaticResource NonSelectableListBoxStyle}"
+                                     Background="{StaticResource WorkspaceContentWellBrush}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border Padding="16,6">
@@ -301,10 +302,10 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="20,16">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="FolderPlusOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
-                                    <TextBlock Text="NEW GROUP" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="NEW GROUP" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -325,7 +326,7 @@
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
+                            <Border Grid.Row="2" Background="{StaticResource WorkspaceFilterBarBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Button Content="ADD GROUP" Click="AddGroup_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                             </Border>
                         </Grid>
@@ -339,14 +340,14 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="20,12">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Group" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                    <TextBlock Text="GROUPS REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="GROUPS REPO" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,12">
+                            <Border Grid.Row="1" Background="{StaticResource WorkspaceFilterBarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,9">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="150"/>
@@ -362,7 +363,8 @@
 
                             <ListBox Grid.Row="2" 
                                      ItemsSource="{Binding GroupManager.Groups}"
-                                     Style="{StaticResource NonSelectableListBoxStyle}">
+                                     Style="{StaticResource NonSelectableListBoxStyle}"
+                                     Background="{StaticResource WorkspaceContentWellBrush}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border Padding="16,6">
@@ -420,10 +422,10 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="20,16">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="AccountPlusOutline" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
-                                    <TextBlock Text="NEW CHAMPION / ALIAS" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="NEW CHAMPION / ALIAS" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -447,7 +449,7 @@
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
+                            <Border Grid.Row="2" Background="{StaticResource WorkspaceFilterBarBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Button Content="ADD CHAMPION" Click="AddAlias_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                             </Border>
                         </Grid>
@@ -461,14 +463,14 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="20,12">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="AccountBoxMultiple" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                            <TextBlock Text="CHAMPIONS REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="CHAMPIONS REPO" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,12">
+                            <Border Grid.Row="1" Background="{StaticResource WorkspaceFilterBarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,9">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1.2*"/>
@@ -484,7 +486,8 @@
 
                             <ListBox Grid.Row="2" 
                                      ItemsSource="{Binding AliasManager.Aliases}"
-                                     Style="{StaticResource NonSelectableListBoxStyle}">
+                                     Style="{StaticResource NonSelectableListBoxStyle}"
+                                     Background="{StaticResource WorkspaceContentWellBrush}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border Padding="16,6">
@@ -542,10 +545,10 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="20,16">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Ghost" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
-                                    <TextBlock Text="NEW MONSTER" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="NEW MONSTER" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -556,7 +559,7 @@
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
+                            <Border Grid.Row="2" Background="{StaticResource WorkspaceFilterBarBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Button Content="ADD MONSTER" Click="AddMonster_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                             </Border>
                         </Grid>
@@ -570,14 +573,14 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="20,12">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Ghost" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                    <TextBlock Text="MONSTERS REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="MONSTERS REPO" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,12">
+                            <Border Grid.Row="1" Background="{StaticResource WorkspaceFilterBarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,9">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -589,7 +592,8 @@
 
                             <ListBox Grid.Row="2" 
                                      ItemsSource="{Binding MonsterList}"
-                                     Style="{StaticResource NonSelectableListBoxStyle}">
+                                     Style="{StaticResource NonSelectableListBoxStyle}"
+                                     Background="{StaticResource WorkspaceContentWellBrush}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border Padding="16,6">
@@ -642,10 +646,10 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="20,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="20,16">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="HomeModern" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Width="14" Height="14"/>
-                                    <TextBlock Text="NEW STRUCTURE MAPPING" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="NEW STRUCTURE MAPPING" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
@@ -663,7 +667,7 @@
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
+                            <Border Grid.Row="2" Background="{StaticResource WorkspaceFilterBarBrush}" Padding="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,12,12">
                                 <Button Content="ADD STRUCTURE" Click="AddStructure_Click" Style="{StaticResource ModernPrimaryButton}" Height="52" FontWeight="Black"/>
                             </Border>
                         </Grid>
@@ -677,14 +681,14 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12,12,0,0" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="20,12">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="HomeModern" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                    <TextBlock Text="STRUCTURES REPO" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}" FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="STRUCTURES REPO" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" FontSize="11" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,12">
+                            <Border Grid.Row="1" Background="{StaticResource WorkspaceFilterBarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,9">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1.5*"/>
@@ -698,7 +702,8 @@
 
                             <ListBox Grid.Row="2" 
                                      ItemsSource="{Binding StructureList}"
-                                     Style="{StaticResource NonSelectableListBoxStyle}">
+                                     Style="{StaticResource NonSelectableListBoxStyle}"
+                                     Background="{StaticResource WorkspaceContentWellBrush}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border Padding="16,6">

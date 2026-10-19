@@ -1,32 +1,32 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
-    <!-- Match the reference: ink-dark blue canvas, luminous navy cards. -->
-    <Color x:Key="PrimaryBackgroundColor">#030E24</Color>
-    <Color x:Key="SecondaryBackgroundColor">#061632</Color>
-    <Color x:Key="SurfaceColor">#091C3A</Color>
-    <Color x:Key="InputBackgroundColor">#071730</Color>
-    <Color x:Key="ElevatedSurfaceColor">#10264B</Color>
-    <Color x:Key="HoverSurfaceColor">#143369</Color>
+    <!-- Midnight-navy foundation: deep, noble space-navy matching the concept reference -->
+    <Color x:Key="PrimaryBackgroundColor">#040D22</Color>
+    <Color x:Key="SecondaryBackgroundColor">#06132D</Color>
+    <Color x:Key="SurfaceColor">#071630</Color>
+    <Color x:Key="InputBackgroundColor">#030919</Color>
+    <Color x:Key="ElevatedSurfaceColor">#0A1E42</Color>
+    <Color x:Key="HoverSurfaceColor">#0E2856</Color>
 
-    <!-- Semantic background colors. Change these instead of painting each view.
-         Canvas = MainWindow; panel = cards; content well = the dark area inside them. -->
-    <Color x:Key="WorkspaceContentWellColor">#061125</Color>
-    <Color x:Key="WorkspaceFilterBarColor">#0C1E3B</Color>
-    <Color x:Key="WorkspaceConsoleHeaderColor">#10233F</Color>
-    <Color x:Key="WorkspacePanelBorderColor">#25456C</Color>
-    <Color x:Key="WorkspaceInspectorBorderColor">#275581</Color>
-    <Color x:Key="WorkspaceHeaderBorderColor">#3566A3</Color>
-    <Color x:Key="WorkspaceConsoleHeaderBorderColor">#254362</Color>
-    <Color x:Key="RenderTimelineTrackColor">#0B1729</Color>
-    <Color x:Key="RenderTimelineClipColor">#25446E</Color>
-    <Color x:Key="RenderTimelineMusicColor">#41365F</Color>
+    <!-- Surface hierarchy: quiet, deeply dark midnight-navy canvas, low-saturation inset
+         surfaces and subtly elevated headers. Dark, cinematic content wells. -->
+    <Color x:Key="WorkspaceContentWellColor">#020612</Color>
+    <Color x:Key="WorkspaceFilterBarColor">#051124</Color>
+    <Color x:Key="WorkspaceConsoleHeaderColor">#051126</Color>
+    <Color x:Key="WorkspacePanelBorderColor">#102644</Color>
+    <Color x:Key="WorkspaceInspectorBorderColor">#15335A</Color>
+    <Color x:Key="WorkspaceHeaderBorderColor">#1A3E6D</Color>
+    <Color x:Key="WorkspaceConsoleHeaderBorderColor">#0D2039</Color>
+    <Color x:Key="RenderTimelineTrackColor">#040B1A</Color>
+    <Color x:Key="RenderTimelineClipColor">#19375F</Color>
+    <Color x:Key="RenderTimelineMusicColor">#30264B</Color>
     
     <!-- Brand & Accents -->
     <Color x:Key="AccentColor">#16D6FF</Color>
     <Color x:Key="AccentColorLight">#61E7FF</Color>
     <Color x:Key="AccentColorDark">#5134FF</Color>
-    <Color x:Key="AccentSoftColor">#103064</Color>
+    <Color x:Key="AccentSoftColor">#0D254C</Color>
     <Color x:Key="HextechGoldColor">#C89B3C</Color>
     
     <!-- Semantic Colors -->
@@ -38,16 +38,16 @@
     <Color x:Key="CancelColor">#F97316</Color> <!-- Orange -->
 
     <!-- Border & Dividers -->
-    <Color x:Key="BorderColor">#183861</Color>
-    <Color x:Key="BorderColorBright">#2C6BAC</Color>
-    <Color x:Key="DividerColor">#193454</Color>
-    <Color x:Key="FocusColor">#2DDEFF</Color>
+    <Color x:Key="BorderColor">#0E223D</Color>
+    <Color x:Key="BorderColorBright">#1A467E</Color>
+    <Color x:Key="DividerColor">#0D203A</Color>
+    <Color x:Key="FocusColor">#2570EB</Color>
     
     <!-- Text -->
     <Color x:Key="TextPrimaryColor">#F3F7FF</Color>
-    <Color x:Key="TextSecondaryColor">#BBCDF2</Color>
-    <Color x:Key="TextMutedColor">#819BCB</Color>
-    <Color x:Key="TextTertiaryColor">#94B0DD</Color>
+    <Color x:Key="TextSecondaryColor">#A9BFE4</Color>
+    <Color x:Key="TextMutedColor">#6882AC</Color>
+    <Color x:Key="TextTertiaryColor">#7E98C2</Color>
 
     <!-- Brushes -->
     <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="{StaticResource PrimaryBackgroundColor}"/>
@@ -57,12 +57,12 @@
     <SolidColorBrush x:Key="ElevatedSurfaceBrush" Color="{StaticResource ElevatedSurfaceColor}"/>
     <SolidColorBrush x:Key="HoverSurfaceBrush" Color="{StaticResource HoverSurfaceColor}"/>
 
-    <!-- CONTENT WELL: same opaque paint for empty/full Pipeline, Live Preview,
-         Engine Console and video-monitor preview; avoids nested rectangles. -->
+    <!-- CONTENT WELL: deeply dark, immersive midnight screen shared by Pipeline,
+         Preview, Console and video monitor; provides true contrast for preview content. -->
     <SolidColorBrush x:Key="WorkspaceContentWellBrush" Color="{StaticResource WorkspaceContentWellColor}"/>
-    <!-- FILTER STRIP: filter tabs directly above a content well. -->
+    <!-- FILTER STRIP: subtle filter tabs directly above a content well. -->
     <SolidColorBrush x:Key="WorkspaceFilterBarBrush" Color="{StaticResource WorkspaceFilterBarColor}"/>
-    <!-- CONSOLE HEADER: a restrained raised strip, separate from the console body. -->
+    <!-- CONSOLE HEADER: restrained dark strip separating console header from body. -->
     <SolidColorBrush x:Key="WorkspaceConsoleHeaderBrush" Color="{StaticResource WorkspaceConsoleHeaderColor}"/>
     <SolidColorBrush x:Key="WorkspacePanelBorderBrush" Color="{StaticResource WorkspacePanelBorderColor}"/>
     <SolidColorBrush x:Key="WorkspaceInspectorBorderBrush" Color="{StaticResource WorkspaceInspectorBorderColor}"/>
@@ -80,36 +80,45 @@
     <SolidColorBrush x:Key="DesignerRenderCanvasBrush" Color="#020202"/>
 
     <!-- LISTS AND INPUTS: hover/selected/focus states are semantic, not arbitrary
-         per-view colors. Selection has more contrast than a passive hovered row. -->
-    <SolidColorBrush x:Key="DashboardCheckBackgroundBrush" Color="#0B1933"/>
-    <SolidColorBrush x:Key="DashboardRowHoverBrush" Color="#112B4B"/>
-    <SolidColorBrush x:Key="DashboardRowSelectedBrush" Color="#163F69"/>
-    <SolidColorBrush x:Key="DashboardStatusBadgeBrush" Color="#132138"/>
-    <SolidColorBrush x:Key="ComboItemHoverBrush" Color="#17365C"/>
-    <SolidColorBrush x:Key="ComboItemHighlightedBrush" Color="#193E66"/>
-    <SolidColorBrush x:Key="ComboItemSelectedBrush" Color="#173C60"/>
-    <SolidColorBrush x:Key="ComboPopupBackgroundBrush" Color="#0B1C37"/>
-    <SolidColorBrush x:Key="TextInputHoverBrush" Color="#1C2B48"/>
-    <SolidColorBrush x:Key="TextInputFocusBrush" Color="#193653"/>
-    <SolidColorBrush x:Key="SidebarNavHoverBackgroundBrush" Color="#102642"/>
-    <SolidColorBrush x:Key="SidebarNavSelectedBackgroundBrush" Color="#132D4C"/>
-    <SolidColorBrush x:Key="SidebarNavFocusedBackgroundBrush" Color="#193957"/>
-    <SolidColorBrush x:Key="RichTextConsoleBackgroundBrush" Color="#061021"/>
-    <SolidColorBrush x:Key="ScrollBarArrowHoverBrush" Color="#16243B"/>
-    <SolidColorBrush x:Key="SliderUnfilledTrackBrush" Color="#182740"/>
-    <SolidColorBrush x:Key="ProgressTrackBackgroundBrush" Color="#2D2D30"/>
+         per-view colors. Selection has crisp contrast and glowing presence. -->
+    <SolidColorBrush x:Key="DashboardCheckBackgroundBrush" Color="#040D1E"/>
+    <SolidColorBrush x:Key="DashboardRowHoverBrush" Color="#071732"/>
+    <SolidColorBrush x:Key="DashboardRowSelectedBrush" Color="#0A244E"/>
+    <SolidColorBrush x:Key="DashboardStatusBadgeBrush" Color="#040D1E"/>
+    <SolidColorBrush x:Key="ComboItemHoverBrush" Color="#0D2447"/>
+    <SolidColorBrush x:Key="ComboItemHighlightedBrush" Color="#102D58"/>
+    <SolidColorBrush x:Key="ComboItemSelectedBrush" Color="#0C254A"/>
+    <SolidColorBrush x:Key="ComboPopupBackgroundBrush" Color="#071630"/>
+    <SolidColorBrush x:Key="TextInputHoverBrush" Color="#06142B"/>
+    <SolidColorBrush x:Key="TextInputFocusBrush" Color="#081834"/>
+    <SolidColorBrush x:Key="SidebarNavHoverBackgroundBrush" Color="#081938"/>
+    <!-- Selected navigation item uses rich glowing gradient below -->
+    <!-- Selected navigation item: soft, refined midnight-navy elevation (harmonized with hover) -->
+    <LinearGradientBrush x:Key="SidebarNavSelectedBackgroundBrush" StartPoint="0,0" EndPoint="1,0.5">
+        <GradientStop Color="#0A2246" Offset="0"/>
+        <GradientStop Color="#0C204E" Offset="0.5"/>
+        <GradientStop Color="#10225A" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SidebarNavFocusedBackgroundBrush" StartPoint="0,0" EndPoint="1,0.5">
+        <GradientStop Color="#0D2952" Offset="0"/>
+        <GradientStop Color="#0F285C" Offset="0.5"/>
+        <GradientStop Color="#142B6A" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="RichTextConsoleBackgroundBrush" Color="#020612"/>
+    <SolidColorBrush x:Key="ScrollBarArrowHoverBrush" Color="#0D1E36"/>
+    <SolidColorBrush x:Key="SliderUnfilledTrackBrush" Color="#0D1B2E"/>
+    <SolidColorBrush x:Key="ProgressTrackBackgroundBrush" Color="#182335"/>
 
     <!-- SETTINGS: switch, icon tiles, and browse-button interaction states. -->
-    <SolidColorBrush x:Key="SettingsSwitchOffBackgroundBrush" Color="#273449"/>
-    <SolidColorBrush x:Key="SettingsSwitchOnBackgroundBrush" Color="#2769F3"/>
-    <SolidColorBrush x:Key="SettingsHeroIconBackgroundBrush" Color="#102B4E"/>
-    <SolidColorBrush x:Key="SettingsBrowseBackgroundBrush" Color="#0B1C38"/>
-    <SolidColorBrush x:Key="SettingsBrowseHoverBrush" Color="#12284A"/>
-    <SolidColorBrush x:Key="SettingsBrowsePressedBrush" Color="#18385A"/>
+    <SolidColorBrush x:Key="SettingsSwitchOffBackgroundBrush" Color="#18273E"/>
+    <SolidColorBrush x:Key="SettingsSwitchOnBackgroundBrush" Color="#2563EB"/>
+    <SolidColorBrush x:Key="SettingsHeroIconBackgroundBrush" Color="#0C2244"/>
+    <SolidColorBrush x:Key="SettingsBrowseBackgroundBrush" Color="#071732"/>
+    <SolidColorBrush x:Key="SettingsBrowseHoverBrush" Color="#0D244A"/>
+    <SolidColorBrush x:Key="SettingsBrowsePressedBrush" Color="#123162"/>
 
     <!-- SHELL / ACTIONS: status rail and translucent metric badge. -->
     <SolidColorBrush x:Key="ShellTopBarTagBackgroundBrush" Color="#141E40AF"/>
-    <SolidColorBrush x:Key="ShellStatusBarBackgroundBrush" Color="#06152E"/>
     <SolidColorBrush x:Key="CancelButtonPressedBackgroundBrush" Color="#F58C49"/>
     
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
@@ -136,90 +145,90 @@
     <!-- Shell-specific treatments are reusable by Settings and workspace panels. -->
     <SolidColorBrush x:Key="ElectricCyanBrush" Color="{StaticResource AccentColor}"/>
     <SolidColorBrush x:Key="ElectricVioletBrush" Color="{StaticResource AccentColorDark}"/>
-    <SolidColorBrush x:Key="ShellCardBorderBrush" Color="#244B80"/>
-    <SolidColorBrush x:Key="ShellNavSelectedBorderBrush" Color="#286AD5"/>
-    <!-- One opaque paint for the entire navigation column. No inset radial
-         overlays: those caused visible bands where its padded content begins. -->
-    <SolidColorBrush x:Key="ShellSidebarUniformBrush" Color="#061531"/>
+    <SolidColorBrush x:Key="ShellCardBorderBrush" Color="#153660"/>
+    <SolidColorBrush x:Key="ShellNavSelectedBorderBrush" Color="#1E4E8E"/>
     <!-- CARD SURFACES: large neutral cards / dialogs, shared by Settings and workspaces. -->
     <LinearGradientBrush x:Key="WorkspacePanelSurfaceBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#0B1C37" Offset="0"/>
-        <GradientStop Color="#0A1730" Offset="0.64"/>
-        <GradientStop Color="#0C1C39" Offset="1"/>
+        <GradientStop Color="#051226" Offset="0"/>
+        <GradientStop Color="#040D1E" Offset="0.65"/>
+        <GradientStop Color="#051022" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="SurfaceContainerGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#0B1D37" Offset="0"/>
-        <GradientStop Color="#0A1730" Offset="0.63"/>
-        <GradientStop Color="#101A39" Offset="1"/>
+        <GradientStop Color="#051226" Offset="0"/>
+        <GradientStop Color="#040D1E" Offset="0.65"/>
+        <GradientStop Color="#051022" Offset="1"/>
     </LinearGradientBrush>
     <!-- HEADERS: common card headers, featured titles and inspector are separate
          semantic layers; do not replace them with the darkest content well. -->
-    <LinearGradientBrush x:Key="WorkspacePanelHeaderBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#12315A" Offset="0"/>
-        <GradientStop Color="#0E2242" Offset="1"/>
+    <LinearGradientBrush x:Key="WorkspacePanelHeaderBrush" StartPoint="0,0" EndPoint="1,0.85">
+        <GradientStop Color="#0C2248" Offset="0"/>
+        <GradientStop Color="#081836" Offset="0.62"/>
+        <GradientStop Color="#0C1B42" Offset="1"/>
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="SectionHeaderGradientBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#10284B" Offset="0"/>
-        <GradientStop Color="#101D38" Offset="1"/>
+    <LinearGradientBrush x:Key="SectionHeaderGradientBrush" StartPoint="0,0" EndPoint="1,0.85">
+        <GradientStop Color="#0C2248" Offset="0"/>
+        <GradientStop Color="#081836" Offset="0.62"/>
+        <GradientStop Color="#0C1B42" Offset="1"/>
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="WorkspaceHeaderSurfaceBrush" StartPoint="0,0" EndPoint="1,0.6">
-        <GradientStop Color="#102B54" Offset="0"/>
-        <GradientStop Color="#101F42" Offset="0.62"/>
-        <GradientStop Color="#161D48" Offset="1"/>
+    <LinearGradientBrush x:Key="WorkspaceHeaderSurfaceBrush" StartPoint="0,0" EndPoint="1,0.85">
+        <GradientStop Color="#0C2248" Offset="0"/>
+        <GradientStop Color="#081836" Offset="0.62"/>
+        <GradientStop Color="#0C1B42" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="SettingsFeaturedBrush" StartPoint="0,0" EndPoint="1,0.85">
-        <GradientStop Color="#102B54" Offset="0"/>
-        <GradientStop Color="#101F42" Offset="0.62"/>
-        <GradientStop Color="#161D48" Offset="1"/>
+        <GradientStop Color="#0C2248" Offset="0"/>
+        <GradientStop Color="#081836" Offset="0.62"/>
+        <GradientStop Color="#0C1B42" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="WorkspaceInspectorSurfaceBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#10274A" Offset="0"/>
-        <GradientStop Color="#0C1B37" Offset="0.55"/>
-        <GradientStop Color="#0C2147" Offset="1"/>
+        <GradientStop Color="#081835" Offset="0"/>
+        <GradientStop Color="#06132B" Offset="0.55"/>
+        <GradientStop Color="#081938" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="ShellSidebarDividerBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#395F87" Offset="0"/>
-        <GradientStop Color="#223C5D" Offset="0.58"/>
-        <GradientStop Color="#00223C5D" Offset="1"/>
+        <GradientStop Color="#1C3D68" Offset="0"/>
+        <GradientStop Color="#0F2442" Offset="0.58"/>
+        <GradientStop Color="#000F2442" Offset="1"/>
     </LinearGradientBrush>
-    <SolidColorBrush x:Key="ShellTopBarLabelDividerBrush" Color="#254471"/>
-    <SolidColorBrush x:Key="ShellTopBarMetricDividerBrush" Color="#264572"/>
+    <SolidColorBrush x:Key="ShellTopBarLabelDividerBrush" Color="#132B4C"/>
+    <SolidColorBrush x:Key="ShellTopBarMetricDividerBrush" Color="#132B4C"/>
 
     <!-- INTERACTION SURFACES: buttons, lists and scrollbars share the same
          theme authority; these keys are consumed by their control styles. -->
     <LinearGradientBrush x:Key="PrimaryButtonHoverBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#93D5FF" Offset="0"/>
-        <GradientStop Color="#7770FF" Offset="1"/>
+        <GradientStop Color="#53C4FF" Offset="0"/>
+        <GradientStop Color="#3B82F6" Offset="0.45"/>
+        <GradientStop Color="#6366F1" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="NavyButtonBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#203453" Offset="0"/>
-        <GradientStop Color="#151F37" Offset="1"/>
+        <GradientStop Color="#081834" Offset="0"/>
+        <GradientStop Color="#051024" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="NavyButtonHoverBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#294A70" Offset="0"/>
-        <GradientStop Color="#242646" Offset="1"/>
+        <GradientStop Color="#0E264E" Offset="0"/>
+        <GradientStop Color="#091A38" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="NavyListSelectionBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#234365" Offset="0"/>
-        <GradientStop Color="#1C2747" Offset="1"/>
+        <GradientStop Color="#0D2954" Offset="0"/>
+        <GradientStop Color="#081A38" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="NavyListSelectionHoverBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#28577B" Offset="0"/>
-        <GradientStop Color="#282A54" Offset="1"/>
+        <GradientStop Color="#12356B" Offset="0"/>
+        <GradientStop Color="#0E234A" Offset="1"/>
     </LinearGradientBrush>
-    <SolidColorBrush x:Key="ScrollBarThumbBackground" Color="#536D99"/>
-    <SolidColorBrush x:Key="ScrollBarThumbHoverBackground" Color="#75C9FF"/>
-    <SolidColorBrush x:Key="ScrollBarThumbPressedBackground" Color="#9ADFFF"/>
+    <SolidColorBrush x:Key="ScrollBarThumbBackground" Color="#2A4872"/>
+    <SolidColorBrush x:Key="ScrollBarThumbHoverBackground" Color="#4A7AB8"/>
+    <SolidColorBrush x:Key="ScrollBarThumbPressedBackground" Color="#689EE0"/>
     <SolidColorBrush x:Key="ScrollBarBackground" Color="Transparent"/>
     <LinearGradientBrush x:Key="ShellCardGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#102B51" Offset="0"/>
-        <GradientStop Color="#091D3D" Offset="0.55"/>
-        <GradientStop Color="#071631" Offset="1"/>
+        <GradientStop Color="#0A1D3D" Offset="0"/>
+        <GradientStop Color="#06142E" Offset="0.55"/>
+        <GradientStop Color="#051026" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="ShellSidebarGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#071432" Offset="0"/>
-        <GradientStop Color="#030A21" Offset="0.38"/>
-        <GradientStop Color="#06122D" Offset="1"/>
+        <GradientStop Color="#05112B" Offset="0"/>
+        <GradientStop Color="#030A1F" Offset="0.38"/>
+        <GradientStop Color="#040D24" Offset="1"/>
     </LinearGradientBrush>
     <!-- Original sidebar has a deep central vignette and low luminous blue bloom. -->
     <RadialGradientBrush x:Key="ShellSidebarVignetteBrush"
@@ -236,27 +245,31 @@
         <GradientStop Color="#1914335B" Offset="0.53"/>
         <GradientStop Color="#00132248" Offset="1"/>
     </RadialGradientBrush>
-    <LinearGradientBrush x:Key="ShellTopBarGradientBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#020B20" Offset="0"/>
-        <GradientStop Color="#02091C" Offset="0.25"/>
-        <GradientStop Color="#031024" Offset="0.65"/>
-        <GradientStop Color="#020B1D" Offset="1"/>
+    <!-- Shared shell chrome: top WORKSPACE bar, full-height sidebar and bottom
+         SYSTEM STATUS bar all use this exact same background with deep, noble midnight-navy tones. -->
+    <!-- Shared shell chrome: top WORKSPACE bar, full-height sidebar and bottom
+         SYSTEM STATUS bar all use this exact same background with smooth, uniform midnight navy
+         (vertical orientation eliminates any vertical color striping down the sidebar). -->
+    <LinearGradientBrush x:Key="ShellChromeGradientBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#040D22" Offset="0"/>
+        <GradientStop Color="#030B1F" Offset="0.5"/>
+        <GradientStop Color="#030A1C" Offset="1"/>
     </LinearGradientBrush>
-    <!-- Quiet ink-navy workspace canvas, gently lifted to smoky midnight blue
-         toward the upper-right. Keep the brighter panels and sidebar distinct. -->
-    <LinearGradientBrush x:Key="ShellContentGradientBrush" StartPoint="0,1" EndPoint="1,0">
-        <GradientStop Color="#080D1B" Offset="0"/>
-        <GradientStop Color="#0B1022" Offset="0.48"/>
-        <GradientStop Color="#12152C" Offset="1"/>
+    <!-- MainWindow content canvas: deeply dark midnight navy, quiet and atmospheric,
+         eliminating the washed-out blue effect and making panels float with rich contrast. -->
+    <LinearGradientBrush x:Key="ShellContentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#020716" Offset="0"/>
+        <GradientStop Color="#030B22" Offset="0.48"/>
+        <GradientStop Color="#020614" Offset="1"/>
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="ShellNavSelectedBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#0E3D87" Offset="0"/>
-        <GradientStop Color="#0C286F" Offset="0.5"/>
-        <GradientStop Color="#1B2AAC" Offset="1"/>
+    <LinearGradientBrush x:Key="ShellNavSelectedBrush" StartPoint="0,0" EndPoint="1,0.5">
+        <GradientStop Color="#0A2246" Offset="0"/>
+        <GradientStop Color="#0C204E" Offset="0.5"/>
+        <GradientStop Color="#10225A" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="ShellNavHoverBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#102F61" Offset="0"/>
-        <GradientStop Color="#172A66" Offset="1"/>
+        <GradientStop Color="#0A2046" Offset="0"/>
+        <GradientStop Color="#0C1D42" Offset="1"/>
     </LinearGradientBrush>
 
     <!-- Semi-transparent Semantic Brushes for Badges, Alerts, and Pills -->
@@ -272,9 +285,9 @@
     <SolidColorBrush x:Key="ErrorPillBorderBrush" Color="{StaticResource ErrorColor}" Opacity="0.5"/>
 
     <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#36BBFF" Offset="0"/>
-        <GradientStop Color="#2475FF" Offset="0.47"/>
-        <GradientStop Color="{StaticResource AccentColorDark}" Offset="1"/>
+        <GradientStop Color="#1E75E8" Offset="0"/>
+        <GradientStop Color="#2563EB" Offset="0.48"/>
+        <GradientStop Color="#3B82F6" Offset="1"/>
     </LinearGradientBrush>
     
     <LinearGradientBrush x:Key="CancelGradientBrush" StartPoint="0,0" EndPoint="1,1">
