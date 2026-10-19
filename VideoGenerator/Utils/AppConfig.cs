@@ -37,6 +37,7 @@ namespace VideoGenerator.Models
         public static readonly string EventRulesPath = Path.Combine(ConfigDir, "event_rules.json");
         public static readonly string AliasesPath = Path.Combine(ConfigDir, "champion_aliases.json");
         public static readonly string LocalVersionPath = Path.Combine(ConfigDir, "version.json");
+        public static readonly string RenderPresetsPath = Path.Combine(ConfigDir, "render_presets.json");
         public static readonly string ApplicationLogPath = Path.Combine(LogsDir, "application_logs.log");
         public static readonly string ApplicationErrorsPath = Path.Combine(LogsDir, "application_errors.log");
         public static readonly string PreviewIconPlaceholderPath = Path.Combine(CacheDir, "preview_icon_placeholder.png");
@@ -84,6 +85,9 @@ namespace VideoGenerator.Models
 
         public static string GetWhisperModelPath(string modelFileName, string storageRoot = null) =>
             Path.Combine(GetCacheDirectory(storageRoot), modelFileName);
+
+        public static string GetRenderPresetsFilePath(string storageRoot = null) =>
+            Path.Combine(GetConfigDirectory(storageRoot), "render_presets.json");
 
         public static string CreateTemporaryWavPath() =>
             Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wav");

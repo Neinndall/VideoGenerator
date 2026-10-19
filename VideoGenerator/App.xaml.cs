@@ -96,6 +96,7 @@ namespace VideoGenerator
             services.AddSingleton<ImageGenerator>();
             services.AddSingleton<VideoService>();
             services.AddSingleton<VideoTimelineRenderService>();
+            services.AddSingleton<RenderPresetManager>();
             services.AddSingleton<TranscriptionService>();
             services.AddSingleton<DialogueService>();
             services.AddSingleton<IDialogueStore>(provider => provider.GetRequiredService<DialogueService>());

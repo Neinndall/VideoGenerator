@@ -4,6 +4,9 @@ MAJOR UPDATE
 Current direction: removed the optional CommunityDragon hash-dictionary downloader, its weekly startup job and the Hash Catalogs Settings panel. The installed WAD reader, xxHash64 path resolver, metadata refresh and icon cache remain operational; existing user caches and settings files are not deleted.
 
 New Features
+  - Render Video / Vegas-Style "Render As..." Modal: Introduced a dedicated modal export dialog with a searchable preset list, real-time parameter customizer (Resolution, FPS, Video Encoders libx264/h264_nvenc, CRF quality slider, FFmpeg speed presets, Audio Bitrate and Sample Rate), disk-persisted preset management (`render_presets.json`), custom preset creation, editing, deletion, atomic JSON persistence, and live export progress with cancel and folder-opening actions.
+  - Render Video / NLE Timeline Editing Tools: Added non-destructive clip splitting at playhead (`S`), In/Out trim markers from current position (`I` / `O`), clip duplication (`Ctrl+D`), delete selected clip (`Delete`), and dynamic timeline zoom slider (`50%` to `250%`) with smooth layout scaling.
+  - Render Video / Transport & Program Monitor: Overhauled the playback bar with MaterialDesign controls, dynamic play/pause toggle icon, stop, rewind/forward steps (5s / Left-Right arrows), clip navigation (Home / End), volume and mute toggles, and live current/total timecode readout.
   - Render Video / Timeline Studio: Added a standalone video montage workspace with clip importing, timeline ordering/trimming, program preview, background music, editable project files and FFmpeg export quality presets.
   - Mapping / Unified Catalogs: Added built-in defaults for Champions, Monsters and Structures alongside Rules and Groups, with one editable JSON per Mapping section and protected BUILT-IN entries.
   - Champions / Riot Roster: Imports champions, internal aliases and class roles from installed game WADs, automatically recognizing new champions and displaying RIOT ROLES in Event Mapping.
@@ -31,6 +34,8 @@ New Features
   - Assets / Local WAD Hashes: The virtual path → xxHash64 resolver remains; the earlier optional external hash dictionary downloader was removed after confirming that the normal icon pipeline never consumed those catalogs.
 
 Improvements
+  - Render Video / Media Library Quick Actions: Added instant search filtering by clip filename/path, one-click `+` buttons on library items to append directly to the timeline, and clear library actions.
+  - Render Video / Theme & Chrome Uniformity: Integrated midnight-navy surface gradients, obsidian content wells, and electric-cyan accents across the timeline studio and export dialog matching the V2 design language.
   - UI / Dashboard & Engine Console Headers: Harmonized `ENGINE CONSOLE` and `DETECTED PIPELINE` panel headers with the shared `WorkspacePanelHeader` midnight-navy gradient (`#0C2248` to `#0C1B42`), and aligned terminal/pipeline icons and labels in semi-bold `AccentBrushLight`.
   - UI / Visual Design Inspector Headers: Unified inspector card headers (`CANVAS BACKGROUND`, `HUD TYPOGRAPHY`, `HUD ICON POSITION`, `DIALOGUE SPEECH BUBBLE`, and `PREVIEW CANVAS STUDIO`) with the shared `WorkspacePanelHeader` midnight-navy gradient, centered title icons and text horizontally and vertically, and recessed search result panels into `WorkspaceContentWellBrush`.
   - UI / Card Header & Surface Hierarchy: Harmonized card headers across Event Mapping tabs with the Settings featured midnight-navy gradient (`#0C2248` to `#0C1B42`), added distinct filter/column strips (`WorkspaceFilterBarBrush`), and recessed repository lists into obsidian content wells (`WorkspaceContentWellBrush`) to establish clear visual depth between header and card body.

@@ -1,17 +1,54 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace VideoGenerator.Views.Models;
 
-public sealed record TimelineExportPreset(string Name, int Width, int Height, int Fps, int Crf)
+public sealed record TimelineExportPreset(
+    string Name,
+    int Width,
+    int Height,
+    int Fps,
+    int Crf,
+    string AudioBitrate = "192k",
+    int AudioSampleRate = 48000,
+    string Encoder = "libx264",
+    string FfmpegPreset = "medium",
+    bool IsBuiltIn = true,
+    string Description = "")
 {
-    public static IReadOnlyList<TimelineExportPreset> Presets { get; } = Array.AsReadOnly(new[]
+    [JsonIgnore]
+    public string ResolutionDisplay => $"{Width} × {Height}";
+
+    [JsonIgnore]
+    public string AspectRatioDisplay => (Width, Height) switch
     {
-        new TimelineExportPreset("720p · Rápido", 1280, 720, 30, 25),
-        new TimelineExportPreset("1080p · Equilibrado", 1920, 1080, 30, 21),
-        new TimelineExportPreset("1080p · 60 FPS", 1920, 1080, 60, 20),
-        new TimelineExportPreset("4K · Alta calidad", 3840, 2160, 30, 19)
+        (1920, 1080) => "16:9 (Horizontal)",
+        (1280, 720) => "16:9 (Horizontal)",
+        (2560, 1440) => "16:9 (2K QHD)",
+        (3840, 2160) => "16:9 (4K UHD)",
+        (1080, 1920) => "9:16 (Vertical · TikTok/Shorts)",
+        (720, 1280) => "9:16 (Vertical)",
+        (1080, 1080) => "1:1 (Cuadrado)",
+        _ => $"{Width}:{Height}"
+    };
+
+    [JsonIgnore]
+    public string SummaryDisplay =>
+        $"{Width}×{Height} · {Fps} FPS · CRF {Crf} · {AudioBitrate} audio";
+
+    public static IReadOnlyList<TimelineExportPreset> BuiltInPresets { get; } = Array.AsReadOnly(new[]
+    {
+        new TimelineExportPreset("YouTube 1080p · 60 FPS", 1920, 1080, 60, 20, "192k", 48000, "libx264", "medium", true, "Ideal para gameplay fluido y montajes en alta definición"),
+        new TimelineExportPreset("YouTube 1080p · 30 FPS", 1920, 1080, 30, 21, "192k", 48000, "libx264", "medium", true, "Equilibrado estándar para vídeos de YouTube"),
+        new TimelineExportPreset("TikTok / Shorts / Reels (9:16)", 1080, 1920, 60, 21, "192k", 48000, "libx264", "medium", true, "Formato vertical optimizado para redes sociales"),
+        new TimelineExportPreset("1440p 2K QHD · 60 FPS", 2560, 1440, 60, 19, "256k", 48000, "libx264", "medium", true, "Alta fidelidad para monitores 1440p"),
+        new TimelineExportPreset("4K Ultra HD · 30 FPS", 3840, 2160, 30, 19, "320k", 48000, "libx264", "medium", true, "Máxima resolución y calidad de exportación"),
+        new TimelineExportPreset("720p · Rápido", 1280, 720, 30, 25, "128k", 48000, "libx264", "fast", true, "Renderizado rápido y archivos ligeros"),
+        new TimelineExportPreset("Discord / Comprimido", 1280, 720, 30, 28, "128k", 48000, "libx264", "veryfast", true, "Archivos de tamaño reducido para compartir rápidamente")
     });
+
+    public static IReadOnlyList<TimelineExportPreset> Presets => BuiltInPresets;
 
     public IReadOnlyList<string> Validate()
     {

@@ -122,9 +122,16 @@ public sealed class VideoTimelineRenderService
             start.ArgumentList.Add("-filter_complex");
             start.ArgumentList.Add(BuildFilterGraph(preparedClips, preset, musicPath is not null,
                 project.MusicVolume, timelineDuration));
-            AddArgs(start, "-map", "[outv]", "-map", "[outa]", "-c:v", "libx264", "-preset", "medium",
+            string videoEncoder = string.Equals(preset.Encoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
+                ? "h264_nvenc"
+                : "libx264";
+            string ffmpegPreset = string.IsNullOrWhiteSpace(preset.FfmpegPreset) ? "medium" : preset.FfmpegPreset;
+            string audioBitrate = string.IsNullOrWhiteSpace(preset.AudioBitrate) ? "192k" : preset.AudioBitrate;
+            string audioSampleRate = preset.AudioSampleRate > 0 ? preset.AudioSampleRate.ToString(NumberCulture) : "48000";
+
+            AddArgs(start, "-map", "[outv]", "-map", "[outa]", "-c:v", videoEncoder, "-preset", ffmpegPreset,
                 "-crf", preset.Crf.ToString(NumberCulture), "-pix_fmt", "yuv420p", "-r",
-                preset.Fps.ToString(NumberCulture), "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+                preset.Fps.ToString(NumberCulture), "-c:a", "aac", "-b:a", audioBitrate, "-ar", audioSampleRate,
                 "-ac", "2", "-movflags", "+faststart", "-f", "mp4", partialPath);
 
             progress?.Report(0);
