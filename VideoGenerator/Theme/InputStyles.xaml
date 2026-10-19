@@ -9,7 +9,7 @@
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="9"/>
         <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="1.5"/>
         <Setter Property="CaretBrush" Value="{StaticResource AccentBrushLight}"/>
@@ -49,7 +49,7 @@
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
@@ -114,6 +114,7 @@
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
                             <Setter TargetName="TextBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                            <Setter TargetName="TextBorder" Property="BorderThickness" Value="1.5"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="TextBorder" Property="Opacity" Value="0.45"/>
@@ -169,7 +170,7 @@
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Height" Value="44"/>
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
@@ -235,6 +236,7 @@
                         </Trigger>
                         <Trigger Property="IsDropDownOpen" Value="True">
                             <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                            <Setter TargetName="Chrome" Property="BorderThickness" Value="1.5"/>
                         </Trigger>
                         <Trigger Property="HasItems" Value="False">
                             <Setter TargetName="PopupSurface" Property="MinHeight" Value="44"/>
@@ -253,7 +255,7 @@
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
@@ -336,6 +338,7 @@
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
                             <Setter TargetName="SearchBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                            <Setter TargetName="SearchBorder" Property="BorderThickness" Value="1.5"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="SearchBorder" Property="Opacity" Value="0.45"/>
