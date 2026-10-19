@@ -33,15 +33,17 @@ namespace VideoGenerator.Models
         public static readonly string MonstersPath = Path.Combine(ConfigDir, "monsters.json");
         public static readonly string StructuresPath = Path.Combine(ConfigDir, "structures.json");
         public static readonly string SkinlineCachePath = Path.Combine(ConfigDir, "skinlines.json");
-        public static readonly string ChampionsPath = Path.Combine(ConfigDir, "champions.json");
-        public static readonly string ItemsPath = Path.Combine(ConfigDir, "items.json");
         public static readonly string SettingsPath = Path.Combine(ConfigDir, "settings.json");
         public static readonly string EventRulesPath = Path.Combine(ConfigDir, "event_rules.json");
         public static readonly string AliasesPath = Path.Combine(ConfigDir, "champion_aliases.json");
         public static readonly string LocalVersionPath = Path.Combine(ConfigDir, "version.json");
+        public static readonly string RenderPresetsPath = Path.Combine(ConfigDir, "render_presets.json");
         public static readonly string ApplicationLogPath = Path.Combine(LogsDir, "application_logs.log");
         public static readonly string ApplicationErrorsPath = Path.Combine(LogsDir, "application_errors.log");
         public static readonly string PreviewIconPlaceholderPath = Path.Combine(CacheDir, "preview_icon_placeholder.png");
+        // New preview-only vector-derived tile. Never overwrite legacy placeholder
+        // or user-provided icon/cache files during this visual upgrade.
+        public static readonly string PreviewDialogueIconPath = Path.Combine(CacheDir, "preview_dialogue_icon_v2.png");
 
         // Isolated storage helpers for deterministic tests
         public static string GetConfigDirectory(string storageRoot = null) =>
@@ -59,14 +61,12 @@ namespace VideoGenerator.Models
         public static string GetDialogueValidationsFilePath(string storageRoot = null) =>
             Path.Combine(GetConfigDirectory(storageRoot), "dialogue_validations.json");
 
-        public static string GetChampionsFilePath(string storageRoot = null) =>
-            Path.Combine(GetConfigDirectory(storageRoot), "champions.json");
-
-        public static string GetItemsFilePath(string storageRoot = null) =>
-            Path.Combine(GetConfigDirectory(storageRoot), "items.json");
+        public static string GetChampionSummaryCachePath(string storageRoot = null) =>
+            Path.Combine(GetCacheDirectory(storageRoot), "champion_summary_data_default.json");
 
         public static string GetMonstersFilePath(string storageRoot = null) =>
             Path.Combine(GetConfigDirectory(storageRoot), "monsters.json");
+
 
         public static string GetStructuresFilePath(string storageRoot = null) =>
             Path.Combine(GetConfigDirectory(storageRoot), "structures.json");
@@ -86,15 +86,11 @@ namespace VideoGenerator.Models
         public static string GetWhisperModelPath(string modelFileName, string storageRoot = null) =>
             Path.Combine(GetCacheDirectory(storageRoot), modelFileName);
 
+        public static string GetRenderPresetsFilePath(string storageRoot = null) =>
+            Path.Combine(GetConfigDirectory(storageRoot), "render_presets.json");
+
         public static string CreateTemporaryWavPath() =>
             Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wav");
-
-        // URLs
-        public static readonly string MonsterWikiUrl = "https://leagueoflegends.fandom.com/wiki/Monster";
-        public static string GetSkinsDataUrl(string locale) => $"https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/{locale}/v1/skins.json";
-        public static string GetSkinLinesUrl(string locale) => $"https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/{locale}/v1/skinlines.json";
-        public static string GetItemsDataUrl(string locale) => $"https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/{locale}/v1/items.json";
-        public static readonly string VersionsUrl = "https://ddragon.leagueoflegends.com/api/versions.json";
 
         public static string GetCdragonLocale(string language = null)
         {

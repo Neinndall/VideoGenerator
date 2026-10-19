@@ -11,6 +11,8 @@ using System.Text;
 using VideoGenerator.Models;
 using VideoGenerator.Utils;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("VideoGenerator.Tests")]
+
 namespace VideoGenerator.Services
 {
     public class VideoService
@@ -290,6 +292,7 @@ namespace VideoGenerator.Services
             string concatListPath = null;
             string finalAudioInput = null;
             string srtPath = null;
+            string temporaryOutputPath = null;
             var temporaryMediaPaths = new List<string>();
 
             try
@@ -300,6 +303,10 @@ namespace VideoGenerator.Services
                 DirectoriesCreator.CreateParentDirectory(outputPath);
                 string cacheDir = _cacheDir;
                 DirectoriesCreator.CreateDirectory(cacheDir);
+                // Render alongside the destination so publishing the finished MP4 is atomic.
+                temporaryOutputPath = Path.Combine(
+                    Path.GetDirectoryName(Path.GetFullPath(outputPath)),
+                    $"{Path.GetFileName(outputPath)}.{Guid.NewGuid():N}.partial.mp4");
 
                 if (imagePaths != null && imagePaths.Count > 1)
                 {
@@ -354,11 +361,16 @@ namespace VideoGenerator.Services
                     var finalResult = await FFMpegArguments
                         .FromFileInput(concatListPath, true, options => options
                             .WithCustomArgument("-f concat -safe 0"))
-                        .OutputToFile(outputPath, true, options => options
+                        .OutputToFile(temporaryOutputPath, true, options => options
                             .WithCustomArgument("-c copy"))
                         .CancellableThrough(cancellationToken)
                         .ProcessAsynchronously();
-                    onWorkCompleted?.Invoke("Concatenated final video");
+
+                    if (finalResult)
+                    {
+                        PublishRenderedVideo(temporaryOutputPath, outputPath, cancellationToken);
+                        onWorkCompleted?.Invoke("Concatenated final video");
+                    }
 
                     // Clean up temporary clips
                     foreach (var clip in tempClips)
@@ -452,7 +464,7 @@ namespace VideoGenerator.Services
                     var result = await FFMpegArguments
                         .FromFileInput(singleImagePath, true, options => options.Loop(1))
                         .AddFileInput(finalAudioInput)
-                        .OutputToFile(outputPath, true, options => options
+                        .OutputToFile(temporaryOutputPath, true, options => options
                             .WithVideoCodec("libx264")
                             .WithAudioCodec("aac")
                             .WithAudioBitrate(192)
@@ -460,10 +472,11 @@ namespace VideoGenerator.Services
                             .WithCustomArgument(customArgs))
                         .CancellableThrough(cancellationToken)
                         .ProcessAsynchronously();
-                    onWorkCompleted?.Invoke("Encoded final video");
 
                     if (result)
                     {
+                        PublishRenderedVideo(temporaryOutputPath, outputPath, cancellationToken);
+                        onWorkCompleted?.Invoke("Encoded final video");
                         _logger.LogInfo($"    [SUCCESS] Video generated: {Path.GetFileName(outputPath)}");
                     }
 
@@ -482,6 +495,7 @@ namespace VideoGenerator.Services
                     if (tempAudioPath != null && File.Exists(tempAudioPath)) File.Delete(tempAudioPath);
                     if (concatListPath != null && File.Exists(concatListPath)) File.Delete(concatListPath);
                     if (srtPath != null && File.Exists(srtPath)) File.Delete(srtPath);
+                    if (temporaryOutputPath != null && File.Exists(temporaryOutputPath)) File.Delete(temporaryOutputPath);
                     foreach (string temporaryMediaPath in temporaryMediaPaths)
                     {
                         try
@@ -493,6 +507,18 @@ namespace VideoGenerator.Services
                 }
                 catch { }
             }
+        }
+
+        internal static void PublishRenderedVideo(string temporaryOutputPath, string outputPath, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!File.Exists(temporaryOutputPath) || new FileInfo(temporaryOutputPath).Length == 0)
+                throw new IOException($"Rendered video is missing or empty: {temporaryOutputPath}");
+
+            // Both paths live in the same directory, so this replaces the previous
+            // output only after rendering succeeds. A failed render keeps it intact.
+            File.Move(temporaryOutputPath, outputPath, true);
         }
 
         private bool ValidateFFmpeg()

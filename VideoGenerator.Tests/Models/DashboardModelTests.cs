@@ -84,11 +84,15 @@ public sealed class DashboardModelTests
 
         Assert.False(model.CanRunWorkflow);
         Assert.Equal(1, model.SelectedVisibleEventCount);
+        Assert.Equal(1, model.NeedsMappingVisibleEventCount);
+        Assert.Equal(0, model.RunnableSelectedVisibleEventCount);
 
         model.FilteredProcessedEvents[0].ParsedData.IsMapped = true;
         model.FilteredProcessedEvents[0].Status = EventStatuses.Ready;
 
         Assert.True(model.CanRunWorkflow);
+        Assert.Equal(0, model.NeedsMappingVisibleEventCount);
+        Assert.Equal(1, model.RunnableSelectedVisibleEventCount);
         Assert.Single(model.GetSelectedVisibleWorkflowEvents());
     }
 }

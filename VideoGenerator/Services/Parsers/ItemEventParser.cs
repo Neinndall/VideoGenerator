@@ -56,7 +56,7 @@ namespace VideoGenerator.Services.Parsers
             }
             else
             {
-                // Resolve item info from cached CommunityDragon items_data.json
+                // Resolve item info from the local game items cache.
                 var itemInfo = await _dataFetcher.GetItemInfoAsync(itemIdOrName, language);
                 resolvedLookup = itemInfo?.Id.ToString() ?? itemIdOrName;
                 displayItemName = itemInfo?.Name ?? Regex.Replace(itemIdOrName, @"(?<!^)(?=[A-Z])", " ");

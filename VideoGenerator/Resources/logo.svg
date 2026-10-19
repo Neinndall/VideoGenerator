@@ -1,21 +1,15 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Diseño Optimizado para Barra de Tareas (Maximizando el espacio del lienzo) -->
-  
-  <!-- Cuerpo de la Cámara (Ocupando casi todo el ancho disponible para evitar márgenes vacíos) -->
-  <!-- Coordenadas ajustadas para centrar el conjunto total en el lienzo -->
-  <rect x="25" y="106" width="350" height="300" rx="50" fill="url(#grad)"/>
-  
-  <!-- Lente / Parte derecha de la cámara (Agrandada y pegada al borde derecho) -->
-  <path d="M385 176L487 96V416L385 336V176Z" fill="url(#grad)"/>
-  
-  <!-- Símbolo de Play (Proporción aumentada para legibilidad en tamaños pequeños) -->
-  <path d="M150 170V342L280 256L150 170Z" fill="white" fill-opacity="1"/>
-
-  <!-- Degradado de Identidad VideoGenerator -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <!-- VideoGenerator 2.0: solid white rounded camera, designed for 16–512 px. -->
   <defs>
-    <linearGradient id="grad" x1="25" y1="106" x2="487" y2="416" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#7C4DFF"/>
-      <stop offset="1" stop-color="#6200EA"/>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#36BBFF"/>
+      <stop offset=".47" stop-color="#2475FF"/>
+      <stop offset="1" stop-color="#5134FF"/>
     </linearGradient>
   </defs>
+  <rect x="10.5" y="10.5" width="491" height="491" rx="108" fill="url(#brand)"
+        stroke="#84DBFF" stroke-opacity=".28" stroke-width="5"/>
+  <path d="M353 222L407 184C419 176 433 183 433 199V313C433 329 420 336 407 327L353 290Z"
+        fill="white"/>
+  <rect x="110" y="171" width="236" height="169" rx="40" fill="white"/>
 </svg>

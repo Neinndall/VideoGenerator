@@ -13,31 +13,15 @@
         
         <Style x:Key="InspectorSectionHeader" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="Black"/>
-            <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
     </UserControl.Resources>
 
     <Grid Margin="{StaticResource WorkspacePagePadding}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <!-- 1. CINEMATIC HEADER -->
-        <Border Grid.Row="0" Style="{StaticResource WorkspaceHeaderContainer}" Margin="0,0,0,16">
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="VISUAL WORKSPACE" Style="{StaticResource WorkspaceEyebrowText}"/>
-                <TextBlock Text="Visual design" Style="{StaticResource WorkspaceTitleText}" Margin="0,4,0,0"/>
-                <TextBlock Text="Customize backgrounds, adjust text vertical offsets, and configure icon alignments in real-time." 
-                           Style="{StaticResource PageSubtitleText}"
-                           Margin="0,5,0,0"/>
-            </StackPanel>
-        </Border>
-
-        <!-- 2. MAIN DESIGNER WORKSPACE -->
-        <Grid Grid.Row="1">
+        <!-- Main designer workspace fills the page below the MainWindow title bar. -->
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="InspectorColumn" Width="380"/> <!-- Left: Inspector -->
                 <ColumnDefinition Width="*"/>   <!-- Right: Live Canvas -->
@@ -54,17 +38,17 @@
                     <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,0,16">
                         <StackPanel VerticalAlignment="Stretch">
                             <!-- Header Bar -->
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="ImageOutline" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="CANVAS BACKGROUND" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="16,12">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="ImageOutline" Foreground="{StaticResource AccentBrushLight}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="CANVAS BACKGROUND" Style="{StaticResource InspectorSectionHeader}"/>
                                 </StackPanel>
                             </Border>
 
                             <!-- Body -->
                             <Border Padding="16">
                                 <StackPanel>
-                                    <TextBlock Text="Configure the workspace background. You can search champion name + skin index (e.g. Aatrox_0) to download from Riot API, or upload a local wallpaper image." 
+                                    <TextBlock Text="Type a champion to browse its available skins, or enter Aatrox_1 / Aatrox1 to use one directly. Aatrox1,2 lets you choose between them. Artwork comes from your installed League WAD files."
                                                FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14" TextWrapping="Wrap" Opacity="0.7" LineHeight="15"/>
 
                                     <Grid>
@@ -86,19 +70,72 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <!-- Row 0: Search API -->
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="RIOT SEARCH" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
-                                        <Grid Grid.Row="0" Grid.Column="1">
-                                            <TextBox x:Name="SplashSearchBox" 
-                                                     materialDesign:HintAssist.Hint="Champion name (e.g. Aatrox)..." 
-                                                     Style="{StaticResource ModernTextBox}"
-                                                     Height="40"
-                                                     Padding="10,6,36,6"
-                                                     KeyDown="SplashSearchBox_KeyDown"/>
-                                            <Button Click="SearchSplash_Click" HorizontalAlignment="Right" Style="{StaticResource IconActionButton}" Width="32" Height="32" Margin="0,0,4,0" VerticalAlignment="Center" ToolTip="Search Riot API">
-                                                <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/>
-                                            </Button>
-                                        </Grid>
+                                        <!-- Row 0: Find a splash in local game files -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="GAME SPLASH" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
+                                        <StackPanel Grid.Row="0" Grid.Column="1">
+                                            <Grid>
+                                                <TextBox x:Name="SplashSearchBox"
+                                                         AutomationProperties.HelpText="Enter Aatrox to list local skins; Aatrox_1 or Aatrox1 to select a skin; Aatrox1,2 to choose between skins"
+                                                         Style="{StaticResource ModernTextBox}"
+                                                         Height="40"
+                                                         Padding="10,6,36,6"
+                                                         TextChanged="SplashSearchBox_TextChanged"
+                                                         KeyDown="SplashSearchBox_KeyDown"/>
+                                                <Button x:Name="SplashSearchButton" Click="SearchSplash_Click"
+                                                        HorizontalAlignment="Right" Style="{StaticResource IconActionButton}"
+                                                        Width="32" Height="32" Margin="0,0,4,0" VerticalAlignment="Center"
+                                                        ToolTip="Browse or load artwork from installed WAD files">
+                                                    <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/>
+                                                </Button>
+                                            </Grid>
+                                            <TextBlock x:Name="SplashSearchStatusText"
+                                                       Visibility="Collapsed" Margin="2,7,0,0"
+                                                       FontSize="11" TextWrapping="Wrap"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <Border x:Name="SplashResultsPanel" Visibility="Collapsed"
+                                                    Margin="0,8,0,0" Padding="4"
+                                                    Background="{StaticResource WorkspaceContentWellBrush}"
+                                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
+                                                <StackPanel>
+                                                    <TextBlock Text="AVAILABLE GAME SPLASHES" Margin="8,5,8,6"
+                                                               FontSize="9" FontWeight="Bold"
+                                                               Foreground="{StaticResource TextMutedBrush}"/>
+                                                    <ListBox x:Name="SplashResultsList" Background="Transparent"
+                                                             BorderThickness="0" MaxHeight="194"
+                                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                             DisplayMemberPath="Label"
+                                                             SelectionChanged="SplashResultsList_SelectionChanged">
+                                                        <ListBox.ItemContainerStyle>
+                                                            <Style TargetType="ListBoxItem">
+                                                                <Setter Property="Padding" Value="8,7"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                                <Setter Property="Background" Value="Transparent"/>
+                                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                                <Setter Property="Template">
+                                                                    <Setter.Value>
+                                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                                            <Border x:Name="SplashOptionBorder" Background="Transparent"
+                                                                                    CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                                                                <ContentPresenter HorizontalAlignment="Stretch"
+                                                                                                  VerticalAlignment="Center"/>
+                                                                            </Border>
+                                                                            <ControlTemplate.Triggers>
+                                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                                    <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                                                                </Trigger>
+                                                                                <Trigger Property="IsSelected" Value="True">
+                                                                                    <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                                                                </Trigger>
+                                                                            </ControlTemplate.Triggers>
+                                                                        </ControlTemplate>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </Style>
+                                                        </ListBox.ItemContainerStyle>
+                                                    </ListBox>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
 
                                         <!-- Row 2: Local Upload -->
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="LOCAL FILE" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
@@ -106,8 +143,8 @@
                                                 Style="{StaticResource ModernPrimaryButton}"
                                                 Height="36" HorizontalAlignment="Stretch">
                                             <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="CloudUploadOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="14" Height="14"/>
-                                                <TextBlock Text="UPLOAD NEW FILE" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
+                                                <materialDesign:PackIcon Kind="FolderOutline" Margin="0,0,8,0" VerticalAlignment="Center" Width="14" Height="14"/>
+                                                <TextBlock Text="CHOOSE LOCAL IMAGE" VerticalAlignment="Center" FontSize="10" FontWeight="Black"/>
                                             </StackPanel>
                                         </Button>
 
@@ -184,10 +221,10 @@
                     <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,0,16">
                         <StackPanel VerticalAlignment="Stretch">
                             <!-- Header Bar -->
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="FormatText" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="HUD TYPOGRAPHY" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="16,12">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="FormatText" Foreground="{StaticResource AccentBrushLight}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="HUD TYPOGRAPHY" Style="{StaticResource InspectorSectionHeader}"/>
                                 </StackPanel>
                             </Border>
 
@@ -212,14 +249,14 @@
                                         <!-- Row 0: Preview Text -->
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="PREVIEW TEXT" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
                                         <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding PreviewText, UpdateSourceTrigger=PropertyChanged}"
-                                                 materialDesign:HintAssist.Hint="Type preview text..." 
+                                                 AutomationProperties.Name="HUD preview text"
                                                  Style="{StaticResource ModernTextBox}" Height="40" Padding="10,6"/>
 
                                         <!-- Row 2: Font Family -->
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="FONT FAMILY" VerticalAlignment="Center" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMutedBrush}"/>
                                         <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding FontNames}" 
                                                   SelectedItem="{Binding SelectedFontName}"
-                                                  materialDesign:HintAssist.Hint="HUD Font"
+                                                  AutomationProperties.Name="HUD font family"
                                                   Style="{StaticResource ModernComboBoxStyle}" 
                                                   Height="40" Padding="12,0"/>
 
@@ -247,10 +284,10 @@
                     <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,0,16">
                         <StackPanel VerticalAlignment="Stretch">
                             <!-- Header Bar -->
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="ImageFilterCenterFocusWeak" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="HUD ICON POSITION" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="16,12">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="ImageFilterCenterFocusWeak" Foreground="{StaticResource AccentBrushLight}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="HUD ICON POSITION" Style="{StaticResource InspectorSectionHeader}"/>
                                 </StackPanel>
                             </Border>
 
@@ -337,10 +374,10 @@
                     <Border Style="{StaticResource WorkspacePanelContainer}" Padding="0" Margin="0,0,0,8">
                         <StackPanel VerticalAlignment="Stretch">
                             <!-- Header Bar -->
-                            <Border Background="{StaticResource SurfaceBrush}" Padding="16,12" CornerRadius="7,7,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="CommentTextOutline" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="DIALOGUE SPEECH BUBBLE" Style="{StaticResource InspectorSectionHeader}" Margin="0"/>
+                            <Border Style="{StaticResource WorkspacePanelHeader}" CornerRadius="12,12,0,0" Padding="16,12">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="CommentTextOutline" Foreground="{StaticResource AccentBrushLight}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="DIALOGUE SPEECH BUBBLE" Style="{StaticResource InspectorSectionHeader}"/>
                                 </StackPanel>
                             </Border>
 
@@ -505,31 +542,35 @@
                  </Grid.RowDefinitions>
 
                  <!-- 1. CANVAS TOOLBAR -->
-                 <Border Grid.Row="0" Style="{StaticResource WorkspacePanelContainer}" Padding="12,8" Margin="0,0,0,12" Background="{StaticResource SurfaceBrush}">
+                 <Border Grid.Row="0" Style="{StaticResource WorkspacePanelContainer}" Padding="12,8" Margin="0,0,0,12" Background="{StaticResource WorkspacePanelHeaderBrush}">
                      <Grid>
                          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                             <materialDesign:PackIcon Kind="MonitorScreenshot" Foreground="{StaticResource AccentBrush}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                             <TextBlock Text="PREVIEW CANVAS STUDIO" FontSize="11" FontWeight="Black" Foreground="{StaticResource TextHighlightBrush}" VerticalAlignment="Center"/>
+                             <materialDesign:PackIcon Kind="MonitorScreenshot" Foreground="{StaticResource AccentBrushLight}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                             <TextBlock Text="PREVIEW CANVAS STUDIO" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBrushLight}" VerticalAlignment="Center"/>
                          </StackPanel>
                          
                          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                             <!-- Toggle Guides Checkbox styled as pill -->
-                             <ToggleButton Style="{StaticResource MaterialDesignActionToggleButton}" 
+                             <!-- Shared transparent icon toggle: no MaterialDesign dark checkmark. -->
+                             <ToggleButton Style="{StaticResource IconActionToggleButton}"
+                                           AutomationProperties.Name="Toggle grid guide overlays"
                                            IsChecked="{Binding ShowGuides, Mode=TwoWay}"
                                            ToolTip="Toggle Grid Guide Overlays"
                                            Width="36" Height="36" Margin="0,0,8,0"
-                                           Background="Transparent" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}">
+                                           Background="Transparent">
                                  <ToggleButton.Content>
-                                     <materialDesign:PackIcon Kind="Grid" Width="16" Height="16" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                     <materialDesign:PackIcon Kind="Grid" Width="16" Height="16"
+                                                              Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type ToggleButton}}}"/>
                                  </ToggleButton.Content>
                              </ToggleButton>
 
                              <!-- Reset Defaults Button -->
                              <Button Click="ResetDefaults_Click"
                                      Style="{StaticResource IconActionButton}"
+                                     AutomationProperties.Name="Reset layout defaults"
                                      ToolTip="Reset Layout Defaults"
                                      Width="36" Height="36">
-                                 <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18"/>
+                                 <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18"
+                                                          Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"/>
                              </Button>
                          </StackPanel>
                      </Grid>
@@ -539,7 +580,7 @@
                  <Border Grid.Row="1" Style="{StaticResource WorkspaceCanvasContainer}" Padding="16">
                      <Grid>
                          <Viewbox x:Name="ViewportBox" Stretch="Uniform" VerticalAlignment="Center">
-                             <Grid Width="1920" Height="1080" Background="#020202" x:Name="RenderCanvas" 
+                             <Grid Width="1920" Height="1080" Background="{StaticResource DesignerRenderCanvasBrush}" x:Name="RenderCanvas"
                                    MouseDown="RenderCanvas_MouseDown" Cursor="Hand" ToolTip="Click to toggle maximize mode (hides/shows inspector sidebar)">
                                  <!-- 1. Fully Rendered Preview Image -->
                                  <Image Source="{Binding PreviewImage}" 
@@ -565,7 +606,7 @@
                          </Viewbox>
                          
                          <!-- Zoom Label -->
-                         <Border Background="#E60D0D0F" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="24" Padding="12,6" CornerRadius="6" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}" IsHitTestVisible="False">
+                         <Border Background="{StaticResource DesignerPreviewLabelBrush}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="24" Padding="12,6" CornerRadius="6" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}" IsHitTestVisible="False">
                              <StackPanel Orientation="Horizontal">
                                  <materialDesign:PackIcon Kind="MagnifyPlus" Width="14" Height="14" Foreground="{StaticResource AccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                  <TextBlock Text="LIVE PREVIEW (CLICK CANVAS TO MAXIMIZE)" FontSize="9" FontWeight="Black" Foreground="{StaticResource TextHighlightBrush}"/>

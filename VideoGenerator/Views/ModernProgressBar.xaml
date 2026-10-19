@@ -10,7 +10,7 @@
         <!-- Custom Progress Recipient (HUD style pill container) -->
         <Border Height="8" 
                 CornerRadius="4" 
-                Background="#2D2D30" 
+            Background="{StaticResource ProgressTrackBackgroundBrush}"
                 BorderThickness="0"
                 Padding="1">
             <ProgressBar Value="{Binding Value, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}" 

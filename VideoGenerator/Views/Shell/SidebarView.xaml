@@ -1,0 +1,123 @@
+<UserControl x:Class="VideoGenerator.Views.Shell.SidebarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <UserControl.Resources>
+        <Style x:Key="SidebarNavIcon" TargetType="{x:Type materialDesign:PackIcon}">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                             Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                             Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <Border Style="{StaticResource AppShellSidebar}"
+            SnapsToDevicePixels="True">
+        <!-- Keep the inner grid transparent so the shared chrome gradient is
+             painted exactly once by the full-height sidebar border. -->
+        <Grid ClipToBounds="True" Background="Transparent">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <!-- Branding remains at the top; the actual application version sits in the footer. -->
+            <StackPanel Grid.Row="0" HorizontalAlignment="Stretch" Margin="0,9,6,12">
+                <Border Style="{StaticResource AppShellBrandMark}"
+                        HorizontalAlignment="Center">
+                    <Image Source="/VideoGenerator;component/Resources/logo.png"
+                           Width="60" Height="60" Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           SnapsToDevicePixels="True"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="VideoGenerator" Style="{StaticResource AppShellBrandTitle}"
+                           HorizontalAlignment="Center" TextAlignment="Center"
+                           Margin="0,13,0,0"/>
+                <TextBlock Text="PRODUCTION SUITE" Style="{StaticResource AppShellBrandSubtitle}"
+                           HorizontalAlignment="Center" TextAlignment="Center"
+                           Margin="0,4,0,0"/>
+                <Border Style="{StaticResource AppShellSidebarDivider}"
+                        Margin="12,24,12,0" Opacity="0.24"
+                        IsHitTestVisible="False"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="1" Text="WORKSPACES"
+                       Style="{StaticResource AppShellNavSectionText}"/>
+
+            <ListBox Grid.Row="2" x:Name="NavListBox"
+                     Style="{StaticResource VirtualizedListBoxStyle}"
+                     ItemContainerStyle="{StaticResource ModernNavItem}"
+                     SelectionChanged="NavListBox_SelectionChanged"
+                     AutomationProperties.Name="Workspaces">
+                <ListBoxItem IsSelected="True" Tag="Dashboard">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ViewDashboardOutline" Style="{StaticResource SidebarNavIcon}" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,19,0"/>
+                        <TextBlock Text="Dashboard" FontSize="13" FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Tag="Background">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ImageOutline" Style="{StaticResource SidebarNavIcon}" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,19,0"/>
+                        <TextBlock Text="Visual design" FontSize="13" FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Tag="RenderVideo">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="MovieOpenPlayOutline" Style="{StaticResource SidebarNavIcon}" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,19,0"/>
+                        <TextBlock Text="Render video" FontSize="13" FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Tag="EventRules">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Cogs" Style="{StaticResource SidebarNavIcon}" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,19,0"/>
+                        <TextBlock Text="Event mapping" FontSize="13" FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Tag="Translations">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Translate" Style="{StaticResource SidebarNavIcon}" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,19,0"/>
+                        <TextBlock Text="Dictionary" FontSize="13" FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Tag="Settings">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="SettingsOutline" Style="{StaticResource SidebarNavIcon}" Width="22" Height="22"
+                                                 VerticalAlignment="Center" Margin="0,0,19,0"/>
+                        <TextBlock Text="Settings" FontSize="13" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ListBoxItem>
+            </ListBox>
+            <!-- The version is quiet footer text on the same uniform sidebar surface. -->
+            <StackPanel x:Name="SidebarVersionFooter" Grid.Row="3" Margin="0,14,6,1" HorizontalAlignment="Stretch">
+                <Border Style="{StaticResource AppShellSidebarDivider}"
+                        Margin="12,0,12,14" Opacity="0.24"
+                        IsHitTestVisible="False"/>
+                <TextBlock Text="{Binding AppVersion}" FontFamily="{StaticResource AppMonoFontFamily}"
+                           FontSize="10.5" FontWeight="Medium" Opacity="0.52"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center" TextAlignment="Center"
+                           AutomationProperties.Name="Application version"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

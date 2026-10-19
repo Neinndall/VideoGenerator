@@ -49,7 +49,15 @@ namespace VideoGenerator.Services.Parsers
                 int skinId = int.Parse(match.Groups[2].Value);
 
                 string actualChampionName = rawChampionName;
-                string[] prefixes = { "Kill", "FirstEncounter", "SecondEncounter", "MoveFirstAlly", "MoveFirst", "Move", "Assist", "AttackNear", "Death" };
+                // Strip the *whole* interaction action, longest first. Previously
+                // MoveFirst removed only its prefix from MoveFirstEnemyNamiSkin68
+                // (yielding EnemyNamiSkin68), while SpellBuffReceive was not
+                // stripped at all (SpellBuffReceiveNamiSkin68).
+                string[] prefixes = {
+                    "SpellBuffReceive", "SpellBuff", "MoveFirstEnemy", "MoveFirstAlly",
+                    "FirstEncounter", "SecondEncounter", "MoveFirst", "AttackNear",
+                    "Kill", "Death", "Assist", "Move", "Enemy", "Ally"
+                };
                 foreach (var prefix in prefixes)
                 {
                     if (actualChampionName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))

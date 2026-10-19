@@ -65,7 +65,12 @@ namespace VideoGenerator.Services
                         // Deduplicate user rules by Keyword to clean up any past duplicates (like Death)
                         userRules = userRules.GroupBy(r => r.Keyword, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).ToList();
 
-                        // 2. Merge Strategy: Add official rules that are missing or update them if changed
+                        // User-saved rules are authoritative for existing
+                        // keywords. Mapping edits (including overrides of
+                        // built-in rules) must survive an app upgrade/restart.
+                        // Only append genuinely new official keywords.
+                        // A future provenance-aware migration may update
+                        // untouched defaults separately from user overrides.
                         var mergedList = new List<EventRule>(userRules);
                         
                         foreach (var official in officialRules)
@@ -74,16 +79,6 @@ namespace VideoGenerator.Services
                             if (existing == null)
                             {
                                 mergedList.Add(official);
-                            }
-                            else
-                            {
-                                // Overwrite system properties to sync code updates for default rules
-                                existing.TranslationKey = official.TranslationKey;
-                                existing.IconType = official.IconType;
-                                existing.IconLookup = official.IconLookup;
-                                existing.Section = official.Section;
-                                existing.Type = official.Type;
-                                existing.ExtractsTarget = official.ExtractsTarget;
                             }
                         }
                         
@@ -94,7 +89,12 @@ namespace VideoGenerator.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("Failed to load event rules. Default rules will be used.", ex);
+                    // Preserve a corrupt/unreadable user file intact so it
+                    // can be repaired or restored. Do not silently replace it
+                    // with default rules on the next startup.
+                    _logger.LogError("Failed to load event rules. Using defaults in memory; the existing user file was preserved.", ex);
+                    Rules = new ObservableCollection<EventRule>(officialRules.OrderBy(r => r.Keyword));
+                    return;
                 }
             }
 

@@ -1,75 +1,190 @@
-## VideoGenerator
+<div align="center">
+  <img src="VideoGenerator/Resources/logo.png" alt="VideoGenerator logo" width="104">
+</div>
+
+# 🎬 VideoGenerator
 
 [![Latest Release](https://img.shields.io/github/v/release/Neinndall/VideoGenerator?color=yellow&logo=github&logoColor=white&label=Release&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
 [![Downloads](https://img.shields.io/github/downloads/Neinndall/VideoGenerator/total?color=blue&logo=github&logoColor=white&label=Downloads&style=flat)](https://github.com/Neinndall/VideoGenerator/releases)
-[![License](https://img.shields.io/github/license/Neinndall/VideoGenerator)](https://github.com/Neinndall/VideoGenerator/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/Neinndall/VideoGenerator)](LICENSE)
 
-VideoGenerator is a Windows desktop application for converting League of Legends voice-over event folders into localized 1080p HUD showcase videos. It combines event parsing, CommunityDragon/DDragon assets, offline Whisper transcription, ImageSharp composition, and FFmpeg encoding in a WPF interface.
+VideoGenerator is a Windows application for turning **League of Legends voice-over event folders into polished, localized 1080p showcase videos**. It brings folder analysis, event recognition, voice transcription, HUD design, dialogue review, and video rendering together in one production workspace.
 
-## Production workflow
+The app uses the League of Legends files installed on your PC to find champion portraits, skin artwork, items, monsters, structures, and other game imagery. No external image or hash catalog service is required for game assets.
 
-1. **Process Folders** scans the selected media directory, parses event names, associates audio files and families, and builds the event pipeline. All folders with supported audio are eligible, including `_cast2D` and `_cast3D` events.
-2. **Prepare Dialogues** resolves icons, transcribes pending audio with Whisper, stores dialogue segments, and prepares HUD images.
-3. **Review Dialogues** opens the segment editor for playback, correction, validation, retranscription, and vertically resizable transcript fields.
-4. **Render Videos** assembles the prepared images and audio into final MP4 files without repeating transcription.
+## 🚀 Getting Started
 
-The global status bar uses deterministic work budgets for preparation, family merging, review, and rendering. Progress only reaches 100% after all planned work has completed or been explicitly skipped.
+### Requirements
 
-## Key features
+- **Windows x64**.
+- **.NET 10 Desktop Runtime** for framework-dependent builds.
+- A local **League of Legends installation** containing Game and Plugins WAD archives for game image and metadata extraction.
+- Voice-over audio files to process (including `.ogg`, `.wav`, and `.mp3`).
+- Internet access only when needed to obtain a Whisper transcription model; transcription then runs locally.
 
-- Dynamic event rules with simple, target, and interaction behavior.
-- English, Spanish, and Turkish translations with non-destructive local merging.
-- Offline transcription through Whisper.net with selectable model, language, thread count, forced batch retranscription, and optional ambient-tag cleanup.
-- Segmented multi-audio dialogue using `||`, with one HUD image and video segment per dialogue part.
-- Optional audio-family merging. Bracketed family folders remain attached to their parent event:
-  - **OFF:** source audios remain consecutive tracks.
-  - **ON:** each family becomes one cached WAV track.
-- Dynamic champion, skin, skinline, item, monster, structure, region, and system icon resolution.
-- Canonical skinline matching across punctuation variants such as `KDA`, `K D A`, and `K/DA`.
-- Live 1920x1080 preview with quick editing, keyboard navigation, cached rendering, and cancellable background work.
-- Background Design Studio with custom art, typography, icon alignment, dialogue bubble controls, brightness, contrast, and saturation.
-- Deterministic FFmpeg render progress covering images, silence tracks, temporary clips, audio joins, encoding, and final concatenation.
-- Quiet batch console with detailed diagnostics retained in local log files.
+### Installation and first launch
 
-## Requirements
+1. Check the [Releases page](https://github.com/Neinndall/VideoGenerator/releases) for an available build. **VideoGenerator 2.0 is not yet available as a published installer.**
+2. When using a packaged build, extract the complete archive and launch `VideoGenerator.exe`.
+3. Open **Settings → General & Media** and select your League of Legends installation directory, containing the **Game** and **Plugins** folders. The application checks whether the WAD files are available.
+4. Choose your media source and preferred dictionary language, then adjust audio and transcription settings as needed.
+5. Open **Dashboard** and select **SCAN FOLDERS** to analyze your voice-over folders.
 
-- Windows x64.
-- .NET 10 SDK for source builds.
-- Internet access for the initial CommunityDragon/DDragon synchronization, icon downloads, and first Whisper model download.
+VideoGenerator never replaces the game installation path you chose with an automatic default. Previously saved settings and locally cached assets are reused.
 
-FFmpeg binaries are embedded and extracted automatically when required. Whisper transcription runs locally after its model has been downloaded.
+## 🏛️ Main Workspaces
 
-## Build and run
+### 🎬 Dashboard — Production Studio
 
-From the application project directory:
+The central workspace for turning a collection of voice-over folders into finished videos.
+
+- **Folder Analysis:** Scan voice-over event directories, including supported `_cast2D` and `_cast3D` folders, and associate their audio tracks with the correct events.
+- **Detected Pipeline:** Review recognized events, audio availability, missing images, and events that need a new mapping. Filter by **All**, **Errors**, **Pending**, or **Mapping**.
+- **Selection and Search:** Search events, select individual entries or all currently visible events, and process the chosen selection.
+- **Live Preview:** See the final HUD composition at **1920 × 1080**, with the selected event text and icon.
+- **Quick Edit:** Correct the HUD text, icon category, or image lookup for an individual event and apply the changes.
+- **Retry Icons:** Reattempt missing game artwork without repeating the audio folder scan.
+- **Export Manifest:** Save an event analysis report as JSON without including source audio, transcripts, or absolute media paths.
+- **Batch Rendering:** Prepare, review, and render individual videos with a global progress indicator and cancellation support.
+
+#### Production workflow
+
+| Stage | What it does |
+| --- | --- |
+| **1. Scan Folders** | Discovers audio and interprets event folder names |
+| **2. Prepare Dialogues** | Resolves game icons, transcribes audio using Whisper when enabled, and prepares HUD images |
+| **3. Review** | Opens the dialogue editor to correct, listen to, and validate each segment |
+| **4. Render Videos** | Combines images and audio with FFmpeg and produces the finished MP4 files |
+
+Audio-family merging is optional. When enabled, related tracks are joined into a cached WAV; when disabled, they remain separate tracks in sequence. Configurable silence padding is respected during rendering.
+
+#### Dialogue Editor
+
+The **Review** stage opens a dedicated editor with audio playback, editable transcripts, pending/validated status, and navigation between segments. Multi-audio events can be represented as separate dialogue parts, with each part receiving its own HUD frame and video segment. You can review or retranscribe pending content before rendering the final video.
+
+### 🎨 Visual Design — HUD Studio
+
+Customize the look of your video overlay while watching an interactive preview.
+
+- **Background Artwork:** Select your own background or search available champion and skin splashes from the installed game files.
+- **Typography:** Adjust text appearance, fonts, and visual hierarchy.
+- **Icon Placement:** Change icon alignment, position, borders, and presentation.
+- **Dialogue Bubble:** Configure the subtitle area, its size, position, opacity, and border styling.
+- **Image Adjustments:** Tune brightness, contrast, and saturation.
+- **Live Preview:** Inspect the composition at 1080p and expand the preview area for closer adjustments.
+
+Design settings are saved and applied to subsequently generated HUD frames.
+
+### 🎞️ Render Video — Timeline Studio
+
+Assemble generated MP4 clips into one finished montage without modifying the source videos.
+
+- **Media Library:** Import existing video files or scan `Generated/Media/` for clips rendered in Dashboard.
+- **Timeline:** Organize linked video/audio lanes and a background-music track, split or trim clips, reorder segments and inspect real audio waveforms.
+- **Program Monitor:** Play, loop, seek and navigate between clips with keyboard shortcuts.
+- **Editable Projects:** Save or reopen `.vgproject` files, including track mute, audio gain, clip trims and music settings (Ctrl+S, Ctrl+O, Ctrl+N).
+- **Render As:** Choose built-in or personal export presets, including H.264 CPU/NVIDIA encoder settings, resolution, frame rate and audio quality; preview track mute and mix settings are honored by the MP4 export.
+- **Safe Export:** Preserve original source files and ask before replacing an existing output; failed exports leave previous output intact.
+
+The initial timeline editor focuses on straightforward sequential montage assembly; it does not yet offer Sony Vegas-style multi-layer compositing, keyframes, or transition effects.
+
+### 🧩 Event Mapping
+
+Teach VideoGenerator how to interpret different League of Legends voice-over event names and which icon category to request.
+
+| Mapping section | Purpose |
+| --- | --- |
+| **Event Rules** | Define actions, interactions, target behavior, HUD text keys, and icon categories |
+| **Groups** | Organize champions into custom regions, classes, roles, and thematic groups |
+| **Champions** | Manage displayed champion names and internal aliases; view official Riot class roles |
+| **Monsters** | Recognize jungle camps and epic monsters, including personal entries |
+| **Structures** | Recognize structures and map event keywords to the appropriate targets |
+
+- **Ready-to-use mappings:** VideoGenerator comes with built-in rules and catalogs. Personal entries can be added alongside them; protected **BUILT-IN** records cannot be deleted from the relevant catalog lists.
+- **Automatically updated champions:** With a configured League installation, Riot's local `champion-summary.json` fills in current champions, internal aliases, and available class roles. New champions can therefore be recognized without a manual application update.
+- **Create a rule from an event:** A **Needs Mapping** event in Dashboard provides a shortcut to Event Mapping with suggested values already filled in. Rescan the affected folders after saving the rule to apply it.
+- **Accurate image categories:** Recognize champions, items, monsters, structures, skins, and **skinlines** as distinct targets. A recognized event can still show **Missing Icon** when its actual image is unavailable.
+
+Riot roles such as *fighter*, *mage*, and *tank* describe champion classes; they are not automatically treated as lane assignments such as ADC or Jungle.
+
+### 🌐 Dictionary
+
+Manage the text shown in the HUD across **English, Spanish, and Turkish**.
+
+- **Multilingual Entries:** View and edit localized event text by dictionary key.
+- **Search and Filters:** Find translations quickly and focus on a selected language.
+- **Custom Text:** Add new keys or correct existing phrases without losing other languages.
+- **Integrated Mapping:** Event Rules can reference dictionary keys so the same event receives the appropriate localized description.
+
+Built-in translations are merged with personal changes, preserving existing custom text.
+
+### ⚙️ Settings
+
+Three dedicated sections keep game paths, media handling, and transcription controls organized.
+
+- **General & Media:** Configure the local League installation, review Game/Plugins WAD availability, select media directories, and set dictionary preferences.
+- **Processing:** Adjust silence handling and optional audio-family merging.
+- **Transcription:** Enable or disable Whisper, choose language/model options, configure processing performance, and control batch retranscription or ambient-tag cleanup.
+
+Settings persist between sessions and do not require editing configuration files manually.
+
+## 🖼️ Local Game Assets and Automatic Updates
+
+VideoGenerator extracts imagery and metadata directly from your League of Legends `.wad` / `.wad.client` archives using LeagueToolkit. Official caches support champion aliases, skins, skinlines, item IDs, and the associated icon lookups.
+
+- **Champion portraits and skins:** Match champion identities and skin data to local artwork.
+- **Thematic skinlines:** Recognize groups such as *True Damage*, *HEARTSTEEL*, and *Arcade* without confusing them with champion names.
+- **Items and objectives:** Resolve object IDs, monsters, structures, and supported game-system icons using local data and verified asset paths.
+- **Patch-aware refresh:** Detect changes to installed game archives and refresh the affected cached catalogs and in-memory lookups.
+- **Honest missing-image handling:** If the required artwork cannot be found, report **Missing Icon** rather than displaying an unrelated image.
+
+The game installation is the source of official metadata. Your custom event rules, aliases, groups, and other settings remain separate and editable.
+
+## 💾 Files and Output
+
+User configuration and cached game data live under `%LOCALAPPDATA%\VideoGenerator\`:
+
+| Folder | Contains |
+| --- | --- |
+| `Config\` | Saved settings, translations, dialogue data, and editable Event Mapping catalogs |
+| `Cache\` | Locally extracted Riot metadata and reusable assets |
+
+Each Event Mapping section has one editable catalog, such as `event_rules.json`, `groups.json`, `champion_aliases.json`, `monsters.json`, or `structures.json`. Factory defaults and personal additions coexist in those files.
+
+Generated HUD images and MP4 videos are organized in the application's `Generated/Images/` and `Generated/Media/` output folders, grouped by champion.
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| **Ctrl + 1–6** | Switch between the six workspaces |
+| **Ctrl + F** | Focus event search in Dashboard |
+| **Ctrl + B** | Collapse or expand the navigation sidebar |
+
+## 🛠️ Build from Source
+
+The repository targets **.NET 10 / WPF** and references the sibling `LeagueToolkit-4.1.0-beta.53` source checkout. Keep that checkout beside the VideoGenerator project when compiling.
+
+From the repository root:
 
 ```powershell
-cd VideoGenerator_v1.3.0.1
-dotnet restore
-dotnet build -c Release
-dotnet run -c Release
+dotnet restore VideoGenerator/VideoGenerator.csproj
+dotnet build VideoGenerator/VideoGenerator.csproj -c Release
+dotnet run --project VideoGenerator/VideoGenerator.csproj -c Release
 ```
 
-## Developer validation
-
-Run deterministic tests with xUnit:
+To run the test suite:
 
 ```powershell
-dotnet test VideoGenerator.Tests\VideoGenerator.Tests.csproj
+dotnet test VideoGenerator.Tests/VideoGenerator.Tests.csproj -c Release
 ```
 
-Parser and pipeline regressions are covered by the xUnit project; it does not open the WPF UI or access external services.
+## 🤝 Contributing
 
-## Configuration files
+Open an issue or submit a pull request with a clear description of the problem or feature. For new event-name patterns, include representative folder names and the expected HUD text and icon behavior.
 
-The application creates and maintains its editable configuration under `%LOCALAPPDATA%/VideoGenerator/Config/`, including:
+See [CHANGELOG.md](CHANGELOG.md) for version notes.
 
-- `settings.json`
-- `event_rules.json`
-- `translations.json`
-- `dialogues.json`
-- `groups.json`
-- `champion_aliases.json`
-- `skinlines.json`
+## 📄 License
 
-Bundled defaults and newly introduced keys are merged without overwriting existing user customizations.
+VideoGenerator is licensed under the [GNU General Public License v3.0](LICENSE). Bundled third-party dependencies retain their respective licenses.

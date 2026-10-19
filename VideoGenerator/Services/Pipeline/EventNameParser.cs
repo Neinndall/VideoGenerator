@@ -12,7 +12,6 @@ namespace VideoGenerator.Services
     public class EventNameParser : IEventNameParser
     {
         private readonly List<IEventParser> _parsers;
-        private readonly RuleManager _ruleManager;
 
         public EventNameParser(
             TranslationService translationService, 
@@ -22,14 +21,14 @@ namespace VideoGenerator.Services
             AliasManager aliasManager,
             SkinlineManager skinlineManager)
         {
-            _ruleManager = ruleManager;
+            var monsterParser = new MonsterEventParser(translationService, dataFetcher, aliasManager);
             _parsers = new List<IEventParser>
             {
                 new ItemEventParser(translationService, dataFetcher),
-                new MonsterEventParser(translationService),
+                monsterParser,
                 new SkinInteractionParser(translationService, dataFetcher, aliasManager),
                 new SpellOrAttackParser(translationService),
-                new DynamicRuleParser(translationService, dataFetcher, ruleManager, groupManager, aliasManager, skinlineManager)
+                new DynamicRuleParser(translationService, dataFetcher, ruleManager, groupManager, aliasManager, skinlineManager, monsterParser)
             };
         }
 
@@ -74,51 +73,29 @@ namespace VideoGenerator.Services
                 folderName.Contains("Attack3D", StringComparison.OrdinalIgnoreCase))
             {
                 var monsterParser = _parsers.OfType<MonsterEventParser>().FirstOrDefault();
-                if (monsterParser != null && monsterParser.CanParse(folderName))
+                if (monsterParser != null)
                 {
                     var result = await monsterParser.ParseAsync(folderName, language);
                     if (result != null) return MarkMapped(result);
                 }
             }
 
-            // 4. Route to DynamicRuleParser if it matches a defined rule keyword
-            var matchedRule = _ruleManager.Rules
-                .OrderByDescending(r => r.Keyword.Length)
-                .FirstOrDefault(r => 
-                {
-                    string normFolder = NormalizeFolderName(cleanFolder);
-                    string normKeyword = NormalizeFolderName(r.Keyword);
-                    if (r.Type == RuleType.Simple)
-                    {
-                        string cleaned = Regex.Replace(normFolder, @"(2D|3D)", "", RegexOptions.IgnoreCase);
-                        bool isNumberedGeneralMatch = Regex.IsMatch(
-                            cleaned,
-                            $@"^{Regex.Escape(normKeyword)}(?:General|inGeneral)\d+$",
-                            RegexOptions.IgnoreCase);
-
-                        return cleaned.Equals(normKeyword, StringComparison.OrdinalIgnoreCase) ||
-                               cleaned.Equals(normKeyword + "General", StringComparison.OrdinalIgnoreCase) ||
-                               cleaned.Equals(normKeyword + "inGeneral", StringComparison.OrdinalIgnoreCase) ||
-                               normFolder.Equals(normKeyword + "3DGeneral", StringComparison.OrdinalIgnoreCase) ||
-                               normFolder.Equals(normKeyword + "2DGeneral", StringComparison.OrdinalIgnoreCase) ||
-                               isNumberedGeneralMatch ||
-                               (cleaned.EndsWith("General", StringComparison.OrdinalIgnoreCase) && 
-                                Regex.IsMatch(cleaned, $@"(^|_){Regex.Escape(normKeyword)}(?=_|$|General|inGeneral)", RegexOptions.IgnoreCase));
-                    }
-                    else
-                    {
-                        return normFolder.Contains(normKeyword, StringComparison.OrdinalIgnoreCase);
-                    }
-                });
-
-            if (matchedRule != null)
+            // 4. The rule engine owns matching AND parsing. Previously there
+            // were two near-identical keyword matchers (here and inside
+            // DynamicRuleParser), followed by a redundant second invocation.
+            // They could disagree about custom/official rules.
+            var dynamicParser = _parsers.OfType<DynamicRuleParser>().FirstOrDefault();
+            if (dynamicParser != null)
             {
-                var dynamicParser = _parsers.OfType<DynamicRuleParser>().FirstOrDefault();
-                if (dynamicParser != null)
-                {
-                    var result = await dynamicParser.ParseAsync(folderName, language);
-                    if (result != null) return MarkMapped(result);
-                }
+                var result = await dynamicParser.ParseAsync(folderName, language);
+                if (result != null) return MarkMapped(result);
+            }
+
+            // A targeted attack without a recognized monster or explicit rule needs review.
+            // SpellOrAttackParser's English fallback would otherwise mark it as mapped.
+            if (Regex.IsMatch(cleanFolder, @"^Attack(?:2D|3D)_?[A-Za-z0-9_]+$", RegexOptions.IgnoreCase))
+            {
+                return CreateGenericEvent(folderName, folderName);
             }
 
             // 5. Route to SpellOrAttackParser for custom abilities or hits that didn't match a rule keyword
@@ -126,14 +103,6 @@ namespace VideoGenerator.Services
             if (spellParser != null && spellParser.CanParse(folderName))
             {
                 var result = await spellParser.ParseAsync(folderName, language);
-                if (result != null) return MarkMapped(result);
-            }
-
-            // 6. Final Fallback to DynamicRuleParser
-            var finalParser = _parsers.OfType<DynamicRuleParser>().FirstOrDefault();
-            if (finalParser != null)
-            {
-                var result = await finalParser.ParseAsync(folderName, language);
                 if (result != null) return MarkMapped(result);
             }
 
@@ -146,19 +115,6 @@ namespace VideoGenerator.Services
             string pattern = @"^(_)?(Play_vo_|Play_|vo_|Play_vo_)([A-Za-z0-9]+?)(Skin\d+)?_";
             string stripped = Regex.Replace(folderName, pattern, "", RegexOptions.IgnoreCase);
             return stripped.TrimStart('_');
-        }
-
-        private string NormalizeFolderName(string folderName)
-        {
-            if (string.IsNullOrEmpty(folderName)) return string.Empty;
-            string normalized = Regex.Replace(folderName, @"\b(2D|3D)\b", "", RegexOptions.IgnoreCase);
-            normalized = Regex.Replace(normalized, @"2D|3D", "", RegexOptions.IgnoreCase);
-            normalized = Regex.Replace(normalized, "Reaspawn", "Respawn", RegexOptions.IgnoreCase);
-            normalized = Regex.Replace(normalized, @"\b(SkinLine|Skinline|skinline)\b", "", RegexOptions.IgnoreCase);
-            normalized = Regex.Replace(normalized, @"SkinLine|Skinline|skinline", "", RegexOptions.IgnoreCase);
-            normalized = Regex.Replace(normalized, "Darking", "Darkin", RegexOptions.IgnoreCase);
-            normalized = Regex.Replace(normalized, @"_+", "_");
-            return normalized.Trim('_');
         }
 
         private ParsedEvent CreateGenericEvent(string folderName, string displayText)

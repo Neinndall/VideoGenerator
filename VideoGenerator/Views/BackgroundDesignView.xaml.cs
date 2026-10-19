@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -12,27 +13,30 @@ using VideoGenerator.Views.Models;
 using VideoGenerator.Views.Dialogs;
 using VideoGenerator.Models;
 using VideoGenerator.Utils;
-using SixLabors.ImageSharp;
+using VideoGenerator.Views.Helpers;
 
 namespace VideoGenerator.Views
 {
     public partial class BackgroundDesignView : UserControl
     {
         private readonly BackgroundModel _model = new();
-        private readonly DataFetcher _dataFetcher;
-        private readonly IconManager _iconManager;
+        private readonly LocalGameIconManager _iconManager;
+        private readonly LocalGameDataRefreshService _gameDataRefresh;
         private readonly ImageGenerator _imageGenerator;
         private CancellationTokenSource _previewCts;
+        private long _previewGeneration;
+        private bool _splashSearchBusy;
+        private string _splashSearchChampion;
 
         public BackgroundDesignView(
-            DataFetcher dataFetcher,
-            IconManager iconManager,
-            ImageGenerator imageGenerator)
+            LocalGameIconManager iconManager,
+            ImageGenerator imageGenerator,
+            LocalGameDataRefreshService gameDataRefresh)
         {
             InitializeComponent();
-            _dataFetcher = dataFetcher;
             _iconManager = iconManager;
             _imageGenerator = imageGenerator;
+            _gameDataRefresh = gameDataRefresh;
             
             DataContext = _model;
 
@@ -135,32 +139,116 @@ namespace VideoGenerator.Views
 
         private async void SearchSplash_Click(object sender, RoutedEventArgs e)
         {
-            string query = SplashSearchBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(query)) return;
-
+            if (_splashSearchBusy) return;
+            SplashResultsPanel.Visibility = Visibility.Collapsed;
+            if (!LeagueSplashQueryParser.TryParse(SplashSearchBox.Text, out var query))
+            {
+                SetSplashSearchStatus("Enter a champion (Aatrox), a skin (Aatrox_1 or Aatrox1), or several skins (Aatrox1,2).");
+                return;
+            }
+            _splashSearchBusy = true;
+            SplashSearchButton.IsEnabled = false;
+            SplashSearchBox.IsEnabled = false;
+            SetSplashSearchStatus("Checking installed game artwork…");
             try
             {
-                string championName = query;
-                string skinNumber = "0";
+                // A new game patch may have landed after the current session
+                // started. Refresh local WAD catalogs before resolving its skin.
+                await _gameDataRefresh.RefreshAsync();
 
-                if (query.Contains("_"))
+                if (query.SkinIds.Count == 1 &&
+                    await ApplySplashAsync(query.Champion, query.SkinIds[0]))
                 {
-                    var parts = query.Split('_');
-                    championName = parts[0];
-                    skinNumber = parts[1];
+                    return;
                 }
 
-                string formatted = championName.Replace(" ", "").Replace("'", "");
-                string url = $"https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{formatted}_{skinNumber}.jpg";
-                
-                string path = await _dataFetcher.DownloadIconAsync(url, "splash");
-                if (path != null) 
+                IReadOnlyList<LocalGameIconManager.LocalSplashSkin> available =
+                    await _iconManager.GetAvailableSplashSkinsAsync(query.Champion);
+                if (available.Count == 0)
                 {
-                    AppSettings.Instance.CustomBackgroundPath = path;
-                    UpdatePreview();
+                    SetSplashSearchStatus("No splash artwork for this champion was found in the installed WADs. Check Settings → General & Media to verify your League installation.");
+                    return;
                 }
+
+                if (query.HasSkinIds)
+                    available = available.Where(skin => query.SkinIds.Contains(skin.SkinId)).ToArray();
+
+                if (available.Count == 0)
+                {
+                    SetSplashSearchStatus("Those skin numbers do not have a local splash in this installation. Enter the champion name alone to see available skins.");
+                    return;
+                }
+
+                _splashSearchChampion = query.Champion;
+                SplashResultsList.SelectedItem = null;
+                SplashResultsList.ItemsSource = available;
+                SplashResultsPanel.Visibility = Visibility.Visible;
+                SetSplashSearchStatus($"Select a skin ({available.Count} available). Only full-size local splashes are listed.");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError($"Local splash search failed: {ex}");
+                SetSplashSearchStatus("Unable to read the local WAD splash catalog. Check the League installation in Settings → General & Media.");
+            }
+            finally
+            {
+                _splashSearchBusy = false;
+                SplashSearchButton.IsEnabled = true;
+                SplashSearchBox.IsEnabled = true;
+            }
+        }
+
+        private void SplashSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (SplashResultsPanel == null || SplashSearchStatusText == null) return;
+            SplashResultsPanel.Visibility = Visibility.Collapsed;
+            SplashSearchStatusText.Visibility = Visibility.Collapsed;
+        }
+
+        private async void SplashResultsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_splashSearchBusy ||
+                SplashResultsList.SelectedItem is not LocalGameIconManager.LocalSplashSkin option)
+                return;
+            SplashResultsList.SelectedItem = null;
+            _splashSearchBusy = true;
+            SplashSearchButton.IsEnabled = false;
+            SplashSearchBox.IsEnabled = false;
+            SetSplashSearchStatus($"Loading skin {option.SkinId}…");
+            try
+            {
+                if (!await ApplySplashAsync(_splashSearchChampion, option.SkinId))
+                    SetSplashSearchStatus("The selected splash could not be decoded from the installed WAD. Try another available skin.");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError($"Local splash selection failed: {ex}");
+                SetSplashSearchStatus("Unable to load that game splash. The current background is unchanged.");
+            }
+            finally
+            {
+                _splashSearchBusy = false;
+                SplashSearchButton.IsEnabled = true;
+                SplashSearchBox.IsEnabled = true;
+            }
+        }
+
+        private async Task<bool> ApplySplashAsync(string champion, int skinId)
+        {
+            string path = await _iconManager.FindSplashAsync(champion, skinId);
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return false;
+            AppSettings.Instance.CustomBackgroundPath = path;
+            SplashResultsPanel.Visibility = Visibility.Collapsed;
+            SetSplashSearchStatus($"Applied {champion} skin {skinId} from the local game files.");
+            UpdatePreview();
+            return true;
+        }
+
+        private void SetSplashSearchStatus(string message)
+        {
+            SplashSearchStatusText.Text = message;
+            SplashSearchStatusText.Visibility = string.IsNullOrWhiteSpace(message)
+                ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private void SplashSearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -173,50 +261,69 @@ namespace VideoGenerator.Views
 
         private void DebouncedUpdatePreview()
         {
-            _previewCts?.Cancel();
-            _previewCts = new CancellationTokenSource();
-            var token = _previewCts.Token;
-
-            Task.Delay(50, token).ContinueWith(t =>
-            {
-                if (!t.IsCanceled)
-                    Dispatcher.Invoke(() => UpdatePreview());
-            }, token);
+            RequestPreview(debounce: true);
         }
 
-        private async void UpdatePreview()
+        private void UpdatePreview()
         {
+            RequestPreview(debounce: false);
+        }
+
+        private void RequestPreview(bool debounce)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => RequestPreview(debounce)));
+                return;
+            }
+
+            _previewCts?.Cancel();
+            var cancellationSource = new CancellationTokenSource();
+            _previewCts = cancellationSource;
+            long generation = ++_previewGeneration;
+            _ = GeneratePreviewAsync(generation, cancellationSource, debounce);
+        }
+
+        private async Task GeneratePreviewAsync(long generation, CancellationTokenSource cancellationSource, bool debounce)
+        {
+            CancellationToken token = cancellationSource.Token;
             try
             {
-                // Ensure a dummy icon exists in the local cache for the designer preview
-                string dummyIconPath = AppConfig.PreviewIconPlaceholderPath;
-                if (!File.Exists(dummyIconPath))
+                if (debounce)
+                    await Task.Delay(50, token);
+
+                token.ThrowIfCancellationRequested();
+
+                // Only the design editor uses this vector-derived sample icon.
+                // Actual event images and their existing crop/border rules are untouched.
+                string previewIconPath = null;
+                try
                 {
-                    try
-                    {
-                        DirectoriesCreator.CreateParentDirectory(dummyIconPath);
-                        using (var img = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(180, 180, SixLabors.ImageSharp.Color.ParseHex("#8B5CF6")))
-                        {
-                            img.SaveAsPng(dummyIconPath);
-                        }
-                    }
-                    catch { }
+                    previewIconPath = PreviewIconArtwork.EnsureCreated(AppConfig.PreviewDialogueIconPath);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceWarning($"Designer sample artwork unavailable: {ex.Message}");
                 }
 
                 var mockEvent = new ParsedEvent
                 {
                     DisplayText = _model.PreviewText,
                     IconType = "champion",
-                    IconLookupName = "Placeholder",
-                    IconPath = File.Exists(dummyIconPath) ? dummyIconPath : null,
-                    Dialogue = "Sample dialogue subtitle text to preview Hextech speech bubble style customization."
+                    IconLookupName = "Design Preview",
+                    IconPath = previewIconPath,
+                    Dialogue = "This is a dialogue preview. Adjust the bubble to suit your video."
                 };
 
-                // Perform generation in background thread
-                byte[] imageBytes = await Task.Run(() => 
-                    _imageGenerator.CreateImageBytesAsync(mockEvent, _model.SelectedFontName, AppSettings.Instance.CustomBackgroundPath, AppSettings.Instance.TextVerticalOffset));
+                string fontName = _model.SelectedFontName;
+                string backgroundPath = AppSettings.Instance.CustomBackgroundPath;
+                float verticalOffset = AppSettings.Instance.TextVerticalOffset;
 
-                if (imageBytes != null)
+                // Perform generation in background thread
+                byte[] imageBytes = await Task.Run(() =>
+                    _imageGenerator.CreateImageBytesAsync(mockEvent, fontName, backgroundPath, verticalOffset, token), token);
+
+                if (imageBytes != null && !token.IsCancellationRequested && generation == _previewGeneration)
                 {
                     var bitmap = new BitmapImage();
                     using (var ms = new MemoryStream(imageBytes))
@@ -227,10 +334,24 @@ namespace VideoGenerator.Views
                         bitmap.EndInit();
                     }
                     bitmap.Freeze(); // Essential for cross-thread access and performance
-                    _model.PreviewImage = bitmap;
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        if (!token.IsCancellationRequested && generation == _previewGeneration)
+                            _model.PreviewImage = bitmap;
+                    });
                 }
             }
-            catch { }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError($"Background designer preview failed: {ex}");
+            }
+            finally
+            {
+                if (ReferenceEquals(_previewCts, cancellationSource))
+                    _previewCts = null;
+                cancellationSource.Dispose();
+            }
         }
         private bool _isMaximized = false;
         private void RenderCanvas_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

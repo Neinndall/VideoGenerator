@@ -18,3 +18,8 @@
 *.rar
 *.zip
 *.7z
+
+# Local-only development notes, QA screenshots and utility scripts.
+# Preserve them in the workspace, but exclude them from Git commits.
+/docs/
+/tools/

@@ -10,7 +10,6 @@ namespace VideoGenerator.Views
     {
         private bool _isDashboardMaximized;
         private GridLength _previousColumnWidth = new(380);
-        private GridLength _previousHeaderHeight = GridLength.Auto;
         private GridLength _previousConfigHeight = GridLength.Auto;
         private GridLength _previousLogsHeight = GridLength.Auto;
         private GridLength _previousQuickEditHeight = GridLength.Auto;
@@ -45,7 +44,6 @@ namespace VideoGenerator.Views
         private void SavePreviewLayout()
         {
             _previousColumnWidth = PipelineColumn.Width;
-            _previousHeaderHeight = HeaderRow.Height;
             _previousConfigHeight = ConfigRow.Height;
             _previousLogsHeight = LogsRow.Height;
             _previousQuickEditHeight = QuickEditRow.Height;
@@ -58,7 +56,6 @@ namespace VideoGenerator.Views
             PipelineColumn.MinWidth = 0;
             PipelineColumn.Width = new GridLength(0);
             SplitterColumn.Width = new GridLength(0);
-            HeaderRow.Height = new GridLength(0);
             ConfigRow.Height = new GridLength(0);
             LogsRow.Height = new GridLength(0);
             QuickEditRow.Height = new GridLength(0);
@@ -71,7 +68,6 @@ namespace VideoGenerator.Views
             PipelineColumn.MinWidth = 250;
             PipelineColumn.Width = _previousColumnWidth.Value > 0 ? _previousColumnWidth : new GridLength(380);
             SplitterColumn.Width = GridLength.Auto;
-            HeaderRow.Height = _previousHeaderHeight;
             ConfigRow.Height = _previousConfigHeight;
             LogsRow.Height = _previousLogsHeight;
             QuickEditRow.Height = _previousQuickEditHeight;

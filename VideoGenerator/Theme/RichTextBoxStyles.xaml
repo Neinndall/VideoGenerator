@@ -3,13 +3,13 @@
 
     <!-- Modern RichTextBox (Terminal/Log Style) -->
     <Style x:Key="ModernRichTextBox" TargetType="RichTextBox">
-        <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="Background" Value="{StaticResource RichTextConsoleBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource AppMonoFontFamily}"/>
         <Setter Property="FontSize" Value="11"/>
-        <Setter Property="Padding" Value="8"/>
+        <Setter Property="Padding" Value="12"/>
         <Setter Property="IsReadOnly" Value="True"/>
         <Setter Property="VerticalContentAlignment" Value="Top"/>
         <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
@@ -21,12 +21,17 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}"
-                            SnapsToDevicePixels="True">
+                            CornerRadius="9" SnapsToDevicePixels="True">
                         <ScrollViewer x:Name="PART_ContentHost" 
                                       Focusable="false" 
                                       HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}" 
                                       VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"/>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

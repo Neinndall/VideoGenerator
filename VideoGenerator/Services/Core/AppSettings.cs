@@ -87,6 +87,20 @@ namespace VideoGenerator.Services
             }
         }
 
+        // A Riot/League installation contains the GAME and Plugins WAD archives.
+        // This is separate from MediaSourceDirectory, which contains exported audio folders.
+        // No default install path: the user selects this in General Settings.
+        private string _leagueGameDirectory = string.Empty;
+        public string LeagueGameDirectory
+        {
+            get => _leagueGameDirectory;
+            set
+            {
+                if (SetProperty(ref _leagueGameDirectory, value))
+                    QueueSave();
+            }
+        }
+
         private float _textVerticalOffset = -8f;
         public float TextVerticalOffset
         {

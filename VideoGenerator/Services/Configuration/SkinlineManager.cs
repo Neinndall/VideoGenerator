@@ -14,7 +14,7 @@ namespace VideoGenerator.Services
 {
     /// <summary>
     /// Centralized authority for League of Legends skinlines.
-    /// Loads thematic skin data from CommunityDragon and provides fast lookups.
+    /// Reads locally cached Riot skinline metadata and provides fast lookups.
     /// </summary>
     public class SkinlineManager
     {
@@ -25,29 +25,57 @@ namespace VideoGenerator.Services
         private SkinlineCatalog _catalog;
         private bool _loaded;
         private readonly object _loadLock = new();
+        private readonly string _catalogPath;
 
         public SkinlineManager(DataFetcher dataFetcher, AliasManager aliasManager, LogService logger)
         {
             _dataFetcher = dataFetcher;
             _aliasManager = aliasManager;
             _logger = logger;
+            _catalogPath = Path.Combine(AppConfig.GetConfigDirectory(dataFetcher.StorageRoot), "skinlines.json");
         }
 
         public IReadOnlyCollection<string> SkinlineNames => EnsureLoaded().DisplayNames.Values;
 
+        /// <summary>
+        /// Re-evaluates the official local JSON caches on the next lookup.
+        /// Call after the game-data bootstrapper refreshes its on-disk catalogs.
+        /// </summary>
+        public void InvalidateCatalog()
+        {
+            lock (_loadLock)
+            {
+                _dataFetcher.InvalidateCaches();
+                _catalog = null;
+                _loaded = false;
+            }
+        }
+
         public bool IsKnownSkinline(string name)
         {
             if (string.IsNullOrEmpty(name)) return false;
-            EnsureLoaded();
-            return _catalog.Champions.ContainsKey(NormalizeName(name));
+            var catalog = EnsureLoaded();
+            return catalog.Champions.ContainsKey(NormalizeName(name)) ||
+                catalog.DisplayNames.Values.Any(official =>
+                    LeagueSkinlineIdentity.Matches(name, official));
         }
 
         public string GetDisplayName(string name)
         {
             if (string.IsNullOrEmpty(name)) return name;
-            EnsureLoaded();
             string key = NormalizeName(name);
-            return _catalog.DisplayNames.TryGetValue(key, out string displayName) ? displayName : name;
+            var catalog = EnsureLoaded();
+            if (catalog.DisplayNames.TryGetValue(key, out string displayName))
+                return displayName;
+            string exactAlias = catalog.DisplayNames.Values.FirstOrDefault(official =>
+                LeagueSkinlineIdentity.Matches(name, official) &&
+                LeagueSkinlineIdentity.GetFamilyName(official) == null);
+            if (exactAlias != null) return exactAlias;
+            var family = catalog.DisplayNames.Values
+                .Select(LeagueSkinlineIdentity.GetFamilyName)
+                .FirstOrDefault(candidate => candidate != null &&
+                    LeagueSkinlineIdentity.Normalize(candidate) == key);
+            return family ?? name;
         }
 
         public IReadOnlyList<string> GetChampions(string name)
@@ -58,26 +86,52 @@ namespace VideoGenerator.Services
         public IReadOnlyList<SkinlineChampion> GetChampionsWithSkin(string name)
         {
             if (string.IsNullOrEmpty(name)) return new List<SkinlineChampion>();
-            EnsureLoaded();
             string key = NormalizeName(name);
-            return _catalog.Champions.TryGetValue(key, out var list) ? list : new List<SkinlineChampion>();
+            var catalog = EnsureLoaded();
+            if (catalog.Champions.TryGetValue(key, out var list)) return list;
+
+            // Riot may split a thematic family into colon-qualified lines.
+            // Keep both Arcade: Heroes and Arcade: Battle Bosses as possible
+            // visual members when the event simply says "Arcade".
+            return catalog.DisplayNames
+                .Where(pair => LeagueSkinlineIdentity.Matches(name, pair.Value))
+                .SelectMany(pair => catalog.Champions.TryGetValue(pair.Key, out var members)
+                    ? members : Enumerable.Empty<SkinlineChampion>())
+                .GroupBy(member => (member.Name.ToLowerInvariant(), member.SkinId))
+                .Select(group => group.First())
+                .OrderBy(member => member.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(member => member.SkinId)
+                .ToList();
         }
 
         private SkinlineCatalog EnsureLoaded()
         {
-            if (_loaded) return _catalog;
-
             lock (_loadLock)
             {
                 if (_loaded) return _catalog;
 
-                _catalog = LoadFromDisk() ?? LoadFromNetwork().GetAwaiter().GetResult() ?? new SkinlineCatalog();
+                // A generated skinlines.json may have a newer timestamp but
+                // contain zero members (e.g. it was built before champions.json
+                // was populated). The official WAD-derived skinlines and skins
+                // caches are authoritative whenever BOTH are usable, regardless
+                // of last-write order. Never overwrite the user's generated file.
+                _catalog = OfficialCachesPresent()
+                    ? Task.Run(LoadFromLocalCatalogAsync).GetAwaiter().GetResult() ?? LoadFromDisk()
+                    : LoadFromDisk();
+                _catalog ??= new SkinlineCatalog();
                 _loaded = true;
                 return _catalog;
             }
         }
 
-        private async Task<SkinlineCatalog> LoadFromNetwork()
+        private bool OfficialCachesPresent()
+        {
+            string skinsPath = AppConfig.GetSkinsCachePath("default", _dataFetcher.StorageRoot);
+            string skinlinesPath = AppConfig.GetSkinLinesCachePath("default", _dataFetcher.StorageRoot);
+            return File.Exists(skinsPath) && File.Exists(skinlinesPath);
+        }
+
+        private async Task<SkinlineCatalog> LoadFromLocalCatalogAsync()
         {
             var catalog = new SkinlineCatalog();
 
@@ -85,6 +139,8 @@ namespace VideoGenerator.Services
             {
                 var skinLines = await _dataFetcher.GetSkinLinesAsync("EN");
                 var allSkins = await _dataFetcher.GetSkinsDataAsync("EN");
+                if (skinLines.Count == 0 || allSkins.Count == 0)
+                    return null;
 
                 // Build a lookup: skinline id -> skinline name
                 var lineIdToName = new Dictionary<int, string>();
@@ -113,13 +169,17 @@ namespace VideoGenerator.Services
                         ? splashProp.GetString() ?? ""
                         : "";
 
-                    var nameMatch = Regex.Match(splashPath, @"Characters/([^/]+)/");
+                    var nameMatch = Regex.Match(splashPath, @"Characters[/\\]([^/\\]+)[/\\]", RegexOptions.IgnoreCase);
                     if (!nameMatch.Success) continue;
 
                     string champInternalName = _aliasManager.GetInternalName(nameMatch.Groups[1].Value);
-                    if (!_aliasManager.IsValidChampion(champInternalName)) continue;
+                    // Riot's own skins.json is authoritative for identities.
+                    // champions.json can be missing/empty on a fresh install,
+                    // so filtering these members through the local champion
+                    // alias list silently empties entire skinlines.
+                    if (string.IsNullOrWhiteSpace(champInternalName)) continue;
 
-                    var skinIdMatch = Regex.Match(splashPath, @"Skin(\d+)");
+                    var skinIdMatch = Regex.Match(splashPath, @"Skin(\d+)", RegexOptions.IgnoreCase);
                     if (!skinIdMatch.Success) continue;
                     int skinId = int.Parse(skinIdMatch.Groups[1].Value);
 
@@ -132,7 +192,8 @@ namespace VideoGenerator.Services
                                 string key = NormalizeName(lineName);
                                 if (catalog.Champions.TryGetValue(key, out var list))
                                 {
-                                    if (!list.Any(c => c.Name.Equals(champInternalName, StringComparison.OrdinalIgnoreCase)))
+                                    if (!list.Any(c => c.Name.Equals(champInternalName, StringComparison.OrdinalIgnoreCase) &&
+                                                       c.SkinId == skinId))
                                     {
                                         list.Add(new SkinlineChampion
                                         {
@@ -146,12 +207,16 @@ namespace VideoGenerator.Services
                     }
                 }
 
-                SaveToDisk(catalog);
+                // This file can contain user edits. Only create the generated
+                // fallback when no configuration exists yet.
+                if (!File.Exists(_catalogPath))
+                    SaveToDisk(catalog);
             }
             catch (Exception ex)
             {
-                _logger.LogWarn("Failed to load skinlines from CommunityDragon. Falling back to local data or defaults.");
-                _logger.LogDebug($"Skinline network load details: {ex.Message}");
+                _logger.LogWarn("Failed to load the locally cached skinline catalog. Falling back to local defaults.");
+                _logger.LogDebug($"Local skinline catalog details: {ex.Message}");
+                return null;
             }
 
             return catalog;
@@ -161,9 +226,9 @@ namespace VideoGenerator.Services
         {
             try
             {
-                if (!File.Exists(AppConfig.SkinlineCachePath)) return null;
+                if (!File.Exists(_catalogPath)) return null;
 
-                string json = File.ReadAllText(AppConfig.SkinlineCachePath);
+                string json = File.ReadAllText(_catalogPath);
                 var data = JsonSerializer.Deserialize<SkinlineCacheData>(json);
                 if (data?.SkinlineMap != null)
                 {
@@ -190,7 +255,7 @@ namespace VideoGenerator.Services
         {
             try
             {
-                DirectoriesCreator.CreateParentDirectory(AppConfig.SkinlineCachePath);
+                DirectoriesCreator.CreateParentDirectory(_catalogPath);
 
                 var map = new Dictionary<string, SkinlineCacheEntry>();
                 foreach (var kvp in catalog.DisplayNames)
@@ -208,7 +273,7 @@ namespace VideoGenerator.Services
                     WriteIndented = true,
                     Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 });
-                File.WriteAllText(AppConfig.SkinlineCachePath, json, Encoding.UTF8);
+                File.WriteAllText(_catalogPath, json, Encoding.UTF8);
             }
             catch (Exception ex)
             {
@@ -263,11 +328,7 @@ namespace VideoGenerator.Services
 
         private static string NormalizeName(string name)
         {
-            if (string.IsNullOrEmpty(name)) return string.Empty;
-            return new string(name
-                .Where(char.IsLetterOrDigit)
-                .Select(char.ToLowerInvariant)
-                .ToArray());
+            return LeagueSkinlineIdentity.Normalize(name);
         }
 
         private class SkinlineCatalog

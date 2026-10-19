@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace VideoGenerator.Views.Models
 {
@@ -28,5 +29,8 @@ namespace VideoGenerator.Views.Models
         }
 
         public bool IsOfficial { get; set; } = false;
+
+        [JsonIgnore]
+        public bool CanDelete => !IsOfficial;
     }
 }

@@ -2,6 +2,8 @@
   "EN": {
     "event_attack": "Attack",
     "event_buff_receive": "Receive buff",
+    "event_receive_damage": "Receive Damage",
+    "event_receive_heal_shield": "Receive Heal/Shield",
     "event_buy_item": "Buy Item {item_name}",
     "event_death": "Death",
     "event_death_human": "Death (Human)",
@@ -141,6 +143,8 @@
   "TR": {
     "event_attack": "Saldırı",
     "event_buff_receive": "Güçlendirme al",
+    "event_receive_damage": "Hasar Al",
+    "event_receive_heal_shield": "İyileştirme/Kalkan Al",
     "event_buy_item": "Eşya Al {item_name}",
     "event_death": "Ölüm",
     "event_death_human": "Ölüm (İnsan)",
@@ -280,6 +284,8 @@
   "ES": {
     "event_attack": "Atacar",
     "event_buff_receive": "Recibir mejora",
+    "event_receive_damage": "Recibir daño",
+    "event_receive_heal_shield": "Recibir curación/escudo",
     "event_buy_item": "Comprar {item_name}",
     "event_death": "Muerte",
     "event_death_human": "Muerte (Humano)",

@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Text;
 using VideoGenerator.Models;
 using VideoGenerator.Services;
@@ -25,8 +24,7 @@ public sealed class ProductionPipelineIntegrationTests
             WriteWave(Path.Combine(eventDirectory, "second.wav"), 660);
 
             var logger = new LogService();
-            using var httpClient = new HttpClient();
-            var dataFetcher = new DataFetcher(httpClient, logger, root);
+            var dataFetcher = new DataFetcher(logger, root);
             var translationService = new TranslationService(
                 logger,
                 Path.Combine(root, "translations.json"));

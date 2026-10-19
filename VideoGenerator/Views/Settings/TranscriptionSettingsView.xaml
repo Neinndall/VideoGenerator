@@ -1,0 +1,216 @@
+<UserControl x:Class="VideoGenerator.Views.Settings.TranscriptionSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                  Padding="0,0,6,0" Focusable="False">
+        <StackPanel HorizontalAlignment="Stretch">
+            <Grid x:Name="TranscriptionCardsGrid" SizeChanged="TranscriptionCardsGrid_SizeChanged">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition x:Name="TranscriptionSideColumn" Width="5*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border x:Name="TranscriptionMainCard" Grid.Row="0" Grid.Column="0"
+                        Style="{StaticResource SettingsSectionPanel}" Margin="0,0,10,16">
+                    <StackPanel>
+                        <Border Style="{StaticResource SettingsSectionHeader}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource SettingsHeroIconTile}">
+                                <materialDesign:PackIcon Kind="MicrophoneOutline" Style="{StaticResource SettingsHeroGlyph}"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Recognition engine" Style="{StaticResource SettingsSectionTitle}"/>
+                                <TextBlock Text="Whisper transcription preferences" Style="{StaticResource SettingsHeroSubtitle}"/>
+                            </StackPanel>
+                        </Grid>
+                        </Border>
+                        <StackPanel Margin="18,17,18,20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,14,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ClosedCaptionOutline" Style="{StaticResource SettingsFieldGlyph}"/>
+                                    <TextBlock Text="Enable subtitles &amp; transcription" Style="{StaticResource SettingsFieldTitle}"/>
+                                </StackPanel>
+                                <TextBlock Text="Transcribe locally and show dialogue in rendered video."
+                                           Style="{StaticResource SettingsFieldDescription}"/>
+                            </StackPanel>
+                            <ToggleButton Grid.Column="1"
+                                IsChecked="{Binding Settings.EnableTranscriptions, Mode=TwoWay}"
+                                Style="{StaticResource SettingsSwitchToggle}"
+                                VerticalAlignment="Center" HorizontalAlignment="Right"
+                                AutomationProperties.Name="Enable audio transcription"/>
+                        </Grid>
+                        <Border Height="1" Background="{StaticResource DividerBrush}" Margin="0,15"/>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Brain" Style="{StaticResource SettingsFieldGlyph}"/>
+                            <TextBlock Text="Whisper model" Style="{StaticResource SettingsFieldTitle}"/>
+                        </StackPanel>
+                        <ComboBox ItemsSource="{Binding WhisperModelOptions}"
+                                  SelectedItem="{Binding Settings.WhisperModel, Mode=TwoWay}"
+                                  Style="{StaticResource ModernComboBoxStyle}"
+                                  IsEnabled="{Binding Settings.EnableTranscriptions}"
+                                  Margin="0,9,0,14"
+                                  AutomationProperties.Name="Whisper model size"/>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Translate" Style="{StaticResource SettingsFieldGlyph}"/>
+                            <TextBlock Text="Audio language" Style="{StaticResource SettingsFieldTitle}"/>
+                        </StackPanel>
+                        <ComboBox ItemsSource="{Binding WhisperLanguageOptions}"
+                                  SelectedValue="{Binding Settings.WhisperLanguage, Mode=TwoWay}"
+                                  SelectedValuePath="Value" DisplayMemberPath="Key"
+                                  Style="{StaticResource ModernComboBoxStyle}"
+                                  IsEnabled="{Binding Settings.EnableTranscriptions}"
+                                  Margin="0,9,0,0"
+                                  AutomationProperties.Name="Recognition language"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="TranscriptionComputeCard" Grid.Row="0" Grid.Column="1"
+                        Style="{StaticResource SettingsSectionPanel}" Margin="10,0,0,16">
+                    <StackPanel>
+                        <Border Style="{StaticResource SettingsSectionHeader}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource SettingsHeroIconTile}">
+                                <materialDesign:PackIcon Kind="Chip" Style="{StaticResource SettingsHeroGlyph}"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Performance" Style="{StaticResource SettingsSectionTitle}"/>
+                                <TextBlock Text="Local CPU resources" Style="{StaticResource SettingsHeroSubtitle}"/>
+                            </StackPanel>
+                        </Grid>
+                        </Border>
+                        <StackPanel Margin="18,17,18,20">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Cpu64Bit" Style="{StaticResource SettingsFieldGlyph}"/>
+                            <TextBlock Text="CPU threads" Style="{StaticResource SettingsFieldTitle}"/>
+                        </StackPanel>
+                        <TextBlock Text="Choose how many threads Whisper may use."
+                                   Style="{StaticResource SettingsFieldDescription}" Margin="0,4,0,16"/>
+                        <Grid IsEnabled="{Binding Settings.EnableTranscriptions}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="42"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider Value="{Binding Settings.WhisperThreadCount, Mode=TwoWay}"
+                                    Minimum="1" Maximum="{Binding MaxCpuThreads}"
+                                    TickFrequency="1" IsSnapToTickEnabled="True"
+                                    Style="{StaticResource ModernSlider}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Settings.WhisperThreadCount}"
+                                       Foreground="{StaticResource SettingsCyanBrush}" FontWeight="Bold"
+                                       FontSize="15" VerticalAlignment="Center" TextAlignment="Right"/>
+                        </Grid>
+                        <Border Style="{StaticResource SettingsInsetCard}" Margin="0,22,0,0" Padding="12">
+                            <TextBlock Text="Larger models improve recognition in some cases but use more memory and may require a one-time download."
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap"/>
+                        </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="TranscriptionCleanupCard" Grid.Row="1" Grid.Column="0"
+                        Style="{StaticResource SettingsSectionPanel}" Margin="0,0,10,16">
+                    <StackPanel>
+                        <Border Style="{StaticResource SettingsSectionHeader}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource SettingsHeroIconTile}">
+                                <materialDesign:PackIcon Kind="AutoFix" Style="{StaticResource SettingsHeroGlyph}"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Transcript cleanup" Style="{StaticResource SettingsSectionTitle}"/>
+                                <TextBlock Text="Remove non-speech tags from dialogue" Style="{StaticResource SettingsHeroSubtitle}"/>
+                            </StackPanel>
+                        </Grid>
+                        </Border>
+                        <StackPanel Margin="18,17,18,20">
+                        <Grid IsEnabled="{Binding Settings.EnableTranscriptions}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,14,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Broom" Style="{StaticResource SettingsFieldGlyph}"/>
+                                    <TextBlock Text="Clean ambient audio tags" Style="{StaticResource SettingsFieldTitle}"/>
+                                </StackPanel>
+                                <TextBlock Text="Remove [BLANK_AUDIO] and [MUSIC] markers."
+                                           Style="{StaticResource SettingsFieldDescription}"/>
+                            </StackPanel>
+                            <ToggleButton Grid.Column="1"
+                                IsChecked="{Binding Settings.CleanWhisperHallucinations, Mode=TwoWay}"
+                                Style="{StaticResource SettingsSwitchToggle}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                AutomationProperties.Name="Clean ambient audio tags"/>
+                        </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="TranscriptionCacheCard" Grid.Row="1" Grid.Column="1"
+                        Style="{StaticResource SettingsSectionPanel}" Margin="10,0,0,16">
+                    <StackPanel>
+                        <Border Style="{StaticResource SettingsSectionHeader}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource SettingsHeroIconTile}">
+                                <materialDesign:PackIcon Kind="Cached" Style="{StaticResource SettingsHeroGlyph}"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Transcript cache" Style="{StaticResource SettingsSectionTitle}"/>
+                                <TextBlock Text="Reuse or regenerate stored dialogue" Style="{StaticResource SettingsHeroSubtitle}"/>
+                            </StackPanel>
+                        </Grid>
+                        </Border>
+                        <StackPanel Margin="18,17,18,20">
+                        <Grid IsEnabled="{Binding Settings.EnableTranscriptions}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,14,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Refresh" Style="{StaticResource SettingsFieldGlyph}"/>
+                                    <TextBlock Text="Force retranscription" Style="{StaticResource SettingsFieldTitle}"/>
+                                </StackPanel>
+                                <TextBlock Text="Rebuild dialogue instead of reusing dialogues.json."
+                                           Style="{StaticResource SettingsFieldDescription}"/>
+                            </StackPanel>
+                            <ToggleButton Grid.Column="1"
+                                IsChecked="{Binding Settings.ForceBatchRetranscribe, Mode=TwoWay}"
+                                Style="{StaticResource SettingsSwitchToggle}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                AutomationProperties.Name="Force dialogue retranscription"/>
+                        </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

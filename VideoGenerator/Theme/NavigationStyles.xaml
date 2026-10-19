@@ -2,70 +2,77 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
  
+    <!-- Quiet sidebar navigation with luminous active state matching the reference concept -->
     <Style x:Key="ModernNavItem" TargetType="ListBoxItem">
-        <Setter Property="Height" Value="46"/>
-        <Setter Property="Margin" Value="0,2"/>
+        <Setter Property="Height" Value="52"/>
+        <Setter Property="Margin" Value="2,1,3,1"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="Foreground" Value="#A9BFE4"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="RootBorder" 
+                    <Border x:Name="RootBorder"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="11"
+                            CornerRadius="10"
                             BorderThickness="1"
                             BorderBrush="Transparent"
-                            SnapsToDevicePixels="True"
-                            Margin="0">
+                            SnapsToDevicePixels="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            
-                            <!-- Left Accent line indicator -->
-                            <Border x:Name="Indicator" 
-                                    Background="{StaticResource AccentBrush}" 
-                                    CornerRadius="2"
+
+                            <Border x:Name="Indicator"
+                                    Background="{StaticResource AccentBrushLight}"
+                                    CornerRadius="1.5"
                                     Width="3"
-                                    Height="22"
+                                    Height="24"
                                     VerticalAlignment="Center"
-                                    Margin="7,0,0,0"
+                                    Margin="3,0,0,0"
                                     Opacity="0"/>
-                            
-                            <ContentPresenter Grid.Column="1" 
-                                              HorizontalAlignment="Left" 
+
+                            <ContentPresenter Grid.Column="1"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="Center"
-                                              Margin="13,0,8,0"/>
+                                              Margin="15,0,9,0"/>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <!-- HOVER STATE -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource HoverSurfaceBrush}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavHoverBackgroundBrush}"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
-                        
-                        <!-- SELECTED STATE -->
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#268B5CF6"/>
-                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#668B5CF6"/>
-                            <Setter TargetName="Indicator" Property="Opacity" Value="1"/>
-                            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavSelectedBackgroundBrush}"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{StaticResource ShellNavSelectedBorderBrush}"/>
+                            <Setter TargetName="Indicator" Property="Opacity" Value="0.85"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </Trigger>
- 
-                        <!-- SELECTED + HOVER -->
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsSelected" Value="True"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="RootBorder" Property="Background" Value="#338B5CF6"/>
-                            <Setter Property="Foreground" Value="#E9D5FF"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource SidebarNavFocusedBackgroundBrush}"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                         </MultiTrigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Indicator" Property="Opacity" Value="1"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

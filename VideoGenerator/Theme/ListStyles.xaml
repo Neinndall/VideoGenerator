@@ -46,7 +46,7 @@
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="BorderThickness" Value="0"/>
                     <Setter Property="Padding" Value="0"/>
-                    <Setter Property="Margin" Value="2,1"/>
+                    <Setter Property="Margin" Value="2,2"/>
                     <Setter Property="Cursor" Value="Hand"/>
                     <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -55,39 +55,50 @@
                             <ControlTemplate TargetType="ListBoxItem">
                                 <Border x:Name="ItemBorder" 
                                         Background="{TemplateBinding Background}" 
-                                        BorderBrush="Transparent" 
-                                        BorderThickness="0" 
-                                        CornerRadius="6"
+                                        BorderBrush="Transparent"
+                                        BorderThickness="1"
+                                        CornerRadius="9"
                                         SnapsToDevicePixels="True">
                                     <Grid>
                                         <!-- Vertical accent bar on the left -->
                                         <Border x:Name="SelectionBar" 
-                                                Width="3" 
+                                                Width="3"
                                                 HorizontalAlignment="Left" 
                                                 Background="Transparent" 
-                                                Margin="0,4,0,4"/>
-                                        <ContentPresenter Margin="12,5" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                CornerRadius="2"
+                                                Margin="0,5,0,5"/>
+                                        <ContentPresenter Margin="12,6" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                                     </Grid>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource HoverSurfaceBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#268B5CF6"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource NavyListSelectionBrush}"/>
+                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#426A97"/>
                                         <Setter TargetName="SelectionBar" Property="Background" Value="{StaticResource AccentBrush}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                                     </Trigger>
                                     <MultiTrigger>
                                         <MultiTrigger.Conditions>
                                             <Condition Property="IsSelected" Value="True"/>
                                             <Condition Property="IsMouseOver" Value="True"/>
                                         </MultiTrigger.Conditions>
-                                        <Setter TargetName="ItemBorder" Property="Background" Value="#338B5CF6"/>
+                                        <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource NavyListSelectionHoverBrush}"/>
+                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
                                         <Setter TargetName="SelectionBar" Property="Background" Value="{StaticResource AccentBrushLight}"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
                                     </MultiTrigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="ItemBorder" Property="Opacity" Value="0.42"/>
+                                        <Setter Property="Cursor" Value="Arrow"/>
+                                    </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Setter.Value>
@@ -106,7 +117,7 @@
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="BorderThickness" Value="0"/>
                     <Setter Property="Padding" Value="0"/>
-                    <Setter Property="Margin" Value="2,1"/>
+                    <Setter Property="Margin" Value="2,2"/>
                     <Setter Property="Focusable" Value="False"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     <Setter Property="Template">
@@ -115,14 +126,18 @@
                                 <Border x:Name="ItemBorder" 
                                         Background="{TemplateBinding Background}" 
                                         BorderBrush="Transparent" 
-                                        BorderThickness="0" 
-                                        CornerRadius="6"
+                                        BorderThickness="1"
+                                        CornerRadius="9"
                                         SnapsToDevicePixels="True">
-                                    <ContentPresenter Margin="12,5" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                    <ContentPresenter Margin="12,6" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource HoverSurfaceBrush}"/>
+                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="ItemBorder" Property="Opacity" Value="0.42"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>

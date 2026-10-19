@@ -11,7 +11,7 @@ namespace VideoGenerator.Models
         /// </summary>
         public bool IsMapped { get; set; } = true;
         public string IconLookupName { get; set; } = string.Empty;
-        public string IconType { get; set; } = "generic"; // champion, item, monster, generic, region, structure, system
+        public string IconType { get; set; } = "generic"; // champion, skinline, item, monster, generic, region, structure, system
         public string IconPath { get; set; }
         public string Dialogue { get; set; } = string.Empty;
     }

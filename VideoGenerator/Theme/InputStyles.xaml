@@ -3,21 +3,39 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:utils="clr-namespace:VideoGenerator.Utils">
 
-    <!-- Inputs use the same compact surface and focus language as buttons and navigation. -->
+    <!-- Keep the MaterialDesign editing/hint/clear-button templates, but round their
+         actual outline chrome (a CornerRadius on an outer wrapper leaves square edges). -->
     <Style x:Key="ModernTextBox" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="2"/>
+        <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="9"/>
+        <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="1"/>
+        <Setter Property="CaretBrush" Value="{StaticResource AccentBrushLight}"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="SelectionOpacity" Value="0.34"/>
         <Setter Property="Height" Value="44"/>
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="materialDesign:HintAssist.IsFloating" Value="True"/>
         <Setter Property="materialDesign:HintAssist.Foreground" Value="{StaticResource TextSecondaryBrush}"/>
-        <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{StaticResource InputBorderHoverBrush}"/>
         <Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="True"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+            </Trigger>
+            <Trigger Property="IsFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="1.5"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.47"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Compact Version for Lists -->
@@ -27,19 +45,20 @@
         <Setter Property="materialDesign:TextFieldAssist.HasClearButton" Value="False"/>
     </Style>
 
-
-
     <!-- TextBox with custom clear button (especially for ReadOnly text boxes) -->
     <Style x:Key="ModernTextBoxWithClear" TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="Padding" Value="10,0,32,0"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="SelectionOpacity" Value="0.34"/>
         <Setter Property="utils:TextBoxBehavior.ClearOnButtonClick" Value="True"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -48,7 +67,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="8"
+                            CornerRadius="9"
                             Padding="{TemplateBinding Padding}">
                         <Grid>
                             <ScrollViewer x:Name="PART_ContentHost"
@@ -56,8 +75,8 @@
                             
                             <TextBlock x:Name="PlaceholderText"
                                        Text="{Binding Path=(materialDesign:HintAssist.Hint), RelativeSource={RelativeSource TemplatedParent}}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       Opacity="0.5"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Opacity="0.95"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"
                                        Visibility="Collapsed"/>
@@ -91,8 +110,17 @@
                             <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="ClearBtn" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="TextBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                        </Trigger>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="TextBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                            <Setter TargetName="TextBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                            <Setter TargetName="TextBorder" Property="BorderThickness" Value="1.5"/>
+                            <Setter TargetName="TextBorder" Property="Padding" Value="9.5,0,31.5,0"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="TextBorder" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="ClearBtn" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -100,32 +128,144 @@
         </Setter>
     </Style>
 
-    <!-- Global Modern ComboBox Style -->
-    <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignOutlinedComboBox}">
+    <!-- The old MaterialDesignOutlinedComboBox brought a gray popup and gray
+         selection. Use one navy dropdown everywhere: Settings, Mapping and HUD. -->
+    <Style x:Key="ModernComboBoxItemStyle" TargetType="ComboBoxItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        <Setter Property="Padding" Value="13,10"/>
+        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="ItemSurface" Background="{TemplateBinding Background}"
+                            CornerRadius="7" Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter ContentSource="Content"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ItemSurface" Property="Background" Value="{StaticResource ComboItemHoverBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="ItemSurface" Property="Background" Value="{StaticResource ComboItemHighlightedBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ItemSurface" Property="Background" Value="{StaticResource ComboItemSelectedBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.42"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox">
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Height" Value="44"/>
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="materialDesign:HintAssist.IsFloating" Value="True"/>
-        <Setter Property="materialDesign:HintAssist.Foreground" Value="{StaticResource TextSecondaryBrush}"/>
-        <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource ModernComboBoxItemStyle}"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Chrome" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="9"/>
+                        <!-- SelectionBoxItem lives on this ComboBox template.
+                             The label and chevron stay non-hit-testable. -->
+                        <ContentPresenter x:Name="SelectionContent" Margin="13,0,36,0"
+                                          HorizontalAlignment="Left" VerticalAlignment="Center"
+                                          IsHitTestVisible="False" RecognizesAccessKey="True"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"/>
+                        <Path Width="10" Height="6" Margin="0,0,14,0"
+                              StrokeThickness="1.7" Stroke="{TemplateBinding Foreground}"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Data="M 1,1 L 5,5 L 9,1"
+                              IsHitTestVisible="False"
+                              HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        <!-- One click surface spans the entire field. Avoid a
+                             nested ToggleButton racing ComboBox's mouse handlers
+                             and immediately closing the just-opened popup. -->
+                        <Border x:Name="ClickSurface" Background="Transparent"
+                                Cursor="Hand" Focusable="False"
+                                utils:ComboBoxClickBehavior.HandlesClick="True"/>
+                        <Popup x:Name="PART_Popup"
+                               Placement="Bottom" AllowsTransparency="True"
+                               Focusable="False" StaysOpen="False"
+                               PopupAnimation="Fade"
+                               IsOpen="{TemplateBinding IsDropDownOpen}">
+                            <Border x:Name="PopupSurface"
+                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                    MaxHeight="310" Background="{StaticResource ComboPopupBackgroundBrush}"
+                                    BorderBrush="#31577F" BorderThickness="1"
+                                    CornerRadius="10" Padding="5" SnapsToDevicePixels="True">
+                                <ScrollViewer x:Name="DropDownScrollViewer"
+                                              Margin="0" MaxHeight="294"
+                                              VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              CanContentScroll="True"
+                                              KeyboardNavigation.DirectionalNavigation="Contained">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                            <Setter TargetName="Chrome" Property="BorderThickness" Value="1.5"/>
+                        </Trigger>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="PopupSurface" Property="MinHeight" Value="44"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Modern Search TextBox Style -->
     <Style x:Key="ModernSearchTextBox" TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="Padding" Value="10,0,32,0"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="SelectionOpacity" Value="0.34"/>
         <Setter Property="utils:TextBoxBehavior.ClearOnButtonClick" Value="True"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -134,7 +274,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="8"
+                            CornerRadius="9"
                             Padding="{TemplateBinding Padding}">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -155,8 +295,8 @@
                             <Grid Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock x:Name="PlaceholderText"
                                            Text="{Binding Path=(materialDesign:HintAssist.Hint), RelativeSource={RelativeSource TemplatedParent}}"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
-                                           Opacity="0.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Opacity="0.95"
                                            VerticalAlignment="Center"
                                            IsHitTestVisible="False"
                                            Visibility="Collapsed"/>
@@ -195,8 +335,17 @@
                             <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="ClearBtn" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="SearchBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                        </Trigger>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="SearchBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                            <Setter TargetName="SearchBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                            <Setter TargetName="SearchBorder" Property="BorderThickness" Value="1.5"/>
+                            <Setter TargetName="SearchBorder" Property="Padding" Value="9.5,0,31.5,0"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="SearchBorder" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="ClearBtn" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -212,6 +361,8 @@
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="SelectionOpacity" Value="0.34"/>
         <Setter Property="Height" Value="38"/>
         <Setter Property="Padding" Value="8,4"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -227,13 +378,16 @@
                         <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="#14FFFFFF"/>
-                            <Setter TargetName="border" Property="BorderBrush" Value="#2AFFFFFF"/>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource TextInputHoverBrush}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BorderBrightBrush}"/>
                         </Trigger>
-                        <Trigger Property="IsFocused" Value="true">
-                            <Setter TargetName="border" Property="Background" Value="#1AFFFFFF"/>
-                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource TextInputFocusBrush}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource FocusBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="border" Property="Opacity" Value="0.45"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
