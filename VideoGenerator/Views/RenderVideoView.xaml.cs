@@ -89,6 +89,14 @@ public partial class RenderVideoView : UserControl
         public string Name => System.IO.Path.GetFileName(Path);
         public double DurationSeconds { get; init; }
         public string TimeDisplay => FormatTime(DurationSeconds);
+        public bool HasVideo { get; init; }
+        public bool HasAudio { get; init; }
+        public bool IsAudioOnly => HasAudio && !HasVideo;
+        public PackIconKind IconKind => IsAudioOnly ? PackIconKind.Music : PackIconKind.MovieOutline;
+        public string FormatBadge => System.IO.Path.GetExtension(Path).TrimStart('.').ToUpperInvariant();
+        public string BadgeBackground => IsAudioOnly ? "#3D1722" : "#16325C";
+        public string BadgeForeground => IsAudioOnly ? "#FCA5A5" : "#93C5FD";
+        public string BadgeBorder => IsAudioOnly ? "#592331" : "#254B80";
     }
 
     public sealed class TimelineEntry
@@ -216,14 +224,20 @@ public partial class RenderVideoView : UserControl
 
     #region Media Library Operations
 
+    private static readonly HashSet<string> SupportedMediaExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp4", ".webm", ".mov", ".mkv", ".avi",
+        ".ogg", ".wav", ".mp3", ".m4a", ".flac", ".aac", ".wma"
+    };
+
     private async void Import_Click(object sender, RoutedEventArgs e)
     {
         if (_exporting) return;
         var dialog = new OpenFileDialog
         {
             Multiselect = true,
-            Title = "Import video clips",
-            Filter = "Video files|*.mp4;*.webm;*.mov;*.mkv;*.avi|All files|*.*"
+            Title = "Import media clips (video or audio)",
+            Filter = "All Supported Media|*.mp4;*.webm;*.mov;*.mkv;*.avi;*.ogg;*.wav;*.mp3;*.m4a;*.flac;*.aac;*.wma|Video files|*.mp4;*.webm;*.mov;*.mkv;*.avi|Audio files|*.ogg;*.wav;*.mp3;*.m4a;*.flac;*.aac;*.wma|All files|*.*"
         };
         if (dialog.ShowDialog() != true || dialog.FileNames.Length == 0) return;
         await ImportPathsAsync(dialog.FileNames);
@@ -238,10 +252,12 @@ public partial class RenderVideoView : UserControl
             SetStatus("No generated media directory found yet");
             return;
         }
-        var files = Directory.GetFiles(dir, "*.mp4", SearchOption.TopDirectoryOnly);
+        var files = Directory.EnumerateFiles(dir, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(f => SupportedMediaExtensions.Contains(System.IO.Path.GetExtension(f)))
+            .ToArray();
         if (files.Length == 0)
         {
-            SetStatus("No MP4 files found in Generated/Media");
+            SetStatus("No media files found in Generated/Media");
             return;
         }
         await ImportPathsAsync(files);
@@ -262,9 +278,15 @@ public partial class RenderVideoView : UserControl
             try
             {
                 var info = await _renderer.InspectClipAsync(full);
-                if (!info.HasVideo) continue;
+                if (!info.HasVideo && !info.HasAudio) continue;
 
-                var entry = new MediaEntry { Path = full, DurationSeconds = info.DurationSeconds };
+                var entry = new MediaEntry
+                {
+                    Path = full,
+                    DurationSeconds = info.DurationSeconds,
+                    HasVideo = info.HasVideo,
+                    HasAudio = info.HasAudio
+                };
                 _allLibraryEntries.Add(entry);
                 added++;
             }
@@ -276,8 +298,114 @@ public partial class RenderVideoView : UserControl
 
         FilterLibrary();
         if (added > 0)
-            SetStatus($"Imported {added} clip(s) into Media Library");
+            SetStatus($"Imported {added} media item(s) into Media Library");
     }
+
+    #endregion
+
+    #region Media Library Drag and Drop
+
+    private Point _mediaLibraryMouseDownPos;
+
+    private void MediaLibraryList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _mediaLibraryMouseDownPos = e.GetPosition(null);
+    }
+
+    private void MediaLibraryList_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_exporting || e.LeftButton != MouseButtonState.Pressed) return;
+        Point current = e.GetPosition(null);
+        Vector diff = _mediaLibraryMouseDownPos - current;
+        if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
+            Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
+        {
+            if (MediaLibraryList.SelectedItem is MediaEntry entry)
+            {
+                DragDrop.DoDragDrop(MediaLibraryList, entry, DragDropEffects.Copy);
+            }
+        }
+    }
+
+    private void MediaLibrary_DragOver(object sender, DragEventArgs e)
+    {
+        if (_exporting)
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Effects = DragDropEffects.Copy;
+            if (MediaLibraryContainer != null)
+                MediaLibraryContainer.BorderBrush = (Brush)FindResource("AccentBrushLight");
+        }
+        else
+        {
+            e.Effects = DragDropEffects.None;
+        }
+        e.Handled = true;
+    }
+
+    private void MediaLibrary_DragLeave(object sender, DragEventArgs e)
+    {
+        ResetMediaLibraryDropVisual();
+    }
+
+    private void ResetMediaLibraryDropVisual()
+    {
+        if (MediaLibraryContainer != null)
+            MediaLibraryContainer.ClearValue(Border.BorderBrushProperty);
+    }
+
+    private async void MediaLibrary_Drop(object sender, DragEventArgs e)
+    {
+        ResetMediaLibraryDropVisual();
+        if (_exporting) return;
+
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            if (e.Data.GetData(DataFormats.FileDrop) is string[] rawPaths && rawPaths.Length > 0)
+            {
+                var filesToImport = new List<string>();
+                foreach (var path in rawPaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        if (SupportedMediaExtensions.Contains(System.IO.Path.GetExtension(path)))
+                            filesToImport.Add(path);
+                    }
+                    else if (Directory.Exists(path))
+                    {
+                        try
+                        {
+                            var dirFiles = Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
+                                .Where(f => SupportedMediaExtensions.Contains(System.IO.Path.GetExtension(f)));
+                            filesToImport.AddRange(dirFiles);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarn($"Error scanning dropped directory '{path}': {ex.Message}");
+                        }
+                    }
+                }
+
+                if (filesToImport.Count > 0)
+                {
+                    await ImportPathsAsync(filesToImport);
+                    SetStatus($"Added {filesToImport.Count} file(s) to Media Library via drag & drop");
+                }
+                else
+                {
+                    SetStatus("No supported video or audio files found in dropped items");
+                }
+            }
+        }
+    }
+
+    #endregion
 
     private void SearchLibraryBox_TextChanged(object sender, TextChangedEventArgs e)
     {
@@ -354,8 +482,6 @@ public partial class RenderVideoView : UserControl
         RefreshTimeline();
         TimelineList.SelectedIndex = _project.Clips.Count - 1;
     }
-
-    #endregion
 
     #region Timeline Operations (Split, In/Out, Duplicate, Reorder)
 
@@ -751,34 +877,80 @@ public partial class RenderVideoView : UserControl
 
     private void Timeline_DragOver(object sender, DragEventArgs e)
     {
-        e.Effects = !_exporting && e.Data.GetDataPresent(typeof(VideoTimelineClip))
-            ? DragDropEffects.Move : DragDropEffects.None;
+        if (_exporting)
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Data.GetDataPresent(typeof(VideoTimelineClip)))
+            e.Effects = DragDropEffects.Move;
+        else if (e.Data.GetDataPresent(typeof(MediaEntry)) || e.Data.GetDataPresent(DataFormats.FileDrop))
+            e.Effects = DragDropEffects.Copy;
+        else
+            e.Effects = DragDropEffects.None;
+
         e.Handled = true;
     }
 
-    private void Timeline_Drop(object sender, DragEventArgs e)
+    private async void Timeline_Drop(object sender, DragEventArgs e)
     {
         if (_exporting) return;
-        if (e.Data.GetData(typeof(VideoTimelineClip)) is not VideoTimelineClip source) return;
-        int from = _project.Clips.IndexOf(source);
-        if (from < 0) return;
-        int to = _project.Clips.Count - 1;
-        var element = e.OriginalSource as DependencyObject;
-        while (element != null)
+
+        // 1. Reordering clips already on timeline
+        if (e.Data.GetData(typeof(VideoTimelineClip)) is VideoTimelineClip source)
         {
-            if (element is ListBoxItem item && item.DataContext is TimelineEntry target)
+            int from = _project.Clips.IndexOf(source);
+            if (from < 0) return;
+            int to = _project.Clips.Count - 1;
+            var element = e.OriginalSource as DependencyObject;
+            while (element != null)
             {
-                to = _project.Clips.IndexOf(target.Clip);
-                break;
+                if (element is ListBoxItem item && item.DataContext is TimelineEntry target)
+                {
+                    to = _project.Clips.IndexOf(target.Clip);
+                    break;
+                }
+                element = VisualTreeHelper.GetParent(element);
             }
-            element = VisualTreeHelper.GetParent(element);
+            if (from != to && to >= 0)
+            {
+                _project.Clips.RemoveAt(from);
+                _project.Clips.Insert(to, source);
+                MarkChanged("Timeline reordered");
+                RefreshTimeline();
+                TimelineList.SelectedIndex = to;
+            }
+            return;
         }
-        if (from == to || to < 0) return;
-        _project.Clips.RemoveAt(from);
-        _project.Clips.Insert(to, source);
-        MarkChanged("Timeline reordered");
-        RefreshTimeline();
-        TimelineList.SelectedIndex = to;
+
+        // 2. Dragging a MediaEntry from Media Library onto the timeline
+        if (e.Data.GetData(typeof(MediaEntry)) is MediaEntry mediaEntry)
+        {
+            AddClipToTimelineInternal(mediaEntry);
+            return;
+        }
+
+        // 3. Dragging external media files directly onto the timeline
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            if (e.Data.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
+            {
+                var validFiles = files.Where(f => File.Exists(f) && SupportedMediaExtensions.Contains(System.IO.Path.GetExtension(f))).ToList();
+                if (validFiles.Count > 0)
+                {
+                    await ImportPathsAsync(validFiles);
+                    foreach (var f in validFiles)
+                    {
+                        string full = System.IO.Path.GetFullPath(f);
+                        var found = _allLibraryEntries.FirstOrDefault(x => string.Equals(x.Path, full, StringComparison.OrdinalIgnoreCase));
+                        if (found != null)
+                            AddClipToTimelineInternal(found);
+                    }
+                }
+            }
+        }
     }
 
     private void ApplyTrim_Click(object sender, RoutedEventArgs e)
@@ -814,7 +986,38 @@ public partial class RenderVideoView : UserControl
 
     #region Monitor Playback & Scrubber Controls
 
-    private void OpenClip(int index, bool autoplay, double seekSeconds)
+    private readonly Dictionary<string, string> _convertedOggToWavCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private async Task<string> ResolvePlayableMediaPathAsync(string mediaPath)
+    {
+        if (!string.Equals(System.IO.Path.GetExtension(mediaPath), ".ogg", StringComparison.OrdinalIgnoreCase))
+            return mediaPath;
+
+        if (_convertedOggToWavCache.TryGetValue(mediaPath, out var cached) && File.Exists(cached))
+            return cached;
+
+        try
+        {
+            await _videoService.EnsureBinariesReadyAsync();
+            string tempWav = AppConfig.CreateTemporaryWavPath();
+            bool ok = await FFMpegCore.FFMpegArguments
+                .FromFileInput(mediaPath)
+                .OutputToFile(tempWav, true, options => options.WithCustomArgument("-c:a pcm_s16le"))
+                .ProcessAsynchronously();
+            if (ok && File.Exists(tempWav))
+            {
+                _convertedOggToWavCache[mediaPath] = tempWav;
+                return tempWav;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarn($"Could not convert OGG preview to WAV: {ex.Message}");
+        }
+        return mediaPath;
+    }
+
+    private async void OpenClip(int index, bool autoplay, double seekSeconds)
     {
         if (index < 0 || index >= _project.Clips.Count) { ClearMonitor(); return; }
         var clip = _project.Clips[index];
@@ -833,7 +1036,15 @@ public partial class RenderVideoView : UserControl
         _playbackTimer.Stop();
         VideoMonitor.Stop();
         VideoMonitor.Source = null;
-        VideoMonitor.Source = new Uri(mediaPath, UriKind.Absolute);
+
+        string playablePath = await ResolvePlayableMediaPathAsync(mediaPath);
+        if (!File.Exists(playablePath))
+        {
+            SetStatus($"Could not prepare playable media for: {clip.DisplayName}");
+            return;
+        }
+
+        VideoMonitor.Source = new Uri(playablePath, UriKind.Absolute);
         PreviewEmptyText.Visibility = Visibility.Collapsed;
         MonitorTitle.Text = clip.DisplayName;
         PlayPauseIcon.Kind = PackIconKind.Play;
@@ -1265,6 +1476,11 @@ public partial class RenderVideoView : UserControl
     {
         StopPlaying();
         if (VideoMonitor != null) VideoMonitor.Close();
+        foreach (var file in _convertedOggToWavCache.Values)
+        {
+            try { if (File.Exists(file)) File.Delete(file); } catch { }
+        }
+        _convertedOggToWavCache.Clear();
     }
 
     private void Editor_Loaded(object sender, RoutedEventArgs e)

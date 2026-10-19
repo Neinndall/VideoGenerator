@@ -51,4 +51,23 @@ public sealed class VideoTimelineRenderServiceTests
         Assert.Contains("[mergeda]anull[outa]", graph);
         Assert.DoesNotContain("amix=", graph);
     }
+
+    [Fact]
+    public void FilterGraphWithAudioOnlyClipGeneratesBlackVideoBackground()
+    {
+        var preset = new TimelineExportPreset("Prueba Audio", 1920, 1080, 30, 20);
+        var clips = new[]
+        {
+            new VideoTimelineRenderService.PreparedClip(
+                new VideoTimelineRenderService.RenderClip(@"C:\audio\dialogue.ogg", 0, 5),
+                HasAudio: true, HasVideo: false)
+        };
+
+        string graph = VideoTimelineRenderService.BuildFilterGraph(clips, preset,
+            includeMusic: false, musicVolume: 0, timelineDuration: 5);
+
+        Assert.Contains("color=c=black:s=1920x1080:r=30:d=5", graph);
+        Assert.Contains("[0:a:0]atrim=start=0:duration=5", graph);
+        Assert.Contains("concat=n=1:v=1:a=1", graph);
+    }
 }

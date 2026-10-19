@@ -78,11 +78,11 @@ public sealed class VideoTimelineRenderService
         {
             ct.ThrowIfCancellationRequested();
             TimelineMediaInfo info = await ProbeAsync(clip.Path, ct);
-            if (!info.HasVideo)
-                throw new InvalidDataException($"El archivo no contiene vídeo: {clip.Path}");
+            if (!info.HasVideo && !info.HasAudio)
+                throw new InvalidDataException($"El archivo no contiene pistas de vídeo ni de audio válidas: {clip.Path}");
             if (clip.TrimStart + clip.Duration > info.DurationSeconds + 0.025)
                 throw new InvalidDataException($"El recorte excede la duración disponible: {clip.Path}");
-            preparedClips.Add(new PreparedClip(clip, info.HasAudio));
+            preparedClips.Add(new PreparedClip(clip, info.HasAudio, info.HasVideo));
         }
 
         if (musicPath is not null)
@@ -157,11 +157,20 @@ public sealed class VideoTimelineRenderService
             string duration = F(item.Clip.Duration);
             // All video streams share resolution, frame rate, sample aspect and pixel format.
             // User paths never enter the filter graph, only controlled numeric values do.
-            graph.Append($"[{i}:v:0]trim=start={start}:duration={duration},setpts=PTS-STARTPTS,")
-                .Append($"fps={preset.Fps},scale={preset.Width}:{preset.Height}:")
-                .Append("force_original_aspect_ratio=decrease:flags=lanczos,")
-                .Append($"pad={preset.Width}:{preset.Height}:(ow-iw)/2:(oh-ih)/2,")
-                .Append($"setsar=1,format=yuv420p[v{i}];");
+            if (item.HasVideo)
+            {
+                graph.Append($"[{i}:v:0]trim=start={start}:duration={duration},setpts=PTS-STARTPTS,")
+                    .Append($"fps={preset.Fps},scale={preset.Width}:{preset.Height}:")
+                    .Append("force_original_aspect_ratio=decrease:flags=lanczos,")
+                    .Append($"pad={preset.Width}:{preset.Height}:(ow-iw)/2:(oh-ih)/2,")
+                    .Append($"setsar=1,format=yuv420p[v{i}];");
+            }
+            else
+            {
+                // Solid black frame placeholder for audio-only clips
+                graph.Append($"color=c=black:s={preset.Width}x{preset.Height}:r={preset.Fps}:d={duration},")
+                    .Append("setsar=1,format=yuv420p[v{i}];");
+            }
 
             if (item.HasAudio)
             {
@@ -382,7 +391,7 @@ public sealed class VideoTimelineRenderService
     private static string F(double number) => number.ToString("0.#########", NumberCulture);
 
     internal sealed record RenderClip(string Path, double TrimStart, double Duration);
-    internal sealed record PreparedClip(RenderClip Clip, bool HasAudio);
+    internal sealed record PreparedClip(RenderClip Clip, bool HasAudio, bool HasVideo = true);
 }
 
 public sealed record TimelineMediaInfo(double DurationSeconds, bool HasVideo, bool HasAudio);
