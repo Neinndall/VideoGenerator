@@ -72,12 +72,15 @@ public partial class RenderVideoView : UserControl
         InitializeComponent();
         DataContext = this;
 
-        MusicVolumeSlider.Value = _project.MusicVolume;
+        _initializingUi = false;
+        if (MusicVolumeSlider != null)
+            MusicVolumeSlider.Value = _project.MusicVolume;
+
         _playbackTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _playbackTimer.Tick += PlaybackTimer_Tick;
 
+        RefreshTimeline();
         UpdateProjectUi();
-        _initializingUi = false;
     }
 
     public sealed class MediaEntry
@@ -154,6 +157,7 @@ public partial class RenderVideoView : UserControl
 
     public void RefreshTimeline()
     {
+        if (_initializingUi || TimelineList == null) return;
         int prevSelected = TimelineList.SelectedIndex;
         TimelineItems.Clear();
         foreach (var clip in _project.Clips)
@@ -237,6 +241,7 @@ public partial class RenderVideoView : UserControl
 
     private void FilterLibrary()
     {
+        if (_initializingUi) return;
         string query = SearchLibraryBox?.Text?.Trim() ?? "";
         Library.Clear();
         var matches = string.IsNullOrWhiteSpace(query)
@@ -311,17 +316,17 @@ public partial class RenderVideoView : UserControl
 
     private void TimelineList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_suppressSelectionOpen) return;
+        if (_suppressSelectionOpen || _initializingUi || TimelineList == null) return;
         if (TimelineList.SelectedItem is not TimelineEntry selected)
         {
-            SelectedClipText.Text = "Select a clip below";
-            TrimStartBox.Text = "0";
-            ClipDurationBox.Text = "0";
+            if (SelectedClipText != null) SelectedClipText.Text = "Select a clip below";
+            if (TrimStartBox != null) TrimStartBox.Text = "0";
+            if (ClipDurationBox != null) ClipDurationBox.Text = "0";
             return;
         }
-        SelectedClipText.Text = selected.Name;
-        TrimStartBox.Text = selected.Clip.TrimStartSeconds.ToString("0.###", CultureInfo.InvariantCulture);
-        ClipDurationBox.Text = selected.Clip.DurationSeconds.ToString("0.###", CultureInfo.InvariantCulture);
+        if (SelectedClipText != null) SelectedClipText.Text = selected.Name;
+        if (TrimStartBox != null) TrimStartBox.Text = selected.Clip.TrimStartSeconds.ToString("0.###", CultureInfo.InvariantCulture);
+        if (ClipDurationBox != null) ClipDurationBox.Text = selected.Clip.DurationSeconds.ToString("0.###", CultureInfo.InvariantCulture);
         int index = TimelineList.SelectedIndex;
         if (!_exporting)
             OpenClip(index, false, selected.Clip.TrimStartSeconds);
@@ -494,6 +499,7 @@ public partial class RenderVideoView : UserControl
     private void TimelineZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         TimelineEntry.CurrentZoomFactor = e.NewValue;
+        if (_initializingUi || TimelineList == null) return;
         RefreshTimeline();
     }
 
@@ -710,6 +716,7 @@ public partial class RenderVideoView : UserControl
 
     private void MonitorVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
+        if (_initializingUi) return;
         if (VideoMonitor != null)
         {
             VideoMonitor.Volume = e.NewValue;
@@ -776,7 +783,7 @@ public partial class RenderVideoView : UserControl
 
     private void PlayheadSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (_updatingSlider || _project.Clips.Count == 0) return;
+        if (_initializingUi || _updatingSlider || _project.Clips.Count == 0) return;
         double overallTotal = _project.Clips.Sum(c => c.DurationSeconds);
         double targetOverall = e.NewValue * overallTotal;
         double elapsed = 0;

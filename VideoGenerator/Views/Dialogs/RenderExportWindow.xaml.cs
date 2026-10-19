@@ -48,10 +48,12 @@ public partial class RenderExportWindow : Window
         _progress = progress ?? throw new ArgumentNullException(nameof(progress));
         _cancellation = cancellation ?? throw new ArgumentNullException(nameof(cancellation));
 
+        _loadingPreset = true;
         InitializeComponent();
         InitializeStandardResolutions();
         LoadProjectSummary();
         InitializeDefaultDestination();
+        _loadingPreset = false;
         Loaded += RenderExportWindow_Loaded;
     }
 
@@ -142,7 +144,7 @@ public partial class RenderExportWindow : Window
 
     private void PresetsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (PresetsListBox.SelectedItem is not TimelineExportPreset preset)
+        if (_loadingPreset || PresetsListBox == null || PresetsListBox.SelectedItem is not TimelineExportPreset preset)
             return;
 
         _selectedPreset = preset;
@@ -257,6 +259,7 @@ public partial class RenderExportWindow : Window
 
     private void CrfSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
+        if (_loadingPreset || CrfValueText == null) return;
         int crf = (int)Math.Round(e.NewValue);
         UpdateCrfDisplay(crf);
         UpdateEstimatedSize();
