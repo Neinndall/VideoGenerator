@@ -11,7 +11,7 @@
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="materialDesign:TextFieldAssist.TextFieldCornerRadius" Value="9"/>
-        <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="1.5"/>
+        <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="1"/>
         <Setter Property="CaretBrush" Value="{StaticResource AccentBrushLight}"/>
         <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
         <Setter Property="SelectionOpacity" Value="0.34"/>
@@ -30,6 +30,7 @@
             </Trigger>
             <Trigger Property="IsFocused" Value="True">
                 <Setter Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                <Setter Property="materialDesign:TextFieldAssist.OutlinedBorderActiveThickness" Value="1.5"/>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Opacity" Value="0.47"/>
@@ -115,6 +116,7 @@
                         <Trigger Property="IsFocused" Value="True">
                             <Setter TargetName="TextBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                             <Setter TargetName="TextBorder" Property="BorderThickness" Value="1.5"/>
+                            <Setter TargetName="TextBorder" Property="Padding" Value="9.5,0,31.5,0"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="TextBorder" Property="Opacity" Value="0.45"/>
@@ -339,6 +341,7 @@
                         <Trigger Property="IsFocused" Value="True">
                             <Setter TargetName="SearchBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                             <Setter TargetName="SearchBorder" Property="BorderThickness" Value="1.5"/>
+                            <Setter TargetName="SearchBorder" Property="Padding" Value="9.5,0,31.5,0"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="SearchBorder" Property="Opacity" Value="0.45"/>

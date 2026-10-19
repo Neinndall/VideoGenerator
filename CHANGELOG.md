@@ -73,6 +73,7 @@ Changes
   - Planning / Scope: Kept the working app name and local configuration path VideoGenerator; public branding will be decided later.
 
 Bug Fixes
+  - UI / Text Box Content Jitter on Mouse Hover: Fixed text jumping 0.5px right and down when hovering over `ModernTextBox`, `ModernTextBoxWithClear`, `ModernSearchTextBox`, and `GeneralDirectoryPathField` by keeping base `OutlinedBorderActiveThickness` at 1px (matching `BorderThickness="1"`), expanding to 1.5px strictly upon active focus (`IsFocused="True"`) with internal padding compensation.
   - Mapping / Persistence: Preserves personal catalog entries and prevents duplicate or unsafe writes when configuration changes or is unreadable.
   - Data / Redundant Catalogs: Removed generation of obsolete Config/champions.json, Config/MonsterDatabase.json and Config/items.json; item data remains in the Riot cache.
   - Video / Atomic Publication: Final MP4 output is replaced only after a successful nonempty render; cancellation and failure preserve the previous video.

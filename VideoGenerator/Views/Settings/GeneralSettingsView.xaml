@@ -71,6 +71,7 @@
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="PathBorder" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                                 <Setter TargetName="PathBorder" Property="BorderThickness" Value="1.5"/>
+                                <Setter TargetName="PathBorder" Property="Padding" Value="11.5,0"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="PathBorder" Property="Opacity" Value="0.42"/>
