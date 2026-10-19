@@ -67,7 +67,9 @@ public sealed class VideoTimelineRenderServiceTests
             includeMusic: false, musicVolume: 0, timelineDuration: 5);
 
         Assert.Contains("color=c=black:s=1920x1080:r=30:d=5", graph);
+        Assert.Contains("setsar=1,format=yuv420p[v0];", graph);
+        Assert.DoesNotContain("[v{i}]", graph);
         Assert.Contains("[0:a:0]atrim=start=0:duration=5", graph);
-        Assert.Contains("concat=n=1:v=1:a=1", graph);
+        Assert.Contains("[v0][a0]concat=n=1:v=1:a=1", graph);
     }
 }

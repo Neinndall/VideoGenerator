@@ -26,6 +26,39 @@
             <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
+
+        <!-- Segmented Tab Filter RadioButton Style (Clean pills without switches) -->
+        <Style x:Key="FilterTabRadioButton" TargetType="RadioButton">
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="TabBorder" Background="#0C1B33" BorderBrush="#1C3861" BorderThickness="1"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#142B4C"/>
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource AccentBrushLight}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource AccentBrushLight}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="16">
@@ -92,16 +125,25 @@
                     <!-- Search & Filter tabs -->
                     <Border Grid.Row="1" Background="{StaticResource WorkspaceFilterBarBrush}" Padding="10,8" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                         <StackPanel>
-                            <TextBox x:Name="SearchBox" Style="{StaticResource ModernTextBox}" Height="32" Padding="8,4"
-                                     TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Filter templates"
-                                     Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,8">
+                                <TextBox x:Name="SearchBox" Style="{StaticResource ModernTextBox}" Height="34"
+                                         Padding="28,0,8,0" VerticalContentAlignment="Center"
+                                         materialDesign:HintAssist.IsFloating="False"
+                                         materialDesign:HintAssist.Hint="Search templates..." FontSize="11"
+                                         TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Filter templates"/>
+                                <materialDesign:PackIcon Kind="Magnify" Width="14" Height="14" Foreground="{StaticResource TextMutedBrush}"
+                                                         VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
+                            </Grid>
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="FilterAllRadio" Content="ALL" IsChecked="True" Checked="FilterRadio_Checked"
-                                             Style="{StaticResource {x:Type ToggleButton}}" Width="68" Height="24" FontSize="10" FontWeight="SemiBold" Margin="0,0,4,0"/>
-                                <RadioButton x:Name="FilterBuiltInRadio" Content="BUILT-IN" Checked="FilterRadio_Checked"
-                                             Style="{StaticResource {x:Type ToggleButton}}" Width="78" Height="24" FontSize="10" FontWeight="SemiBold" Margin="0,0,4,0"/>
-                                <RadioButton x:Name="FilterCustomRadio" Content="CUSTOM" Checked="FilterRadio_Checked"
-                                             Style="{StaticResource {x:Type ToggleButton}}" Width="76" Height="24" FontSize="10" FontWeight="SemiBold"/>
+                                <RadioButton x:Name="FilterAllRadio" Content="ALL" GroupName="TemplateFilterGroup"
+                                             IsChecked="True" Checked="FilterRadio_Checked"
+                                             Style="{StaticResource FilterTabRadioButton}"/>
+                                <RadioButton x:Name="FilterBuiltInRadio" Content="BUILT-IN" GroupName="TemplateFilterGroup"
+                                             Checked="FilterRadio_Checked"
+                                             Style="{StaticResource FilterTabRadioButton}"/>
+                                <RadioButton x:Name="FilterCustomRadio" Content="CUSTOM" GroupName="TemplateFilterGroup"
+                                             Checked="FilterRadio_Checked"
+                                             Style="{StaticResource FilterTabRadioButton}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -126,9 +168,9 @@
                                             <TextBlock Text="{Binding SummaryDisplay}" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"/>
                                         </StackPanel>
                                         <Border Grid.Column="1" VerticalAlignment="Center" Padding="6,2" CornerRadius="4"
-                                                Background="{StaticResource WorkspacePanelSurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-                                            <TextBlock Text="{Binding IsBuiltIn, Converter={x:Null}}" FontSize="9" FontWeight="Bold"
-                                                       Foreground="{StaticResource AccentBrushLight}"/>
+                                                Background="{Binding BadgeBackground}" BorderBrush="{Binding BadgeBorder}" BorderThickness="1">
+                                            <TextBlock Text="{Binding BadgeText}" FontSize="8" FontWeight="Bold"
+                                                       Foreground="{Binding BadgeForeground}"/>
                                         </Border>
                                     </Grid>
                                 </Border>
@@ -176,10 +218,14 @@
                         <StackPanel>
                             <!-- Template Name & Description -->
                             <TextBlock Text="TEMPLATE NAME" Style="{StaticResource DialogSectionHeader}"/>
-                            <TextBox x:Name="PresetNameBox" Style="{StaticResource ModernTextBox}" Height="36" Padding="10,6" Margin="0,0,0,10"
+                            <TextBox x:Name="PresetNameBox" Style="{StaticResource ModernTextBox}" Height="40" Padding="12,0"
+                                     VerticalContentAlignment="Center" materialDesign:HintAssist.IsFloating="False"
+                                     FontSize="12" FontWeight="SemiBold" Margin="0,0,0,10"
                                      TextChanged="CustomSetting_Changed"/>
-                            <TextBox x:Name="PresetDescBox" Style="{StaticResource ModernTextBox}" Height="32" Padding="10,4" Margin="0,0,0,16"
-                                     Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" TextChanged="CustomSetting_Changed"/>
+                            <TextBox x:Name="PresetDescBox" Style="{StaticResource ModernTextBox}" Height="36" Padding="12,0"
+                                     VerticalContentAlignment="Center" materialDesign:HintAssist.IsFloating="False"
+                                     Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,0,0,16"
+                                     TextChanged="CustomSetting_Changed"/>
 
                             <!-- Video Settings Group -->
                             <Border Style="{StaticResource WorkspacePanelContainer}" Padding="14" Margin="0,0,0,14" Background="{StaticResource WorkspaceContentWellBrush}">
@@ -206,9 +252,11 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="FRAME SIZE (W × H)" Style="{StaticResource DialogFieldLabel}"/>
-                                        <TextBox Grid.Column="1" x:Name="WidthBox" Style="{StaticResource ModernTextBox}" Height="34" Padding="8,4" TextChanged="CustomSetting_Changed"/>
+                                        <TextBox Grid.Column="1" x:Name="WidthBox" Style="{StaticResource ModernTextBox}" Height="36" Padding="10,0"
+                                                 VerticalContentAlignment="Center" materialDesign:HintAssist.IsFloating="False" TextChanged="CustomSetting_Changed"/>
                                         <TextBlock Grid.Column="2" Text="×" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
-                                        <TextBox Grid.Column="3" x:Name="HeightBox" Style="{StaticResource ModernTextBox}" Height="34" Padding="8,4" TextChanged="CustomSetting_Changed"/>
+                                        <TextBox Grid.Column="3" x:Name="HeightBox" Style="{StaticResource ModernTextBox}" Height="36" Padding="10,0"
+                                                 VerticalContentAlignment="Center" materialDesign:HintAssist.IsFloating="False" TextChanged="CustomSetting_Changed"/>
                                     </Grid>
 
                                     <!-- Frame rate -->
@@ -308,7 +356,8 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="DestinationPathBox" Style="{StaticResource ModernTextBox}" Height="36" Padding="10,6"
+                                <TextBox x:Name="DestinationPathBox" Style="{StaticResource ModernTextBox}" Height="38" Padding="12,0"
+                                         VerticalContentAlignment="Center" materialDesign:HintAssist.IsFloating="False"
                                          AutomationProperties.Name="Export file path"/>
                                 <Button Grid.Column="1" Content="BROWSE..." Click="BrowseDestination_Click"
                                         Style="{StaticResource ModernSecondaryButton}" Height="36" Margin="8,0,0,0" Padding="16,0"/>

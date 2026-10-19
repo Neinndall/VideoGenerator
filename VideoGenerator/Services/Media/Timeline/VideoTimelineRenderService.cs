@@ -169,7 +169,7 @@ public sealed class VideoTimelineRenderService
             {
                 // Solid black frame placeholder for audio-only clips
                 graph.Append($"color=c=black:s={preset.Width}x{preset.Height}:r={preset.Fps}:d={duration},")
-                    .Append("setsar=1,format=yuv420p[v{i}];");
+                    .Append($"setsar=1,format=yuv420p[v{i}];");
             }
 
             if (item.HasAudio)

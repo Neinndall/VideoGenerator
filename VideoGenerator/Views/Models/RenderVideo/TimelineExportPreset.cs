@@ -37,6 +37,18 @@ public sealed record TimelineExportPreset(
     public string SummaryDisplay =>
         $"{Width}×{Height} · {Fps} FPS · CRF {Crf} · {AudioBitrate} audio";
 
+    [JsonIgnore]
+    public string BadgeText => IsBuiltIn ? "BUILT-IN" : "CUSTOM";
+
+    [JsonIgnore]
+    public string BadgeBackground => IsBuiltIn ? "#0B2244" : "#2E1A47";
+
+    [JsonIgnore]
+    public string BadgeBorder => IsBuiltIn ? "#1D4ED8" : "#9333EA";
+
+    [JsonIgnore]
+    public string BadgeForeground => IsBuiltIn ? "#93C5FD" : "#D8B4FE";
+
     public static IReadOnlyList<TimelineExportPreset> BuiltInPresets { get; } = Array.AsReadOnly(new[]
     {
         new TimelineExportPreset("YouTube 1080p · 60 FPS", 1920, 1080, 60, 20, "192k", 48000, "libx264", "medium", true, "Ideal para gameplay fluido y montajes en alta definición"),
