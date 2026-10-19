@@ -31,6 +31,7 @@ New Features
   - Assets / Local WAD Hashes: The virtual path → xxHash64 resolver remains; the earlier optional external hash dictionary downloader was removed after confirming that the normal icon pipeline never consumed those catalogs.
 
 Improvements
+  - UI / Visual Design Inspector Headers: Unified inspector card headers (`CANVAS BACKGROUND`, `HUD TYPOGRAPHY`, `HUD ICON POSITION`, `DIALOGUE SPEECH BUBBLE`, and `PREVIEW CANVAS STUDIO`) with the shared `WorkspacePanelHeader` midnight-navy gradient, centered title icons and text horizontally and vertically, and recessed search result panels into `WorkspaceContentWellBrush`.
   - UI / Card Header & Surface Hierarchy: Harmonized card headers across Event Mapping tabs with the Settings featured midnight-navy gradient (`#0C2248` to `#0C1B42`), added distinct filter/column strips (`WorkspaceFilterBarBrush`), and recessed repository lists into obsidian content wells (`WorkspaceContentWellBrush`) to establish clear visual depth between header and card body.
   - UI / Midnight-Navy Palette: Redesigned the color scheme in Colors.xaml with an ultra-deep midnight canvas, cohesive chrome gradient, and deep obsidian-navy content wells for Live Preview, Pipeline, and Console.
   - UI / Seamless Sidebar Chrome: Replaced horizontal gradient stops with a smooth top-to-bottom shading in ShellChromeGradientBrush to eliminate vertical color banding.
