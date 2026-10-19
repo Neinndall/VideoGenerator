@@ -58,7 +58,31 @@ namespace VideoGenerator.Services
         }
 
         /// <summary>Root used to search both GAME and PLUGINS; null when no client is located.</summary>
-        public string GameDirectory { get; }
+        public string GameDirectory { get; private set; }
+
+        /// <summary>
+        /// Dynamically updates the root installation directory and immediately discovers its WAD archives.
+        /// Returns true if the directory or archive set changed.
+        /// </summary>
+        public bool UpdateGameDirectory(string gameDirectory)
+        {
+            lock (_refreshLock)
+            {
+                string resolved = ResolveGameDirectory(gameDirectory);
+                bool pathChanged = !string.Equals(GameDirectory, resolved, StringComparison.OrdinalIgnoreCase);
+                GameDirectory = resolved;
+                ArchiveSnapshot updated = DiscoverArchiveSnapshot();
+                lock (_indexLock)
+                {
+                    lock (_mappingLock)
+                    {
+                        _iconMappings.Clear();
+                    }
+                    Volatile.Write(ref _archiveSnapshot, updated);
+                }
+                return pathChanged || updated.WadFiles.Count > 0;
+            }
+        }
 
         /// <summary>Current WAD and WAD.CLIENT paths. No archives are kept open.</summary>
         public IReadOnlyList<string> WadFiles => Volatile.Read(ref _archiveSnapshot).WadFiles;

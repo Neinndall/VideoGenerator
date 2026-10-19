@@ -47,7 +47,13 @@ namespace VideoGenerator.Services
         /// catalogs even if they were previously cached by an older release.
         /// User-authored configuration and custom mappings are not modified.
         /// </summary>
-        public async Task<bool> RefreshAsync(CancellationToken token = default)
+        public Task<bool> RefreshAsync(CancellationToken token = default) =>
+            RefreshAsync(force: false, token);
+
+        /// <summary>
+        /// Refreshes source data, with an option to force catalog re-extraction and cache invalidation.
+        /// </summary>
+        public async Task<bool> RefreshAsync(bool force, CancellationToken token = default)
         {
             await _refreshGate.WaitAsync(token).ConfigureAwait(false);
             try
@@ -56,7 +62,7 @@ namespace VideoGenerator.Services
                 bool archivesChanged = await Task.Run(
                     () => _gameAssets.RefreshArchives(), token).ConfigureAwait(false);
 
-                if (_initialized && !archivesChanged)
+                if (_initialized && !archivesChanged && !force)
                     return false;
 
                 int updated = await _catalogBootstrapper.PrepareAsync(token)
@@ -64,7 +70,7 @@ namespace VideoGenerator.Services
 
                 // The old in-memory lookups are not allowed to shadow newer JSON
                 // from the installed WADs. Keep existing usable image files.
-                if (archivesChanged || updated > 0 || !_initialized)
+                if (archivesChanged || updated > 0 || !_initialized || force)
                 {
                     _dataFetcher.InvalidateCaches();
                     if (_aliases != null)

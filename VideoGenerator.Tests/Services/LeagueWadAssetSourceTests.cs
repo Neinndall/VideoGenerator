@@ -104,6 +104,39 @@ public sealed class LeagueWadAssetSourceTests
     }
 
     [Fact]
+    public async Task UpdateGameDirectoryDynamicallyActivatesAndUnloadsArchives()
+    {
+        using var fixture = new WadFixture();
+        fixture.AddWad("Game/data/champion.wad.client",
+            ("assets/hero.bin", new byte[] { 42 }));
+        string installedRoot = fixture.Root;
+
+        // Initially created with no game directory
+        var source = new LeagueWadAssetSource(new LogService(), null,
+            Path.Combine(fixture.Root, "IconCache"), () => null!);
+        Assert.Null(source.GameDirectory);
+        Assert.False(source.IsAvailable);
+        Assert.Empty(source.WadFiles);
+        Assert.Null(await source.ReadAssetBytesAsync("assets/hero.bin"));
+
+        // Dynamically activate by setting game directory
+        bool updated = source.UpdateGameDirectory(installedRoot);
+        Assert.True(updated);
+        Assert.True(source.IsAvailable);
+        Assert.NotEmpty(source.WadFiles);
+        Assert.Equal(installedRoot, source.GameDirectory);
+        byte[]? read = await source.ReadAssetBytesAsync("assets/hero.bin");
+        Assert.NotNull(read);
+        Assert.Equal(new byte[] { 42 }, read);
+
+        // Dynamically unload
+        source.UpdateGameDirectory(null);
+        Assert.False(source.IsAvailable);
+        Assert.Empty(source.WadFiles);
+        Assert.Null(source.GameDirectory);
+    }
+
+    [Fact]
     public async Task RegisteredPngConvertsAndCachesWithoutReopeningMissingWad()
     {
         using var fixture = new WadFixture();

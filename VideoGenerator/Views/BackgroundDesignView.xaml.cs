@@ -166,7 +166,7 @@ namespace VideoGenerator.Views
                     await _iconManager.GetAvailableSplashSkinsAsync(query.Champion);
                 if (available.Count == 0)
                 {
-                    SetSplashSearchStatus("No splash artwork for this champion was found in the installed WADs. Check Settings → General & Media and restart if the League directory was just changed.");
+                    SetSplashSearchStatus("No splash artwork for this champion was found in the installed WADs. Check Settings → General & Media to verify your League installation.");
                     return;
                 }
 

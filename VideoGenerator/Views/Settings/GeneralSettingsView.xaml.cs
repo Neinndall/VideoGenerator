@@ -25,6 +25,17 @@ namespace VideoGenerator.Views.Settings
         public void SetActiveGameSource(LeagueWadAssetSource source)
         {
             _activeSource = source;
+            if (_activeSource != null && !_activeSource.IsAvailable &&
+                !string.IsNullOrWhiteSpace(CurrentSettings.LeagueGameDirectory) &&
+                Directory.Exists(CurrentSettings.LeagueGameDirectory))
+            {
+                _activeSource.UpdateGameDirectory(CurrentSettings.LeagueGameDirectory);
+                var refreshService = App.ServiceProvider?.GetService<LocalGameDataRefreshService>();
+                if (refreshService != null)
+                {
+                    _ = refreshService.RefreshAsync(force: true);
+                }
+            }
             ShowCurrentInstallation();
             _ = VerifyLoadedInstallationAsync();
         }
@@ -69,9 +80,9 @@ namespace VideoGenerator.Views.Settings
                 }
                 else
                 {
-                    SetStatus("Restart required",
-                        "The saved folder differs from the installation currently loaded. Restart to activate the selected WAD archives.",
-                        PackIconKind.Restart, "WarningBrush");
+                    SetStatus("Local archives active",
+                        $"Loaded {_activeSource.WadFiles.Count} WAD archives.",
+                        PackIconKind.CheckCircleOutline, "SuccessBrush");
                 }
             }
             else
@@ -79,9 +90,9 @@ namespace VideoGenerator.Views.Settings
                 ActiveGameDirectoryText.Text = "Currently loaded: no WAD archives";
                 if (LeagueGameInstallationLocator.FindInstallationRoot(configured) != null)
                 {
-                    SetStatus("Restart required",
-                        "An installation folder is saved, but its WAD archives are not loaded in this session. Restart to activate it.",
-                        PackIconKind.Restart, "WarningBrush");
+                    SetStatus("Installation not activated",
+                        "An installation folder is saved, but its WAD archives are not loaded. Use Browse to re-select or activate it.",
+                        PackIconKind.AlertCircleOutline, "WarningBrush");
                 }
                 else
                 {
@@ -111,7 +122,7 @@ namespace VideoGenerator.Views.Settings
                 if (!scan.IsValid || !IsSameInstallation(scan.Root, selected))
                 {
                     SetStatus("Installation needs attention",
-                        "This session is using an incomplete or partial game folder. Browse to the League installation root and restart.",
+                        "This session is using an incomplete or partial game folder. Browse to the League installation root.",
                         PackIconKind.AlertCircleOutline, "WarningBrush");
                 }
                 else if (string.IsNullOrWhiteSpace(CurrentSettings.LeagueGameDirectory))
@@ -188,21 +199,30 @@ namespace VideoGenerator.Views.Settings
                 }
 
                 CurrentSettings.LeagueGameDirectory = result.Root;
-                // Save immediately: a user can restart right after choosing a game folder.
                 CurrentSettings.SaveSettings();
+
+                SetStatus("Activating WAD archives",
+                    $"Activating {result.GameWadCount} Game and {result.PluginWadCount} Plugins archives…",
+                    PackIconKind.DatabaseSyncOutline, "AccentBrush");
+
+                if (_activeSource != null)
+                {
+                    _activeSource.UpdateGameDirectory(result.Root);
+                }
+
+                var refreshService = App.ServiceProvider?.GetService<LocalGameDataRefreshService>();
+                if (refreshService != null)
+                {
+                    await refreshService.RefreshAsync(force: true);
+                }
+
                 ShowCurrentInstallation();
-                if (!IsSameInstallation(result.Root, _activeSource?.GameDirectory))
-                {
-                    SetStatus("Restart required",
-                        $"Found {result.GameWadCount} Game and {result.PluginWadCount} Plugins archives. Restart to activate them.",
-                        PackIconKind.Restart, "WarningBrush");
-                }
-                else
-                {
-                    SetStatus("Local archives detected",
-                        $"Found {result.GameWadCount} Game and {result.PluginWadCount} Plugins archives. Individual assets are verified when read.",
-                        PackIconKind.CheckCircleOutline, "SuccessBrush");
-                }
+                GameArchiveCountText.Text = result.GameWadCount.ToString();
+                PluginArchiveCountText.Text = result.PluginWadCount.ToString();
+
+                SetStatus("Local archives active",
+                    $"Found {result.GameWadCount} Game and {result.PluginWadCount} Plugins archives. Archives loaded and ready for use.",
+                    PackIconKind.CheckCircleOutline, "SuccessBrush");
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
                                        or ArgumentException)
