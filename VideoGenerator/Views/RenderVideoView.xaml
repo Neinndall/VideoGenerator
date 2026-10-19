@@ -228,6 +228,18 @@
                                           Stretch="Uniform" ScrubbingEnabled="True"
                                           MediaOpened="VideoMonitor_MediaOpened" MediaEnded="VideoMonitor_MediaEnded"
                                           MediaFailed="VideoMonitor_MediaFailed"/>
+                            <!-- Audio-only clip playback indicator -->
+                            <Border x:Name="AudioOnlyIndicator" Visibility="Collapsed" Background="#071120"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Border Width="52" Height="52" CornerRadius="26" Background="#0C1B33" BorderBrush="#38BDF8" BorderThickness="1.5"
+                                            HorizontalAlignment="Center" Margin="0,0,0,8">
+                                        <materialDesign:PackIcon Kind="Waveform" Width="28" Height="28" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock x:Name="AudioOnlyClipTitle" Text="Audio Playback" Foreground="#F0F6FC" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Audio Track Preview" Foreground="#849CBF" FontSize="10" Margin="0,2,0,0" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
                             <StackPanel x:Name="PreviewEmptyText" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="PlayBoxMultipleOutline" Width="36" Height="36" HorizontalAlignment="Center" Foreground="#526A8F" Margin="0,0,0,6"/>
                                 <TextBlock Text="Select a timeline clip to preview" Foreground="#849CBF" FontSize="12" HorizontalAlignment="Center"/>
@@ -268,6 +280,9 @@
                                 </Button>
                                 <Button Click="Next_Click" Style="{StaticResource EditorTransportButton}" ToolTip="Next clip (End)">
                                     <materialDesign:PackIcon Kind="SkipForward" Width="16" Height="16" Foreground="{StaticResource AccentBrushLight}"/>
+                                </Button>
+                                <Button x:Name="LoopToggleButton" Click="LoopToggle_Click" Style="{StaticResource EditorTransportButton}" ToolTip="Toggle loop playback (L)">
+                                    <materialDesign:PackIcon x:Name="LoopIcon" Kind="Repeat" Width="16" Height="16" Foreground="#849CBF"/>
                                 </Button>
                             </StackPanel>
 
@@ -520,6 +535,14 @@
                                 </StackPanel>
                             </Border>
 
+                            <!-- Vegas Loop Button -->
+                            <Button x:Name="VegasLoopButton" Click="LoopToggle_Click" Style="{StaticResource EditorToolButton}" ToolTip="Toggle Loop Playback (L)" Height="28" Padding="6,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon x:Name="VegasLoopIcon" Kind="Repeat" Width="14" Height="14" Foreground="#849CBF" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="VegasLoopText" Text="LOOP: OFF" FontSize="9" FontWeight="Bold" Foreground="#849CBF"/>
+                                </StackPanel>
+                            </Button>
+
                             <Border Width="1" Height="20" Background="{StaticResource BorderBrush}" Margin="6,0"/>
 
                             <!-- Zoom Tools -->
@@ -667,192 +690,248 @@
                     <!-- RIGHT: SCROLLABLE TRACK LANES & SONY VEGAS DUAL-LANE CLIPS -->
                     <Border Grid.Column="1" Background="{StaticResource RenderTimelineTrackBrush}" Padding="4,4,12,6"
                             AllowDrop="True" Drop="Timeline_Drop" DragOver="Timeline_DragOver">
-                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" CanContentScroll="False">
-                            <StackPanel Orientation="Vertical">
-                                <!-- TIME RULER STRIP -->
-                                <Border Height="20" Background="#061224" CornerRadius="3" Margin="0,0,0,2" BorderBrush="#122744" BorderThickness="1">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text=",00:00:00:00" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="8,0,32,0"/>
-                                        <TextBlock Text=",00:00:05:00" Foreground="#475569" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
-                                        <TextBlock Text=",00:00:10:00" Foreground="#475569" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
-                                        <TextBlock Text=",00:00:15:00" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
-                                        <TextBlock Text=",00:00:20:00" Foreground="#475569" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
-                                        <TextBlock Text=",00:00:30:00" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
-                                        <TextBlock Text=",00:00:45:00" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
-                                        <TextBlock Text=",00:01:00:00" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
-                                    </StackPanel>
-                                </Border>
+                        <ScrollViewer x:Name="TimelineScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" CanContentScroll="False">
+                            <Grid x:Name="TimelineTracksHostGrid">
+                                <StackPanel x:Name="TimelineTracksStack" Orientation="Vertical">
+                                    <!-- TIME RULER STRIP -->
+                                    <Border x:Name="TimeRulerBorder" Height="20" Background="#061224" CornerRadius="3" Margin="0,0,0,2" BorderBrush="#122744" BorderThickness="1"
+                                            Cursor="Hand" ToolTip="Click or drag to seek on timeline"
+                                            PreviewMouseDown="TimeRuler_MouseDown" PreviewMouseMove="TimeRuler_MouseMove" PreviewMouseUp="TimeRuler_MouseUp">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="00:00:00" Foreground="#94A3B8" FontSize="9" FontFamily="Consolas, monospace" Margin="8,0,32,0"/>
+                                            <TextBlock Text="00:00:05" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                            <TextBlock Text="00:00:10" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                            <TextBlock Text="00:00:15" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                            <TextBlock Text="00:00:20" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                            <TextBlock Text="00:00:30" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                            <TextBlock Text="00:00:45" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                            <TextBlock Text="00:01:00" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                            <TextBlock Text="00:02:00" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                            <TextBlock Text="00:03:00" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                            <TextBlock Text="00:05:00" Foreground="#64748B" FontSize="9" FontFamily="Consolas, monospace" Margin="0,0,32,0"/>
+                                        </StackPanel>
+                                    </Border>
 
-                                <!-- TRACK 1 & 2: DUAL-LANE LINKED VIDEO + AUDIO EVENTS -->
-                                <ListBox x:Name="TimelineList" ItemsSource="{Binding TimelineItems}"
-                                         SelectedIndex="-1" SelectionChanged="TimelineList_SelectionChanged"
-                                         PreviewMouseMove="TimelineList_PreviewMouseMove"
-                                         Background="Transparent" BorderThickness="0"
-                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                    <ListBox.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal"/>
-                                        </ItemsPanelTemplate>
-                                    </ListBox.ItemsPanel>
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="0"/>
-                                            <Setter Property="Margin" Value="2,0"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="BorderThickness" Value="0"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="ListBoxItem">
-                                                        <ContentPresenter/>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Width="{Binding PixelWidth}" Height="152"
-                                                    Background="#09182E"
-                                                    BorderBrush="{StaticResource RenderTimelineVegasSelectedBrush}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="5" ClipToBounds="True"
-                                                    MouseDown="TimelineClip_MouseDown">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <!-- Video Event (Height 76) -->
-                                                        <RowDefinition Height="76"/>
-                                                        <!-- Sync Link Connector (Height 2) -->
-                                                        <RowDefinition Height="2"/>
-                                                        <!-- Audio Event (Height 74) -->
-                                                        <RowDefinition Height="74"/>
-                                                    </Grid.RowDefinitions>
+                                    <!-- TRACK 1 & 2: DUAL-LANE LINKED VIDEO + AUDIO EVENTS -->
+                                    <ListBox x:Name="TimelineList" ItemsSource="{Binding TimelineItems}"
+                                             SelectedIndex="-1" SelectionChanged="TimelineList_SelectionChanged"
+                                             PreviewMouseMove="TimelineList_PreviewMouseMove"
+                                             Background="Transparent" BorderThickness="0"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <ListBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ListBox.ItemsPanel>
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="0"/>
+                                                <Setter Property="Margin" Value="2,0"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <ContentPresenter/>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Width="{Binding PixelWidth}" Height="152"
+                                                        Background="#09182E"
+                                                        BorderBrush="{StaticResource RenderTimelineVegasSelectedBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="5" ClipToBounds="True"
+                                                        MouseDown="TimelineClip_MouseDown">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <!-- Video Event (Height 76) -->
+                                                            <RowDefinition Height="76"/>
+                                                            <!-- Sync Link Connector (Height 2) -->
+                                                            <RowDefinition Height="2"/>
+                                                            <!-- Audio Event (Height 74) -->
+                                                            <RowDefinition Height="74"/>
+                                                        </Grid.RowDefinitions>
 
-                                                    <!-- 1. VIDEO EVENT (Sony Vegas Blue Event) -->
-                                                    <Border Grid.Row="0" Background="{StaticResource RenderTimelineClipBrush}" Padding="6,4">
-                                                        <Grid>
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition Height="Auto"/>
-                                                                <RowDefinition Height="*"/>
-                                                                <RowDefinition Height="Auto"/>
-                                                            </Grid.RowDefinitions>
+                                                        <!-- 1. VIDEO EVENT (Sony Vegas Blue Event) - Visible only for video clips -->
+                                                        <Border Grid.Row="0" Background="{StaticResource RenderTimelineClipBrush}" Padding="6,4"
+                                                                Visibility="{Binding VideoLaneVisibility}">
+                                                            <Grid>
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                    <RowDefinition Height="*"/>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                </Grid.RowDefinitions>
 
-                                                            <!-- Video Header -->
-                                                            <Grid Grid.Row="0">
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                </Grid.ColumnDefinitions>
-                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                                    <TextBlock Text="{Binding IndexDisplay}" Foreground="#93C5FD" FontSize="10" FontWeight="Bold" Margin="0,0,4,0"/>
-                                                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" Foreground="#F0F6FC" FontSize="11" FontWeight="SemiBold"/>
-                                                                </StackPanel>
+                                                                <!-- Video Header -->
+                                                                <Grid Grid.Row="0">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding IndexDisplay}" Foreground="#93C5FD" FontSize="10" FontWeight="Bold" Margin="0,0,4,0"/>
+                                                                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" Foreground="#F0F6FC" FontSize="11" FontWeight="SemiBold"/>
+                                                                    </StackPanel>
 
-                                                                <!-- Mini Tools on clip: Split ✂, Duplicate ⧉, Delete ✕ -->
-                                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                                    <Border Background="#1E3A8A" CornerRadius="2" Padding="3,1" Margin="0,0,3,0">
-                                                                        <TextBlock Text="fx" FontSize="9" FontWeight="Black" Foreground="#60A5FA"/>
-                                                                    </Border>
-                                                                    <Button Tag="{Binding}" Click="ClipMiniSplit_Click" ToolTip="Split at playhead"
-                                                                            Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Margin="1,0">
-                                                                        <materialDesign:PackIcon Kind="ContentCut" Width="10" Height="10" Foreground="#38BDF8"/>
-                                                                    </Button>
-                                                                    <Button Tag="{Binding}" Click="ClipMiniDuplicate_Click" ToolTip="Duplicate clip (Ctrl+D)"
-                                                                            Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Margin="1,0">
-                                                                        <materialDesign:PackIcon Kind="ContentCopy" Width="10" Height="10" Foreground="#A78BFA"/>
-                                                                    </Button>
-                                                                    <Button Tag="{Binding}" Click="ClipMiniRemove_Click" ToolTip="Delete clip (Del)"
-                                                                            Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Margin="1,0">
-                                                                        <materialDesign:PackIcon Kind="Close" Width="10" Height="10" Foreground="#F87171"/>
-                                                                    </Button>
-                                                                </StackPanel>
-                                                            </Grid>
-
-                                                            <!-- Filmstrip Thumbnails visual -->
-                                                            <Border Grid.Row="1" Background="#08152B" CornerRadius="3" Margin="0,2" Padding="4,0" BorderBrush="#142C52" BorderThickness="1">
-                                                                <Grid VerticalAlignment="Center">
-                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Opacity="0.35">
-                                                                        <materialDesign:PackIcon Kind="MovieRoll" Width="16" Height="16" Foreground="#849CBF" Margin="6,0"/>
-                                                                        <materialDesign:PackIcon Kind="MovieRoll" Width="16" Height="16" Foreground="#849CBF" Margin="6,0"/>
-                                                                        <materialDesign:PackIcon Kind="MovieRoll" Width="16" Height="16" Foreground="#849CBF" Margin="6,0"/>
+                                                                    <!-- Mini Tools on clip: Split ✂, Duplicate ⧉, Delete ✕ -->
+                                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <Border Background="#1E3A8A" CornerRadius="2" Padding="3,1" Margin="0,0,3,0">
+                                                                            <TextBlock Text="fx" FontSize="9" FontWeight="Black" Foreground="#60A5FA"/>
+                                                                        </Border>
+                                                                        <Button Tag="{Binding}" Click="ClipMiniSplit_Click" ToolTip="Split at playhead"
+                                                                                Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Margin="1,0">
+                                                                            <materialDesign:PackIcon Kind="ContentCut" Width="10" Height="10" Foreground="#38BDF8"/>
+                                                                        </Button>
+                                                                        <Button Tag="{Binding}" Click="ClipMiniDuplicate_Click" ToolTip="Duplicate clip (Ctrl+D)"
+                                                                                Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Margin="1,0">
+                                                                            <materialDesign:PackIcon Kind="ContentCopy" Width="10" Height="10" Foreground="#A78BFA"/>
+                                                                        </Button>
+                                                                        <Button Tag="{Binding}" Click="ClipMiniRemove_Click" ToolTip="Delete clip (Del)"
+                                                                                Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Margin="1,0">
+                                                                            <materialDesign:PackIcon Kind="Close" Width="10" Height="10" Foreground="#F87171"/>
+                                                                        </Button>
                                                                     </StackPanel>
                                                                 </Grid>
-                                                            </Border>
 
-                                                            <!-- Video Footer: Duration -->
-                                                            <Grid Grid.Row="2">
-                                                                <TextBlock Text="VIDEO · 1080p" Foreground="#64748B" FontSize="9" FontWeight="Bold" VerticalAlignment="Center"/>
-                                                                <TextBlock Text="{Binding TimeDisplay}" Foreground="#93C5FD" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                                <!-- Filmstrip Thumbnails visual -->
+                                                                <Border Grid.Row="1" Background="#08152B" CornerRadius="3" Margin="0,2" Padding="4,0" BorderBrush="#142C52" BorderThickness="1">
+                                                                    <Grid VerticalAlignment="Center">
+                                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Opacity="0.35">
+                                                                            <materialDesign:PackIcon Kind="MovieRoll" Width="16" Height="16" Foreground="#849CBF" Margin="6,0"/>
+                                                                            <materialDesign:PackIcon Kind="MovieRoll" Width="16" Height="16" Foreground="#849CBF" Margin="6,0"/>
+                                                                            <materialDesign:PackIcon Kind="MovieRoll" Width="16" Height="16" Foreground="#849CBF" Margin="6,0"/>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Border>
+
+                                                                <!-- Video Footer: Duration -->
+                                                                <Grid Grid.Row="2">
+                                                                    <TextBlock Text="VIDEO · 1080p" Foreground="#64748B" FontSize="9" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="{Binding TimeDisplay}" Foreground="#93C5FD" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                                </Grid>
                                                             </Grid>
-                                                        </Grid>
-                                                    </Border>
+                                                        </Border>
 
-                                                    <!-- SYNC CONNECTOR -->
-                                                    <Border Grid.Row="1" Background="#1D3E70"/>
-
-                                                    <!-- 2. AUDIO EVENT (Sony Vegas Crimson Audio Event) -->
-                                                    <Border Grid.Row="2" Background="{StaticResource RenderTimelineAudioClipBrush}" Padding="6,4">
-                                                        <Grid>
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition Height="Auto"/>
-                                                                <RowDefinition Height="*"/>
-                                                                <RowDefinition Height="Auto"/>
-                                                            </Grid.RowDefinitions>
-
-                                                            <!-- Audio Header -->
-                                                            <Grid Grid.Row="0">
-                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                                    <materialDesign:PackIcon Kind="VolumeHigh" Width="12" Height="12" Foreground="#F87171" Margin="0,0,4,0" VerticalAlignment="Center"/>
-                                                                    <TextBlock Text="Audio - " Foreground="#FCA5A5" FontSize="9" FontWeight="Bold"/>
-                                                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" Foreground="#FEE2E2" FontSize="9" FontWeight="SemiBold"/>
+                                                        <!-- EMPTY TRACK 1 SLOT (Unoccupied placeholder when audio-only clip) -->
+                                                        <Border Grid.Row="0" Background="#050E1C" CornerRadius="4" Margin="1"
+                                                                BorderBrush="#112542" BorderThickness="1"
+                                                                Visibility="{Binding AudioOnlyPlaceholderVisibility}">
+                                                            <Grid>
+                                                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.4">
+                                                                    <materialDesign:PackIcon Kind="VolumeHigh" Width="14" Height="14" Foreground="#475569" HorizontalAlignment="Center"/>
+                                                                    <TextBlock Text="[Audio Clip · Track 2]" Foreground="#64748B" FontSize="9" FontStyle="Italic" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                                                 </StackPanel>
-                                                                <TextBlock Text="0,0 dB" Foreground="#94A3B8" FontSize="9" HorizontalAlignment="Right"/>
                                                             </Grid>
+                                                        </Border>
 
-                                                            <!-- REALISTIC AUDIO WAVEFORM PEAKS -->
-                                                            <Border Grid.Row="1" Background="#1F0B13" CornerRadius="3" Margin="0,2" BorderBrush="#3B1421" BorderThickness="1" ClipToBounds="True">
-                                                                <ItemsControl ItemsSource="{Binding WaveformPeaks}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                                    <ItemsControl.ItemsPanel>
-                                                                        <ItemsPanelTemplate>
-                                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center"/>
-                                                                        </ItemsPanelTemplate>
-                                                                    </ItemsControl.ItemsPanel>
-                                                                    <ItemsControl.ItemTemplate>
-                                                                        <DataTemplate>
-                                                                            <Border Width="2" Height="{Binding}" Background="{StaticResource RenderTimelineAudioWaveformBrush}" CornerRadius="1" Margin="1,0" VerticalAlignment="Center" Opacity="0.85"/>
-                                                                        </DataTemplate>
-                                                                    </ItemsControl.ItemTemplate>
-                                                                </ItemsControl>
-                                                            </Border>
+                                                        <!-- SYNC CONNECTOR (Visible only when both video and audio exist) -->
+                                                        <Border Grid.Row="1" Background="#1D3E70" Visibility="{Binding ConnectorVisibility}"/>
 
-                                                            <!-- Audio Footer -->
-                                                            <Grid Grid.Row="2">
-                                                                <TextBlock Text="48 kHz · Stereo" Foreground="#94A3B8" FontSize="8" VerticalAlignment="Center"/>
-                                                                <TextBlock Text="Synced" Foreground="#10B981" FontSize="9" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                        <!-- 2. AUDIO EVENT (Sony Vegas Crimson Audio Event) -->
+                                                        <Border Grid.Row="2" Background="{StaticResource RenderTimelineAudioClipBrush}" Padding="6,4">
+                                                            <Grid>
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                    <RowDefinition Height="*"/>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                </Grid.RowDefinitions>
+
+                                                                <!-- Audio Header -->
+                                                                <Grid Grid.Row="0">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <materialDesign:PackIcon Kind="VolumeHigh" Width="12" Height="12" Foreground="#F87171" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                                        <TextBlock Text="Audio · " Foreground="#FCA5A5" FontSize="9" FontWeight="Bold"/>
+                                                                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" Foreground="#FEE2E2" FontSize="9" FontWeight="SemiBold"/>
+                                                                    </StackPanel>
+
+                                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <!-- Mini tools on audio header (available when audio-only) -->
+                                                                        <StackPanel Orientation="Horizontal" Visibility="{Binding AudioOnlyPlaceholderVisibility}" Margin="0,0,4,0">
+                                                                            <Button Tag="{Binding}" Click="ClipMiniSplit_Click" ToolTip="Split audio clip at playhead"
+                                                                                    Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Margin="1,0">
+                                                                                <materialDesign:PackIcon Kind="ContentCut" Width="10" Height="10" Foreground="#FCA5A5"/>
+                                                                            </Button>
+                                                                            <Button Tag="{Binding}" Click="ClipMiniDuplicate_Click" ToolTip="Duplicate audio clip (Ctrl+D)"
+                                                                                    Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Margin="1,0">
+                                                                                <materialDesign:PackIcon Kind="ContentCopy" Width="10" Height="10" Foreground="#A78BFA"/>
+                                                                            </Button>
+                                                                            <Button Tag="{Binding}" Click="ClipMiniRemove_Click" ToolTip="Delete audio clip (Del)"
+                                                                                    Style="{StaticResource IconActionButton}" Width="16" Height="16" Padding="0" Margin="1,0">
+                                                                                <materialDesign:PackIcon Kind="Close" Width="10" Height="10" Foreground="#F87171"/>
+                                                                            </Button>
+                                                                        </StackPanel>
+                                                                        <TextBlock Text="{Binding TimeDisplay}" Foreground="#FCA5A5" FontSize="9" FontWeight="Bold" Margin="2,0,0,0"/>
+                                                                    </StackPanel>
+                                                                </Grid>
+
+                                                                <!-- REALISTIC AUDIO WAVEFORM PEAKS -->
+                                                                <Border Grid.Row="1" Background="#1F0B13" CornerRadius="3" Margin="0,2" BorderBrush="#3B1421" BorderThickness="1" ClipToBounds="True">
+                                                                    <ItemsControl ItemsSource="{Binding WaveformPeaks}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                        <ItemsControl.ItemsPanel>
+                                                                            <ItemsPanelTemplate>
+                                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center"/>
+                                                                            </ItemsPanelTemplate>
+                                                                        </ItemsControl.ItemsPanel>
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <Border Width="2" Height="{Binding}" Background="{StaticResource RenderTimelineAudioWaveformBrush}" CornerRadius="1" Margin="1,0" VerticalAlignment="Center" Opacity="0.85"/>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </Border>
+
+                                                                <!-- Audio Footer -->
+                                                                <Grid Grid.Row="2">
+                                                                    <TextBlock Text="48 kHz · Stereo" Foreground="#94A3B8" FontSize="8" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="{Binding AudioFooterStatus}" Foreground="#10B981" FontSize="9" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                                </Grid>
                                                             </Grid>
-                                                        </Grid>
-                                                    </Border>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
 
-                                <!-- TRACK 3: BACKGROUND MUSIC EVENT LANE -->
-                                <Border Height="36" Background="{StaticResource RenderTimelineMusicBrush}" Margin="2,4,2,0" CornerRadius="4" Padding="10,4" BorderBrush="#4A2666" BorderThickness="1">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="MusicBoxOutline" Width="14" Height="14" Foreground="#D8B4FE" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="MusicLaneText" Text="No background music · Choose audio in mixer"
-                                                       Foreground="#E9D5FF" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="1" Text="🎵 BGM Track (Loop)" Foreground="#C084FC" FontSize="9" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                    <!-- TRACK 3: BACKGROUND MUSIC EVENT LANE -->
+                                    <Border Height="36" Background="{StaticResource RenderTimelineMusicBrush}" Margin="2,4,2,0" CornerRadius="4" Padding="10,4" BorderBrush="#4A2666" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="MusicBoxOutline" Width="14" Height="14" Foreground="#D8B4FE" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="MusicLaneText" Text="No background music · Choose audio in mixer"
+                                                           Foreground="#E9D5FF" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="🎵 BGM Track (Loop)" Foreground="#C084FC" FontSize="9" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- PLAYHEAD NEEDLE CANVAS (OVERLAY) -->
+                                <Canvas x:Name="PlayheadCanvas" IsHitTestVisible="False" ClipToBounds="False"
+                                        Width="{Binding ActualWidth, ElementName=TimelineTracksStack}"
+                                        Height="{Binding ActualHeight, ElementName=TimelineTracksStack}">
+                                    <Grid x:Name="PlayheadNeedle" Canvas.Left="0" Canvas.Top="0" Width="12"
+                                          Height="{Binding ActualHeight, ElementName=TimelineTracksStack}"
+                                          Visibility="Collapsed">
+                                        <!-- Marker head on ruler (Inverted cyan triangle) -->
+                                        <Polygon Points="0,0 12,0 6,10" Fill="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                        <!-- Vertical playhead line spanning all tracks -->
+                                        <Rectangle Width="2" Fill="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Stretch" Margin="5,8,5,0" Opacity="0.9"/>
                                     </Grid>
-                                </Border>
-                            </StackPanel>
+                                </Canvas>
+                            </Grid>
                         </ScrollViewer>
                     </Border>
                 </Grid>

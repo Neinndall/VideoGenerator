@@ -76,11 +76,23 @@ public partial class RenderVideoView : UserControl
         if (MusicVolumeSlider != null)
             MusicVolumeSlider.Value = _project.MusicVolume;
 
-        _playbackTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+        _playbackTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
         _playbackTimer.Tick += PlaybackTimer_Tick;
 
         RefreshTimeline();
         UpdateProjectUi();
+    }
+
+    private static readonly HashSet<string> AudioOnlyExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".ogg", ".wav", ".mp3", ".m4a", ".flac", ".aac", ".wma"
+    };
+
+    public static bool IsAudioOnlyPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        string ext = System.IO.Path.GetExtension(path);
+        return AudioOnlyExtensions.Contains(ext);
     }
 
     public sealed class MediaEntry
@@ -112,6 +124,16 @@ public partial class RenderVideoView : UserControl
         public string TimecodeDisplay => FormatTimecode(Clip.DurationSeconds);
         public double PixelWidth => Math.Clamp(Clip.DurationSeconds * CurrentZoomFactor, 120d, 1800d);
         public List<double> WaveformPeaks { get; init; } = new();
+
+        public bool HasVideo { get; init; } = true;
+        public bool HasAudio { get; init; } = true;
+        public bool IsAudioOnly => HasAudio && !HasVideo;
+
+        public Visibility VideoLaneVisibility => HasVideo ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility AudioOnlyPlaceholderVisibility => IsAudioOnly ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility AudioLaneVisibility => HasAudio ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ConnectorVisibility => (HasVideo && HasAudio) ? Visibility.Visible : Visibility.Collapsed;
+        public string AudioFooterStatus => IsAudioOnly ? "Audio Clip" : "Synced";
 
         public static List<double> GenerateWaveform(string seedString, double duration)
         {
@@ -209,12 +231,31 @@ public partial class RenderVideoView : UserControl
         for (int i = 0; i < _project.Clips.Count; i++)
         {
             var clip = _project.Clips[i];
+            string fullPath = ResolveClipPath(clip);
+            bool hasVideo = true;
+            bool hasAudio = true;
+
+            var libEntry = _allLibraryEntries.FirstOrDefault(x =>
+                string.Equals(x.Path, fullPath, StringComparison.OrdinalIgnoreCase));
+            if (libEntry != null)
+            {
+                hasVideo = libEntry.HasVideo;
+                hasAudio = libEntry.HasAudio;
+            }
+            else if (IsAudioOnlyPath(fullPath))
+            {
+                hasVideo = false;
+                hasAudio = true;
+            }
+
             var peaks = TimelineEntry.GenerateWaveform(clip.SourcePath + i, clip.DurationSeconds);
             TimelineItems.Add(new TimelineEntry
             {
                 Clip = clip,
                 ClipIndex = i,
-                WaveformPeaks = peaks
+                WaveformPeaks = peaks,
+                HasVideo = hasVideo,
+                HasAudio = hasAudio
             });
         }
         UpdateProjectUi();
@@ -1047,6 +1088,25 @@ public partial class RenderVideoView : UserControl
         VideoMonitor.Source = new Uri(playablePath, UriKind.Absolute);
         PreviewEmptyText.Visibility = Visibility.Collapsed;
         MonitorTitle.Text = clip.DisplayName;
+
+        bool isAudioOnly = false;
+        var libEntry = _allLibraryEntries.FirstOrDefault(x => string.Equals(x.Path, mediaPath, StringComparison.OrdinalIgnoreCase));
+        if (libEntry != null)
+        {
+            isAudioOnly = libEntry.IsAudioOnly;
+        }
+        else
+        {
+            isAudioOnly = IsAudioOnlyPath(mediaPath);
+        }
+
+        if (AudioOnlyIndicator != null)
+        {
+            AudioOnlyIndicator.Visibility = isAudioOnly ? Visibility.Visible : Visibility.Collapsed;
+            if (AudioOnlyClipTitle != null && isAudioOnly)
+                AudioOnlyClipTitle.Text = clip.DisplayName;
+        }
+
         PlayPauseIcon.Kind = PackIconKind.Play;
         UpdatePlayheadUi();
     }
@@ -1074,6 +1134,8 @@ public partial class RenderVideoView : UserControl
         StopPlaying();
         _activeClipIndex = -1;
         VideoMonitor.Source = null;
+        if (AudioOnlyIndicator != null)
+            AudioOnlyIndicator.Visibility = Visibility.Collapsed;
         PreviewEmptyText.Visibility = Visibility.Visible;
         MonitorTitle.Text = "No clip selected";
         UpdatePlayheadUi();
@@ -1104,8 +1166,33 @@ public partial class RenderVideoView : UserControl
             OpenClip(0, true, _project.Clips[0].TrimStartSeconds);
             return;
         }
-        if (_playing) StopPlaying();
-        else if (_activeClipIndex >= 0) StartPlaying();
+        if (_playing)
+        {
+            StopPlaying();
+            return;
+        }
+        if (_activeClipIndex >= 0 && _activeClipIndex < _project.Clips.Count)
+        {
+            var currentClip = _project.Clips[_activeClipIndex];
+            bool atClipEnd = VideoMonitor.Position.TotalSeconds >= currentClip.TrimStartSeconds + currentClip.DurationSeconds - 0.15;
+            if (atClipEnd)
+            {
+                if (_activeClipIndex >= _project.Clips.Count - 1)
+                {
+                    SelectTimelineWithoutReload(0);
+                    OpenClip(0, true, _project.Clips[0].TrimStartSeconds);
+                    return;
+                }
+                else
+                {
+                    int next = _activeClipIndex + 1;
+                    SelectTimelineWithoutReload(next);
+                    OpenClip(next, true, _project.Clips[next].TrimStartSeconds);
+                    return;
+                }
+            }
+            StartPlaying();
+        }
     }
 
     private void Stop_Click(object sender, RoutedEventArgs e)
@@ -1191,6 +1278,12 @@ public partial class RenderVideoView : UserControl
         int next = _activeClipIndex + 1;
         if (next >= _project.Clips.Count)
         {
+            if (_loopPlayback && _project.Clips.Count > 0)
+            {
+                SelectTimelineWithoutReload(0);
+                OpenClip(0, true, _project.Clips[0].TrimStartSeconds);
+                return;
+            }
             StopPlaying();
             UpdatePlayheadUi();
         }
@@ -1208,6 +1301,7 @@ public partial class RenderVideoView : UserControl
             if (!_updatingSlider && PlayheadSlider != null) PlayheadSlider.Value = 0;
             if (MonitorTimeText != null) MonitorTimeText.Text = "00:00 / 00:00";
             if (MasterTimecodeText != null) MasterTimecodeText.Text = "00:00:00:00";
+            UpdatePlayheadNeedle(0);
             return;
         }
         var clip = _project.Clips[_activeClipIndex];
@@ -1233,6 +1327,143 @@ public partial class RenderVideoView : UserControl
 
         if (MasterTimecodeText != null)
             MasterTimecodeText.Text = FormatTimecode(overallTime);
+
+        UpdatePlayheadNeedle(clipPos);
+    }
+
+    private void UpdatePlayheadNeedle(double clipPos)
+    {
+        if (PlayheadCanvas == null || PlayheadNeedle == null) return;
+        if (_activeClipIndex < 0 || _activeClipIndex >= _project.Clips.Count)
+        {
+            PlayheadNeedle.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        PlayheadNeedle.Visibility = Visibility.Visible;
+
+        double clipStartX = 2.0;
+        for (int i = 0; i < _activeClipIndex; i++)
+        {
+            double prevW = Math.Clamp(_project.Clips[i].DurationSeconds * TimelineEntry.CurrentZoomFactor, 120d, 1800d);
+            clipStartX += prevW + 4.0;
+        }
+
+        var currentClip = _project.Clips[_activeClipIndex];
+        double currentClipW = Math.Clamp(currentClip.DurationSeconds * TimelineEntry.CurrentZoomFactor, 120d, 1800d);
+        double progressRatio = currentClip.DurationSeconds > 0
+            ? Math.Clamp(clipPos / currentClip.DurationSeconds, 0.0, 1.0)
+            : 0.0;
+
+        double needleCenterX = clipStartX + (progressRatio * currentClipW);
+        Canvas.SetLeft(PlayheadNeedle, Math.Max(0, needleCenterX - 6));
+
+        if (_playing && TimelineScrollViewer != null)
+        {
+            double viewportW = TimelineScrollViewer.ViewportWidth;
+            if (viewportW > 0)
+            {
+                double scrollOffset = TimelineScrollViewer.HorizontalOffset;
+                if (needleCenterX > scrollOffset + viewportW - 80)
+                {
+                    TimelineScrollViewer.ScrollToHorizontalOffset(needleCenterX - 80);
+                }
+                else if (needleCenterX < scrollOffset)
+                {
+                    TimelineScrollViewer.ScrollToHorizontalOffset(Math.Max(0, needleCenterX - 40));
+                }
+            }
+        }
+    }
+
+    private bool _isScrubbingRuler;
+
+    private void TimeRuler_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_project.Clips.Count == 0 || e.LeftButton != MouseButtonState.Pressed) return;
+        _isScrubbingRuler = true;
+        if (sender is UIElement ui)
+            ui.CaptureMouse();
+        Point pt = e.GetPosition(TimelineTracksStack);
+        SeekToTimelinePixelX(pt.X);
+    }
+
+    private void TimeRuler_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_isScrubbingRuler && e.LeftButton == MouseButtonState.Pressed && TimelineTracksStack != null)
+        {
+            Point pt = e.GetPosition(TimelineTracksStack);
+            SeekToTimelinePixelX(pt.X);
+        }
+    }
+
+    private void TimeRuler_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isScrubbingRuler)
+        {
+            _isScrubbingRuler = false;
+            if (sender is UIElement ui)
+                ui.ReleaseMouseCapture();
+        }
+    }
+
+    private void SeekToTimelinePixelX(double pixelX)
+    {
+        if (_project.Clips.Count == 0) return;
+        double clipStartX = 2.0;
+        int targetIndex = _project.Clips.Count - 1;
+        double targetClipProgressSec = 0;
+
+        for (int i = 0; i < _project.Clips.Count; i++)
+        {
+            var clip = _project.Clips[i];
+            double clipW = Math.Clamp(clip.DurationSeconds * TimelineEntry.CurrentZoomFactor, 120d, 1800d);
+            double clipEndX = clipStartX + clipW;
+
+            if (pixelX <= clipEndX || i == _project.Clips.Count - 1)
+            {
+                targetIndex = i;
+                double offsetInClip = Math.Clamp(pixelX - clipStartX, 0.0, clipW);
+                double ratio = clipW > 0 ? (offsetInClip / clipW) : 0.0;
+                targetClipProgressSec = ratio * clip.DurationSeconds;
+                break;
+            }
+
+            clipStartX = clipEndX + 4.0;
+        }
+
+        var selectedClip = _project.Clips[targetIndex];
+        double seekSeconds = selectedClip.TrimStartSeconds + targetClipProgressSec;
+
+        SelectTimelineWithoutReload(targetIndex);
+        OpenClip(targetIndex, _playing, seekSeconds);
+    }
+
+    private bool _loopPlayback = false;
+
+    private void LoopToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _loopPlayback = !_loopPlayback;
+        UpdateLoopButtonUi();
+        SetStatus(_loopPlayback ? "Loop playback enabled" : "Loop playback disabled");
+    }
+
+    private void UpdateLoopButtonUi()
+    {
+        var activeBrush = new SolidColorBrush(Color.FromRgb(56, 189, 248));
+        var mutedBrush = new SolidColorBrush(Color.FromRgb(132, 156, 191));
+
+        if (LoopIcon != null)
+            LoopIcon.Foreground = _loopPlayback ? activeBrush : mutedBrush;
+
+        if (VegasLoopIcon != null)
+            VegasLoopIcon.Foreground = _loopPlayback ? activeBrush : mutedBrush;
+
+        if (VegasLoopText != null)
+        {
+            VegasLoopText.Text = _loopPlayback ? "LOOP: ON" : "LOOP: OFF";
+            VegasLoopText.Foreground = _loopPlayback ? activeBrush : mutedBrush;
+        }
     }
 
     private void PlayheadSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -1459,6 +1690,11 @@ public partial class RenderVideoView : UserControl
         {
             e.Handled = true;
             Next_Click(this, new RoutedEventArgs());
+        }
+        else if (e.Key == Key.L && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            e.Handled = true;
+            LoopToggle_Click(this, new RoutedEventArgs());
         }
     }
 
