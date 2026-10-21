@@ -1,3 +1,20 @@
+VideoGenerator - Patch Notes | v2.0.0.2
+
+HOTFIX UPDATE
+This hotfix improves recognition of newly released Riot skin collections whose skins are already present in the PBE game data but do not yet have a distinct skinline ID, while keeping icon lookup restricted to genuine local WAD assets.
+
+New Features
+
+Improvements
+  - Skinlines / Data-Driven PBE Collections: Resolve newly named subcollections from official Riot skins.json skin names plus an existing skinlines.json family, using one reusable matching rule for all families instead of hardcoded theme names, skin IDs or champion lists. Only WAD assets belonging to the matched collection are eligible for its icon.
+
+Changes
+
+Bug Fixes
+  - Event Mapping / K/DA FIRESTARTER: Fixed FirstEncounter3DKDAFirestarter incorrectly routing to champion:KDAFirestarter and displaying K D A as separate letters. It now uses skinline:K/DA FIRESTARTER and the correct brand spelling. For newly announced skin collections not yet indexed by skinlines.json, matching is based on the official Riot skin names and WAD-backed portraits of that exact collection (not older K/DA skins), preserving custom icon rules and without adding fictitious skinline IDs.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v2.0.0.1
 
 HOTFIX UPDATE

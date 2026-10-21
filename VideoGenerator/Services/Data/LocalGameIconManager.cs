@@ -307,6 +307,26 @@ namespace VideoGenerator.Services
                     if (result != null) return result;
                 }
             }
+            // A newly announced subcollection may exist in official skins.json
+            // without a separate skinline ID yet. Derive members from their
+            // actual Riot names, never from a generic K/DA family fallback.
+            // Only WAD-backed portraits are returned.
+            SkinCatalog skinCatalog = await catalogs.Skins.Value;
+            if (qualified || !skinCatalog.HasWadMetadata) return null;
+            foreach (var entry in skinCatalog.SplashSkins
+                .OrderBy(e => e.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                foreach (var skin in entry.Value.OrderBy(s => s.SkinId))
+                {
+                    if (!allLines.Any(line =>
+                        LeagueSkinlineIdentity.TryMatchNamedCollection(
+                            lineQuery, skin.Name, line.Name, entry.Key, out _)))
+                        continue;
+                    string result = await FindChampionAsync(
+                        $"{entry.Key}Skin{skin.SkinId}", catalogs);
+                    if (result != null) return result;
+                }
+            }
             return null;
         }
 

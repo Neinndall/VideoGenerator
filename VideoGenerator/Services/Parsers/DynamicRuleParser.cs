@@ -265,6 +265,21 @@ namespace VideoGenerator.Services.Parsers
                     displayText = _translationService.GetText(
                         language, rule.TranslationKey, $"{officialTheme} {officialChampion}");
                 }
+                else if (matchedGroup == null &&
+                    string.IsNullOrWhiteSpace(rule.IconLookup) &&
+                    rule.Type != RuleType.Simple &&
+                    string.Equals(rule.IconType, "champion", StringComparison.OrdinalIgnoreCase) &&
+                    await _skinlineManager.FindNamedSkinCollectionAsync(rawTarget)
+                        is string namedCollection)
+                {
+                    // A PBE subcollection can appear in official skins.json
+                    // before its own skinline ID exists. Keep Riot's exact
+                    // name and request ONLY a member of this named collection.
+                    iconType = "skinline";
+                    iconTarget = namedCollection;
+                    displayText = _translationService.GetText(
+                        language, rule.TranslationKey, namedCollection);
+                }
                 else if (matchedGroup != null)
                 {
                     if (matchedGroup.Category.Equals("Region", StringComparison.OrdinalIgnoreCase))

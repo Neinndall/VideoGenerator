@@ -105,6 +105,50 @@ namespace VideoGenerator.Services
         }
 
         /// <summary>
+        /// Resolve a VO collection (e.g. KDAFirestarter) from the actual Riot
+        /// skin names when PBE skins.json has no skinLines membership yet.
+        /// This does not synthesize a new official skinline ID or persist a
+        /// fictitious mapping into the user's skinlines.json.
+        /// </summary>
+        public async Task<string> FindNamedSkinCollectionAsync(string requested)
+        {
+            if (string.IsNullOrWhiteSpace(requested)) return null;
+            string key = LeagueSkinlineIdentity.Normalize(requested);
+            string[] officialFamilies = EnsureLoaded().DisplayNames.Values
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(family =>
+                {
+                    string prefix = LeagueSkinlineIdentity.Normalize(family);
+                    return prefix.Length > 0 && key.Length > prefix.Length &&
+                        key.StartsWith(prefix, StringComparison.Ordinal);
+                })
+                .ToArray();
+            // Almost all Kill/Encounter targets are regular champions or
+            // monsters. Avoid a full skins.json scan for those events.
+            if (officialFamilies.Length == 0) return null;
+            var skins = await _dataFetcher.GetSkinsDataAsync("EN");
+            foreach (var skin in skins.Values)
+            {
+                if (skin.ValueKind != JsonValueKind.Object ||
+                    !skin.TryGetProperty("name", out var name) ||
+                    name.ValueKind != JsonValueKind.String ||
+                    !skin.TryGetProperty("splashPath", out var splash) ||
+                    splash.ValueKind != JsonValueKind.String)
+                    continue;
+                Match owner = Regex.Match(splash.GetString() ?? "",
+                    @"[/\\]Characters[/\\]([^/\\]+)[/\\]Skins[/\\]Skin\d+[/\\]",
+                    RegexOptions.IgnoreCase);
+                if (!owner.Success) continue;
+                foreach (string family in officialFamilies)
+                    if (LeagueSkinlineIdentity.TryMatchNamedCollection(
+                        requested, name.GetString(), family, owner.Groups[1].Value,
+                        out string collection))
+                        return collection;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// VO labels such as "WorldsWinners" and "T1WorldsWinners" are not
         /// official skinline names. Resolve the speaking skin to its actual
         /// "World Champions: YEAR" line using Riot's cached membership, never

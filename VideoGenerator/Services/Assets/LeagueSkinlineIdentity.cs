@@ -70,5 +70,40 @@ namespace VideoGenerator.Services
             int colon = official?.IndexOf(':') ?? -1;
             return colon > 0 ? official[..colon].Trim() : null;
         }
+
+        /// <summary>
+        /// Riot can ship a named collection of skins before assigning it a
+        /// separate skinline ID (PBE K/DA FIRESTARTER is one such example).
+        /// A VO token may identify a *leading* portion of a Riot skin name,
+        /// but only inside an existing official skinline family. Require a
+        /// real skin owner after the requested prefix, so a fake champion or
+        /// arbitrary text fragment can never be mistaken for a theme.
+        /// </summary>
+        public static bool TryMatchNamedCollection(string requested, string skinName,
+            string officialFamily, string champion, out string collection)
+        {
+            collection = null;
+            string family = Normalize(officialFamily);
+            string wanted = Normalize(requested);
+            string owner = Normalize(champion);
+            if (family.Length == 0 || owner.Length == 0 ||
+                wanted.Length <= family.Length ||
+                !wanted.StartsWith(family, StringComparison.Ordinal) ||
+                string.IsNullOrWhiteSpace(skinName) ||
+                !skinName.StartsWith(officialFamily + " ", StringComparison.OrdinalIgnoreCase) ||
+                !Normalize(skinName).EndsWith(owner, StringComparison.Ordinal))
+                return false;
+
+            string[] words = skinName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            // Leave one or more words for the champion / skin variant.
+            for (int count = 1; count < words.Length; count++)
+            {
+                string candidate = string.Join(" ", words.Take(count));
+                if (Normalize(candidate) != wanted) continue;
+                collection = candidate;
+                return true;
+            }
+            return false;
+        }
     }
 }

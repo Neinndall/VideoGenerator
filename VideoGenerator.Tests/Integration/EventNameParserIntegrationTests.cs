@@ -7,6 +7,109 @@ namespace VideoGenerator.Tests.Integration;
 [Trait("Category", "Integration")]
 public sealed class EventNameParserIntegrationTests
 {
+    [Fact]
+    public async Task SonaSkin77IsRecognizedButStillRequiresItsExactOfficialPortrait()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.SonaSkin77.").FullName;
+        try
+        {
+            var parsed = await CreateParser(root).ParseFolderNameAsync(
+                "Play_vo_EvelynnSkin65_Kill3DSonaSkin77", "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("champion", parsed.IconType);
+            Assert.Equal("SonaSkin77", parsed.IconLookupName);
+            Assert.Equal("Kill Sona (Skin 77)", parsed.DisplayText);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_EvelynnSkin65_FirstEncounter3DKDAFirestarter", "First Encounter with K/DA FIRESTARTER")]
+    [InlineData("Play_vo_EvelynnSkin65_Kill3DKDAFirestarter", "Kill K/DA FIRESTARTER")]
+    [InlineData("Play_vo_AkaliSkin102_FirstEncounter2DKDAFirestarter", "First Encounter with K/DA FIRESTARTER")]
+    public async Task UnindexedRiotKdaFirestarterSkinsAreRecognizedAsNamedCollection(
+        string folder, string display)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.KDAFirestarter.").FullName;
+        try
+        {
+            SeedNewKdaSkinsWithoutSkinlineMembership(root);
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("skinline", parsed.IconType);
+            Assert.Equal("K/DA FIRESTARTER", parsed.IconLookupName);
+            Assert.Equal(display, parsed.DisplayText);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+            Assert.DoesNotContain("K D A", parsed.DisplayText);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public async Task UnverifiedFirestarterSuffixDoesNotCreateAnImaginarySkinline()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.KDAFirestarterUnknown.").FullName;
+        try
+        {
+            SeedNewKdaSkinsWithoutSkinlineMembership(root);
+            var parsed = await CreateParser(root).ParseFolderNameAsync(
+                "Play_vo_EvelynnSkin65_FirstEncounter3DKDAUnknownProject", "EN");
+            Assert.NotEqual("skinline", parsed.IconType);
+            Assert.NotEqual("K/DA", parsed.IconLookupName);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public async Task UserIconRuleForFirestarterIsNotOverridden()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.KDAFirestarterCustom.").FullName;
+        try
+        {
+            SeedNewKdaSkinsWithoutSkinlineMembership(root);
+            File.WriteAllText(Path.Combine(root, "event_rules.json"),
+                System.Text.Json.JsonSerializer.Serialize(new[]
+                {
+                    new VideoGenerator.Views.Models.EventRule
+                    {
+                        Keyword = "FirstEncounter",
+                        TranslationKey = "interaction_first_encounter_one",
+                        Section = "INTERACTIONS",
+                        IconType = "system",
+                        IconLookup = "Danger",
+                        Type = VideoGenerator.Views.Models.RuleType.Interaction,
+                        ExtractsTarget = true
+                    }
+                }));
+            var parsed = await CreateParser(root).ParseFolderNameAsync(
+                "Play_vo_EvelynnSkin65_FirstEncounter3DKDAFirestarter", "EN");
+            Assert.Equal("system", parsed.IconType);
+            Assert.Equal("Danger", parsed.IconLookupName);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    private static void SeedNewKdaSkinsWithoutSkinlineMembership(string root)
+    {
+        string cache = Path.Combine(root, "Cache");
+        Directory.CreateDirectory(cache);
+        File.WriteAllText(Path.Combine(cache, "skinlines_data_default.json"),
+            """[{"id":91,"name":"K/DA"}]""");
+        File.WriteAllText(Path.Combine(cache, "skins_data_default.json"), """
+            {
+              "28065":{"name":"K/DA FIRESTARTER Evelynn",
+                "splashPath":"ASSETS/Characters/Evelynn/Skins/Skin65/Images/evelynn_splash_centered_65.jpg","skinLines":[]},
+              "84102":{"name":"K/DA FIRESTARTER Ignition Akali",
+                "splashPath":"ASSETS/Characters/Akali/Skins/Skin102/Images/akali_splash_centered_102.jpg","skinLines":[]},
+              "103097":{"name":"K/DA FIRESTARTER Ahri",
+                "splashPath":"ASSETS/Characters/Ahri/Skins/Skin97/Images/ahri_splash_centered_97.jpg","skinLines":[]},
+              "103015":{"name":"K/DA Ahri",
+                "splashPath":"ASSETS/Characters/Ahri/Skins/Skin15/Images/ahri_splash_centered_15.jpg","skinLines":[{"id":91}]}
+            }
+            """);
+    }
+
     [Theory]
     [InlineData("Play_vo_AkaliSkin102_FirstEncounter3DAhriSkinlineKDA", "skinline", "AhriSkinlineK/DA")]
     [InlineData("Play_vo_AkaliSkin102_Kill3DEvelynnSkinlineKDA", "skinline", "EvelynnSkinlineK/DA")]

@@ -178,6 +178,71 @@ public sealed class LocalGameIconManagerCatalogRefreshTests
     }
 
     [Fact]
+    public async Task FirestarterUsesOnlyActualNewKdaSkinsEvenWithoutSeparatePbeSkinlineId()
+    {
+        using var fixture = new CatalogFixture();
+        fixture.WriteWad("assets/characters/ahri/skins/skin0/tile.png",
+            "assets/characters/ahri/skins/skin0/splash.png", 1, 1,
+            thematicSkins: new[]
+            {
+                new ThematicSkin(91, "K/DA", "Ahri", 15,
+                    "assets/characters/ahri/skins/skin15/tile.png", 6, "K/DA Ahri"),
+                new ThematicSkin(0, "", "Ahri", 97,
+                    "assets/characters/ahri/skins/skin97/tile.png", 0, "K/DA FIRESTARTER Ahri"),
+                new ThematicSkin(0, "", "Akali", 102,
+                    "assets/characters/akali/skins/skin102/tile.png", 0, "K/DA FIRESTARTER Ignition Akali"),
+                new ThematicSkin(0, "", "Evelynn", 65,
+                    "assets/characters/evelynn/skins/skin65/tile.png", 9, "K/DA FIRESTARTER Evelynn")
+            });
+        var manager = fixture.CreateManager(fixture.CreateSource());
+        // A missing first/second tile must not cause a fallback to an older K/DA icon.
+        AssertSize(await manager.FindIconAsync("skinline", "K/DA FIRESTARTER"), 9);
+        AssertSize(await manager.FindIconAsync("skinline", "KDA"), 6);
+        Assert.Null(await manager.FindIconAsync("skinline", "K/DA Unknown Project"));
+    }
+
+    [Fact]
+    public async Task NamedCollectionFallbackUsesTheSameMetadataPatternForOtherFamilies()
+    {
+        using var fixture = new CatalogFixture();
+        // Synthetic future collection: proves this works without any hardcoded
+        // family, collection, champion or skin ID in the production resolver.
+        fixture.WriteWad("assets/characters/ahri/skins/skin0/tile.png",
+            "assets/characters/ahri/skins/skin0/splash.png", 1, 1,
+            thematicSkins: new[]
+            {
+                new ThematicSkin(16, "Pentakill", "Sona", 2,
+                    "assets/characters/sona/skins/skin2/tile.png", 6, "Pentakill Sona"),
+                new ThematicSkin(0, "", "Sona", 88,
+                    "assets/characters/sona/skins/skin88/tile.png", 11,
+                    "Pentakill NEW WAVE Sona")
+            });
+        var manager = fixture.CreateManager(fixture.CreateSource());
+        AssertSize(await manager.FindIconAsync("skinline", "PentakillNewWave"), 11);
+        AssertSize(await manager.FindIconAsync("skinline", "Pentakill"), 6);
+        Assert.Null(await manager.FindIconAsync("skinline", "PentakillUnknown"));
+    }
+
+    [Fact]
+    public async Task UnreleasedSkinAbsentFromRiotMetadataDoesNotBorrowAnotherSonaPortrait()
+    {
+        using var fixture = new CatalogFixture();
+        fixture.WriteWad("assets/characters/ahri/skins/skin0/tile.png",
+            "assets/characters/ahri/skins/skin0/splash.png", 1, 1,
+            thematicSkins: new[]
+            {
+                new ThematicSkin(0, "", "Sona", 75,
+                    "assets/characters/sona/skins/skin75/tile.png", 8,
+                    "Prestige Requiem Sona")
+            });
+        var manager = fixture.CreateManager(fixture.CreateSource());
+        AssertSize(await manager.FindIconAsync("champion", "SonaSkin75"), 8);
+        // Riot's actual PBE metadata currently has no SonaSkin77; preserving
+        // the requested skin identity is safer than silently using Sona 75.
+        Assert.Null(await manager.FindIconAsync("champion", "SonaSkin77"));
+    }
+
+    [Fact]
     public async Task WardKillUsesInstalledWardingTotemItemInsteadOfNonexistentWardName()
     {
         using var fixture = new CatalogFixture();
@@ -435,7 +500,8 @@ public sealed class LocalGameIconManagerCatalogRefreshTests
     }
 
     private sealed record ThematicSkin(
-        int LineId, string LineName, string Champion, int SkinId, string Tile, int Size);
+        int LineId, string LineName, string Champion, int SkinId, string Tile, int Size,
+        string? SkinName = null);
 
     private sealed class CatalogFixture : IDisposable
     {
@@ -504,11 +570,14 @@ public sealed class LocalGameIconManagerCatalogRefreshTests
                 {
                     skins[(2000 + index++).ToString()] = new
                     {
+                        name = member.SkinName,
                         tilePath = member.Tile,
                         splashPath = member.Tile.Replace("tile.png", "splash.png"),
-                        skinLines = new[] { new { id = member.LineId } }
+                        skinLines = member.LineId > 0
+                            ? new object[] { new { id = member.LineId } }
+                            : Array.Empty<object>()
                     };
-                    if (!lines.Any(line =>
+                    if (member.LineId > 0 && !lines.Any(line =>
                         JsonSerializer.Serialize(line).Contains($"\"id\":{member.LineId}", StringComparison.Ordinal)))
                         lines.Add(new { id = member.LineId, name = member.LineName });
                 }
