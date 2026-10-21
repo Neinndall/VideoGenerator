@@ -81,6 +81,7 @@ namespace VideoGenerator.Views
             LogService = _logger;
 
             InitializeData();
+            UpdateManualIconSlot();
         }
 
         public DashboardModel DashboardModel { get; }
@@ -213,6 +214,7 @@ namespace VideoGenerator.Views
                          e.PropertyName == nameof(AppSettings.IconBorderThickness) ||
                          e.PropertyName == nameof(AppSettings.BubbleBorderThickness))
                 {
+                    UpdateManualIconSlot();
                     await UpdatePreviewAsync();
                 }
             };
@@ -220,6 +222,7 @@ namespace VideoGenerator.Views
             _model.PropertyChanged += async (s, e) => {
                 if (e.PropertyName == nameof(_model.SelectedEvent) && _model.SelectedEvent != null)
                 {
+                    UpdateManualIconSlot();
                     await UpdatePreviewAsync();
                 }
                 else if (e.PropertyName == nameof(_model.SelectedFilter) || 
@@ -363,7 +366,11 @@ namespace VideoGenerator.Views
             ev.ParsedData.IconLookupName = iconName;
             ev.ParsedData.IconType = iconType;
 
-            string iconPath = await _eventIconResolutionService.ResolveAsync(ev.ParsedData);
+            // An explicitly chosen manual icon belongs to this event, not to
+            // its mutable icon-type or lookup label. Do not silently replace
+            // the user's selection when Quick Edit is applied.
+            string iconPath = GetManualIconPath(ev) ??
+                await _eventIconResolutionService.ResolveAsync(ev.ParsedData);
 
             ev.ParsedData.IconPath = iconPath;
             ev.UpdateStatusAfterIconResolution(iconPath);
@@ -380,6 +387,7 @@ namespace VideoGenerator.Views
             }
             _dialogueService.SetDialogue(selectedLang, ev.FolderName, dialogue);
 
+            UpdateManualIconSlot();
             await UpdatePreviewAsync();
         }
 
@@ -516,6 +524,7 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
+                UpdateManualIconSlot();
                 await _progressService.CompleteAsync();
             }
         }
@@ -561,10 +570,12 @@ namespace VideoGenerator.Views
 
                 foreach (PreviewEventModel pipelineEvent in analyzedEvents)
                 {
+                    RestoreSavedIcon(pipelineEvent);
                     _model.ProcessedEvents.Add(pipelineEvent);
                 }
                 _model.IsAnalyzed = _model.ProcessedEvents.Count > 0;
                 if (_model.ProcessedEvents.Count > 0) _model.SelectedEvent = _model.ProcessedEvents[0];
+                UpdateManualIconSlot();
                 _logger.LogInfo($">>> ANALYSIS COMPLETE. Found {_model.ProcessedEvents.Count} events. Resolving icons...");
                 // Keep 100% visible briefly before switching
                 await Task.Delay(400, token);
@@ -580,6 +591,7 @@ namespace VideoGenerator.Views
             finally
             {
                 _model.IsProcessing = false;
+                UpdateManualIconSlot();
                 await _progressService.CompleteAsync();
             }
         }

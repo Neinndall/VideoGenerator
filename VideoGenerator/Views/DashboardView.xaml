@@ -11,6 +11,47 @@
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:NonLockingImageConverter x:Key="NonLockingImageConverter"/>
+        <Style x:Key="DashboardIconHoverButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextHighlightBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{StaticResource DashboardIconHoverBackgroundBrush}"
+                                BorderBrush="{StaticResource DashboardIconHoverBorderBrush}"
+                                BorderThickness="2" CornerRadius="12" Padding="8">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 To="1" Duration="0:0:0.16"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 To="0" Duration="0:0:0.18"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="Opacity" Value="1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="DashboardEventSelectionCheckBox"
                TargetType="CheckBox">
             <Setter Property="Foreground" Value="{StaticResource AccentBrushLight}"/>
@@ -473,6 +514,34 @@
                                        Cursor="Hand"
                                        MouseDown="PreviewImage_MouseDown"
                                        ToolTip="Click to toggle maximize mode (hides/shows event pipeline sidebar)"/>
+
+                                <!-- Hover-only overlay at the actual 1920x1080 HUD icon
+                                     coordinates; never part of the exported image. -->
+                                <Canvas x:Name="ManualIconOverlay" Width="1920" Height="1080"
+                                        Visibility="{Binding DashboardModel.SelectedEvent, Converter={StaticResource NullToVisibilityConverter}}">
+                                    <Button x:Name="PreviewIconAction" Canvas.Left="34" Canvas.Top="684"
+                                            Width="212" Height="208"
+                                            Style="{StaticResource DashboardIconHoverButton}"
+                                            ToolTip="Choose a local icon. Right-click to restore the Riot icon."
+                                            Click="PreviewIconAction_Click">
+                                        <Button.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem x:Name="RestoreRiotIconMenuItem"
+                                                          Header="Restore Riot WAD icon"
+                                                          Click="RestoreRiotIcon_Click"/>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon x:Name="PreviewIconActionGlyph" Kind="ImagePlus"
+                                                                     Width="62" Height="62" Margin="0,0,0,12"
+                                                                     HorizontalAlignment="Center"
+                                                                     Foreground="{StaticResource AccentBrushLight}"/>
+                                            <TextBlock x:Name="PreviewIconActionText" Text="ADD ICON"
+                                                       FontSize="21" FontWeight="Bold"
+                                                       HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Canvas>
                                 
                                 <!-- Empty State -->
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" 

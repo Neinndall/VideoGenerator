@@ -38,6 +38,7 @@ public sealed class LocalGameIconManagerCatalogRefreshTests
         AssertSize(await manager.FindIconAsync("monster", "Baron"), 6);
         AssertSize(await manager.FindIconAsync("monster", "Dragon"), 7);
         AssertSize(await manager.FindIconAsync("monster", "Rift_Herald"), 8);
+        AssertSize(await manager.FindIconAsync("monster", "HERALD"), 8);
         AssertSize(await manager.FindIconAsync("monster", "Elder_Dragon"), 9);
     }
 
@@ -105,6 +106,26 @@ public sealed class LocalGameIconManagerCatalogRefreshTests
     }
 
     [Fact]
+    public async Task WorldChampionsYearUsesOnlyThatYearsRealWadSkinTiles()
+    {
+        using var fixture = new CatalogFixture();
+        fixture.WriteWad("assets/characters/ahri/skins/skin0/tile.png",
+            "assets/characters/ahri/skins/skin0/splash.png", 1, 1,
+            thematicSkins: new[]
+            {
+                new ThematicSkin(194, "World Champions: 2022", "Aatrox", 44,
+                    "assets/characters/aatrox/skins/skin44/tile.png", 6),
+                new ThematicSkin(232, "World Champions: 2025", "MissFortune", 69,
+                    "assets/characters/missfortune/skins/skin69/tile.png", 9)
+            });
+        var manager = fixture.CreateManager(fixture.CreateSource());
+        AssertSize(await manager.FindIconAsync("skinline", "World Champions: 2025"), 9);
+        AssertSize(await manager.FindIconAsync("skinline", "World Champions: 2022"), 6);
+        Assert.Null(await manager.FindIconAsync("skinline", "T1WorldsWinners"));
+        Assert.Null(await manager.FindIconAsync("champion", "T1WorldsWinners"));
+    }
+
+    [Fact]
     public async Task RiotChampionQualifiedSkinlineUsesOnlyMatchingChampionSkins()
     {
         using var fixture = new CatalogFixture();
@@ -125,6 +146,35 @@ public sealed class LocalGameIconManagerCatalogRefreshTests
         AssertSize(await manager.FindIconAsync("skinline", "KaynSkinlineHearsteel"), 10);
         AssertSize(await manager.FindIconAsync("skinline", "TrueDamageX"), 8);
         Assert.Null(await manager.FindIconAsync("skinline", "KaynSkinlineTrueDamage"));
+    }
+
+    [Fact]
+    public async Task AkaliSkin102TargetsUseKdaAndPentakillMemberTilesWithoutJadeAliases()
+    {
+        using var fixture = new CatalogFixture();
+        fixture.WriteWad("assets/characters/ahri/skins/skin0/tile.png",
+            "assets/characters/ahri/skins/skin0/splash.png", 1, 1,
+            thematicSkins: new[]
+            {
+                new ThematicSkin(91, "K/DA", "Ahri", 15,
+                    "assets/characters/ahri/skins/skin15/tile.png", 8),
+                new ThematicSkin(91, "K/DA", "Evelynn", 65,
+                    "assets/characters/evelynn/skins/skin65/tile.png", 9),
+                new ThematicSkin(91, "K/DA", "Evelynn", 66,
+                    "assets/characters/evelynn/skins/skin66/tile.png", 10),
+                new ThematicSkin(16, "Pentakill", "Sona", 2,
+                    "assets/characters/sona/skins/skin2/tile.png", 12),
+                new ThematicSkin(17, "Solo Sona", "Sona", 6,
+                    "assets/characters/sona/skins/skin6/tile.png", 11)
+            });
+        var manager = fixture.CreateManager(fixture.CreateSource());
+        AssertSize(await manager.FindIconAsync("skinline", "AhriSkinlineKDA"), 8);
+        AssertSize(await manager.FindIconAsync("skinline", "EvelynnSkinlineK/DA"), 9);
+        AssertSize(await manager.FindIconAsync("skinline", "Pentakill"), 12);
+        AssertSize(await manager.FindIconAsync("champion", "EvelynnSkin65"), 9);
+        AssertSize(await manager.FindIconAsync("champion", "EvelynnSkin66"), 10);
+        AssertSize(await manager.FindIconAsync("champion", "SonaSkin06"), 11);
+        Assert.Null(await manager.FindIconAsync("skinline", "SonaSkinlineKDA"));
     }
 
     [Fact]

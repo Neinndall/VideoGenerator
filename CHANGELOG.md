@@ -1,3 +1,25 @@
+VideoGenerator - Patch Notes | v2.0.0.1
+
+HOTFIX UPDATE
+This update improves how VideoGenerator recognizes League of Legends voice events and assigns official local Riot WAD artwork. It fixes false Missing Icon warnings for combat conditions, jungle objectives and championship skin themes, expands multilingual event descriptions, and adds persistent manual icon overrides in Dashboard while preserving personal Event Mapping settings.
+
+New Features
+  - Dashboard / Manual Event Icons: Added a subtle Add / Change Icon action that fades in when hovering the Live Preview icon. Import a local image for an unreleased skin, keep it across folder rescans and restore the Riot WAD icon from the context menu.
+
+Improvements
+  - Event Mapping / Recognition & Dictionary: Expanded reusable recognition for skill slots and recasts, multikills with form prefixes, and generic epic-monster objectives with ally-team score context. Added EN/ES/TR dictionary entries while retaining user-defined rules and avoiding fabricated WAD icon lookups.
+
+Bug Fixes
+  - Event Mapping / Epic Monsters: Added built-in ahead/behind ally-team rules for Kill3DEpicMonsterAheadAllyTeam and Kill3DEpicMonsterBehindAllyTeam, preserving the neutral monster category without requiring an arbitrary portrait. Added EN/ES/TR translations and kept user icon overrides intact.
+  - Event Mapping / Kill Semantics: Prevented Q/W/E/R ability kills (including recasts such as Q2) from being classified as champions. Form-prefixed multikills such as Dragon_Kill3DPenta now retain their streak and user icon rules. EnemyTeamKill3DEpicMonster now identifies a neutral monster category without inventing Baron/Dragon/Herald artwork, with EN/ES/TR translations.
+  - Event Mapping / Worlds Winners: Corrected MissFortuneSkin69 encounters with T1WorldsWinners / WorldsWinners from nonexistent champion icons to the official World Champions: 2025 skinline (Riot skinline ID 232). Other years resolve from the source skin's official membership; T1-only lookups verify the team, and unmatched themes do not borrow incorrect icons.
+  - Event Mapping / Low-Health Kills: Fixed Kill3DFirstLowHealth and Kill3DLowHealth being incorrectly routed as champions. These combat-condition events now use the generic category without requiring nonexistent champion icons.
+  - Event Mapping / Jungle Buff: Fixed Kill3DJungleBuff being misidentified as champion:JungleBuff. Unspecified jungle buffs are now recognized as neutral objectives without arbitrarily using a red or blue buff icon; explicit BlueBuff and RedBuff still use their own portraits.
+  - Event Mapping / Shop Icons: Fixed Shop2DOpen and Shop events being marked Missing Icon because the old built-in system:Gold lookup has no verified WAD texture. Existing user rules remain untouched, and custom icon mappings still work.
+  - Champions / Riot Aliases: Fixed Jade_* game-mode aliases replacing canonical champions (Ahri, Evelynn, Sona) in Akali Skin102 encounters, causing incorrect K/DA and skin icon lookups. Explicit Jade_* variants remain recognizable when requested by an event.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 VideoGenerator - Patch Notes | v2.0.0.0
 
 MAJOR UPDATE

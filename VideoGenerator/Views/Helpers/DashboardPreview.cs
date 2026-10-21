@@ -79,6 +79,8 @@ namespace VideoGenerator.Views
             // Keep a failed resolution as null; the user can retry without rescanning.
             pipelineEvent.ParsedData.IconPath = iconPath;
             pipelineEvent.UpdateStatusAfterIconResolution(iconPath);
+            if (ReferenceEquals(_model.SelectedEvent, pipelineEvent))
+                UpdateManualIconSlot();
         }
 
         private async Task ResolvePendingIconsAsync(CancellationToken cancellationToken, bool retryOnlyFailed = false)
@@ -128,6 +130,8 @@ namespace VideoGenerator.Views
                             pipelineEvent.ParsedData.IconPath = iconPath;
                             pipelineEvent.UpdateStatusAfterIconResolution(iconPath);
                         }
+                        if (batch.Any(ev => ReferenceEquals(ev, _model.SelectedEvent)))
+                            UpdateManualIconSlot();
                     });
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

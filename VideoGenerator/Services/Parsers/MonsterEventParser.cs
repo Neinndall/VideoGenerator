@@ -90,7 +90,12 @@ namespace VideoGenerator.Services.Parsers
             {
                 OriginalFolder = folderName,
                 DisplayText = displayText,
-                IconLookupName = monsterNameFormatted,
+                // JungleBuff means an unspecified jungle buff, not necessarily
+                // Blue Sentinel or Red Brambleback. Never fabricate one of
+                // their portraits for an ambiguous source event.
+                IconLookupName = IsUnspecifiedJungleBuff(monsterNameRaw) ||
+                    IsUnspecifiedEpicMonster(monsterNameRaw)
+                    ? null : monsterNameFormatted,
                 IconType = "monster"
             });
         }
@@ -112,6 +117,19 @@ namespace VideoGenerator.Services.Parsers
             // Square is an optional artwork suffix, never part of a monster's identity.
             string target = Regex.Replace(rawTarget, @"_?Square$", "", RegexOptions.IgnoreCase).Trim('_');
             string normalized = NormalizeMonsterName(target);
+            if (IsUnspecifiedJungleBuff(normalized))
+            {
+                monsterName = "Jungle Buff";
+                return true;
+            }
+            if (IsUnspecifiedEpicMonster(normalized))
+            {
+                // A generic epic objective is not Baron, Dragon or Herald
+                // specifically. Preserve its monster category without borrowing
+                // the portrait of any one real creature.
+                monsterName = "Epic Monster";
+                return true;
+            }
             if (normalized.Length == 0 || StructureNames.Contains(normalized) ||
                 BundledChampionNames.Contains(normalized) || _aliasManager.IsValidChampion(target))
                 return false;
@@ -149,6 +167,15 @@ namespace VideoGenerator.Services.Parsers
         /// </summary>
         public bool TryResolveTarget(string rawTarget, out string monsterName) =>
             TryResolveMonsterName(rawTarget, out monsterName);
+
+        // Riot VO occasionally names only the type of jungle objective. This
+        // is intentionally not a distinct creature in DefaultMonsters, and
+        // there is no verified unique WAD image for that collective category.
+        public static bool IsUnspecifiedJungleBuff(string target) =>
+            NormalizeMonsterName(target).Equals("JungleBuff", StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsUnspecifiedEpicMonster(string target) =>
+            NormalizeMonsterName(target).Equals("EpicMonster", StringComparison.OrdinalIgnoreCase);
 
         private IReadOnlyDictionary<string, string> CurrentMonsterCatalog()
         {

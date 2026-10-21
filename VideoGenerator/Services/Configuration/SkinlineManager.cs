@@ -104,6 +104,58 @@ namespace VideoGenerator.Services
                 .ToList();
         }
 
+        /// <summary>
+        /// VO labels such as "WorldsWinners" and "T1WorldsWinners" are not
+        /// official skinline names. Resolve the speaking skin to its actual
+        /// "World Champions: YEAR" line using Riot's cached membership, never
+        /// by guessing a championship year or borrowing a different team.
+        /// </summary>
+        public async Task<string> FindWorldChampionsLineForSkinAsync(
+            string champion, int skinId, bool requireT1)
+        {
+            if (string.IsNullOrWhiteSpace(champion) || skinId < 0) return null;
+            string internalName = _aliasManager.GetInternalName(champion);
+            var catalog = EnsureLoaded();
+            string officialLine = catalog.DisplayNames
+                .Where(pair => string.Equals(
+                    LeagueSkinlineIdentity.GetFamilyName(pair.Value),
+                    "World Champions", StringComparison.OrdinalIgnoreCase))
+                .Where(pair => catalog.Champions.TryGetValue(pair.Key, out var members) &&
+                    members.Any(member => member.SkinId == skinId &&
+                        string.Equals(_aliasManager.GetInternalName(member.Name),
+                            internalName, StringComparison.OrdinalIgnoreCase)))
+                .Select(pair => pair.Value)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
+            if (officialLine == null || !requireT1) return officialLine;
+
+            // A "World Champions" year may belong to DRX, EDG, etc. The T1
+            // qualifier must also be confirmed by the *specific* Riot skin
+            // name (e.g. "MVP T1 Miss Fortune"), not merely by its skinline.
+            var skins = await _dataFetcher.GetSkinsDataAsync("EN");
+            foreach (var skin in skins.Values)
+            {
+                if (skin.ValueKind != JsonValueKind.Object ||
+                    !skin.TryGetProperty("splashPath", out var splash) ||
+                    splash.ValueKind != JsonValueKind.String)
+                    continue;
+                Match match = Regex.Match(splash.GetString() ?? "",
+                    @"[/\\]Characters[/\\]([^/\\]+)[/\\]Skins[/\\]Skin(\d+)[/\\]",
+                    RegexOptions.IgnoreCase);
+                if (!match.Success || !int.TryParse(match.Groups[2].Value, out int id) ||
+                    id != skinId ||
+                    !string.Equals(_aliasManager.GetInternalName(match.Groups[1].Value),
+                        internalName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (skin.TryGetProperty("name", out var name) &&
+                    name.ValueKind == JsonValueKind.String &&
+                    Regex.IsMatch(name.GetString() ?? "", @"\bT1\b",
+                        RegexOptions.IgnoreCase))
+                    return officialLine;
+            }
+            return null;
+        }
+
         private SkinlineCatalog EnsureLoaded()
         {
             lock (_loadLock)
