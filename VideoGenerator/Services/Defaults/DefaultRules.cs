@@ -23,6 +23,11 @@ namespace VideoGenerator.Services
                 new EventRule { Keyword = "KillDouble", TranslationKey = "event_double_kill", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillTriple", TranslationKey = "event_triple_kill", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillQuadra", TranslationKey = "event_quadra_kill", Section = "COMBAT", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                // An epic objective with a team-score qualifier is still an
+                // unspecified monster. Use the semantic EpicMonster sentinel
+                // (no portrait), preserving the qualifier in the translation.
+                new EventRule { Keyword = "KillEpicMonsterAheadAllyTeam", TranslationKey = "event_kill_epic_monster_ahead_ally_team", Section = "COMBAT", IconType = "monster", IconLookup = "EpicMonster", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "KillEpicMonsterBehindAllyTeam", TranslationKey = "event_kill_epic_monster_behind_ally_team", Section = "COMBAT", IconType = "monster", IconLookup = "EpicMonster", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillTurret", TranslationKey = "event_turret_takedown", Section = "COMBAT", IconType = "structure", IconLookup = "Turret", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillBaronSteal", TranslationKey = "event_baron_steal", Section = "COMBAT", IconType = "monster", IconLookup = "Baron", Type = RuleType.Simple, ExtractsTarget = false },
                 new EventRule { Keyword = "KillDragonSteal", TranslationKey = "event_dragon_steal", Section = "COMBAT", IconType = "monster", IconLookup = "Dragon", Type = RuleType.Simple, ExtractsTarget = false },
@@ -76,8 +81,11 @@ namespace VideoGenerator.Services
                 // ==========================================
                 new EventRule { Keyword = "BuyItem", TranslationKey = "event_buy_item", Section = "ITEMS", IconType = "item", Type = RuleType.Target, ExtractsTarget = true },
                 new EventRule { Keyword = "UseItem", TranslationKey = "event_use_item", Section = "ITEMS", IconType = "item", Type = RuleType.Target, ExtractsTarget = true },
-                new EventRule { Keyword = "ShopOpen", TranslationKey = "event_open_shop", Section = "ITEMS", IconType = "system", IconLookup = "Gold", Type = RuleType.Simple, ExtractsTarget = false },
-                new EventRule { Keyword = "Shop", TranslationKey = "event_shop_open", Section = "ITEMS", IconType = "system", IconLookup = "Gold", Type = RuleType.Simple, ExtractsTarget = false },
+                // Shop opening has no dedicated Gold icon registered in the
+                // installed WADs. Do not require a fictitious system:Gold asset.
+                // A manual image can still be assigned through Dashboard Live Preview.
+                new EventRule { Keyword = "ShopOpen", TranslationKey = "event_open_shop", Section = "ITEMS", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
+                new EventRule { Keyword = "Shop", TranslationKey = "event_shop_open", Section = "ITEMS", IconType = "generic", Type = RuleType.Simple, ExtractsTarget = false },
 
                 // ==========================================
                 // 📡 PINGS (Señales de Mapa)

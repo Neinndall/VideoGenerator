@@ -8,6 +8,49 @@ namespace VideoGenerator.Tests.Integration;
 public sealed class EventNameParserIntegrationTests
 {
     [Theory]
+    [InlineData("Play_vo_AkaliSkin102_FirstEncounter3DAhriSkinlineKDA", "skinline", "AhriSkinlineK/DA")]
+    [InlineData("Play_vo_AkaliSkin102_Kill3DEvelynnSkinlineKDA", "skinline", "EvelynnSkinlineK/DA")]
+    [InlineData("Play_vo_AkaliSkin102_FirstEncounter3DPentakill", "skinline", "Pentakill")]
+    [InlineData("Play_vo_AkaliSkin102_FirstEncounter3DEvelynnSkin66", "champion", "EvelynnSkin66")]
+    [InlineData("Play_vo_AkaliSkin102_FirstEncounter3DEvelynnSkin65", "champion", "EvelynnSkin65")]
+    [InlineData("Play_vo_AkaliSkin102_FirstEncounter3DSonaSkin06", "champion", "SonaSkin6")]
+    public async Task AkaliSkin102UsesCanonicalChampionIdentityRatherThanJadeVariants(
+        string folder, string expectedType, string expectedLookup)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.AkaliSkin102.").FullName;
+        try
+        {
+            string cache = Path.Combine(root, "Cache");
+            Directory.CreateDirectory(cache);
+            // The actual Riot summary contains both normal champions and
+            // Jade_* gameplay variants sharing the exact same display name.
+            // Their ordering must not corrupt FirstEncounter/Kill icon requests.
+            File.WriteAllText(Path.Combine(cache, "champion_summary_data_default.json"), """
+                [{"id":103,"name":"Ahri","alias":"Ahri"},
+                 {"id":60103,"name":"Ahri","alias":"Jade_Ahri"},
+                 {"id":28,"name":"Evelynn","alias":"Evelynn"},
+                 {"id":60028,"name":"Evelynn","alias":"Jade_Evelynn"},
+                 {"id":37,"name":"Sona","alias":"Sona"},
+                 {"id":60037,"name":"Sona","alias":"Jade_Sona"}]
+                """);
+            File.WriteAllText(Path.Combine(cache, "skinlines_data_default.json"),
+                """[{"id":91,"name":"K/DA"},{"id":16,"name":"Pentakill"}]""");
+            File.WriteAllText(Path.Combine(cache, "skins_data_default.json"), """
+                {"103015":{"splashPath":"ASSETS/Characters/Ahri/Skins/Skin15/Images/ahri_splash_centered_15.jpg","skinLines":[{"id":91}]},
+                 "28006":{"splashPath":"ASSETS/Characters/Evelynn/Skins/Skin06/Images/evelynn_splash_centered_6.jpg","skinLines":[{"id":91}]},
+                 "37002":{"splashPath":"ASSETS/Characters/Sona/Skins/Skin02/Images/sona_splash_centered_2.jpg","skinLines":[{"id":16}]}}
+                """);
+            ParsedEvent parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal(expectedType, parsed.IconType);
+            Assert.Equal(expectedLookup, parsed.IconLookupName);
+            Assert.DoesNotContain("Jade_", parsed.IconLookupName);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
     [InlineData("Play_vo_JannaSkin67_Receive3DDamage", "Receive Damage")]
     [InlineData("Play_vo_JannaSkin67_Receive2DDamage", "Receive Damage")]
     [InlineData("Play_vo_AkaliSkin103_Receive3DHealShield", "Receive Heal/Shield")]
@@ -93,8 +136,8 @@ public sealed class EventNameParserIntegrationTests
     [InlineData("Ping2DPush", "system", "Push")]
     [InlineData("Ping2DRetreat", "system", "Retreat")]
     [InlineData("Ping2DTarget", "system", "Target")]
-    [InlineData("Shop", "system", "Gold")]
-    [InlineData("ShopOpen", "system", "Gold")]
+    [InlineData("Shop", "generic", "Generic")]
+    [InlineData("ShopOpen", "generic", "Generic")]
     public async Task PreviouslyRegisteredRulesKeepTheirFixedSemanticIconRequests(
         string action, string expectedType, string expectedLookup)
     {
@@ -106,6 +149,73 @@ public sealed class EventNameParserIntegrationTests
             Assert.True(parsed.IsMapped);
             Assert.Equal(expectedType, parsed.IconType);
             Assert.Equal(expectedLookup, parsed.IconLookupName);
+            Assert.Equal(expectedType != "generic",
+                EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Shop", "event_shop_open", "Play_vo_AatroxSkin33_Shop2D", "Gold")]
+    [InlineData("ShopOpen", "event_open_shop", "Play_vo_AatroxSkin33_Shop2DOpen", "Gold")]
+    public async Task LegacyShopGoldMappingDoesNotDemandAnUnavailableSystemIcon(
+        string keyword, string translationKey, string folder, string oldLookup)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.LegacyShopIcon.").FullName;
+        try
+        {
+            string config = Path.Combine(root, "event_rules.json");
+            var legacy = new VideoGenerator.Views.Models.EventRule
+            {
+                Keyword = keyword,
+                Section = "ITEMS",
+                TranslationKey = translationKey,
+                IconType = "system",
+                IconLookup = oldLookup,
+                Type = VideoGenerator.Views.Models.RuleType.Simple,
+                ExtractsTarget = false
+            };
+            File.WriteAllText(config, System.Text.Json.JsonSerializer.Serialize(new[] { legacy }));
+            ParsedEvent parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("generic", parsed.IconType);
+            Assert.Equal("Generic", parsed.IconLookupName);
+            Assert.False(EventIconResolutionService.RequiresIcon(parsed));
+
+            // A user-owned rule is not migrated or overwritten, only
+            // interpreted safely at runtime while keeping the same text.
+            var persisted = new RuleManager(new LogService(), config).Rules
+                .Single(rule => rule.Keyword == keyword);
+            Assert.Equal("system", persisted.IconType);
+            Assert.Equal("Gold", persisted.IconLookup);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public async Task CustomShopIconLookupRemainsMandatoryAndUnchanged()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.CustomShopIcon.").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "event_rules.json"),
+                System.Text.Json.JsonSerializer.Serialize(new[]
+                {
+                    new VideoGenerator.Views.Models.EventRule
+                    {
+                        Keyword = "ShopOpen",
+                        TranslationKey = "event_open_shop",
+                        Section = "ITEMS",
+                        IconType = "system",
+                        IconLookup = "Danger",
+                        Type = VideoGenerator.Views.Models.RuleType.Simple
+                    }
+                }));
+            ParsedEvent parsed = await CreateParser(root).ParseFolderNameAsync(
+                "Play_vo_AatroxSkin33_Shop2DOpen", "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("system", parsed.IconType);
+            Assert.Equal("Danger", parsed.IconLookupName);
             Assert.True(EventIconResolutionService.RequiresIcon(parsed));
         }
         finally { Directory.Delete(root, recursive: true); }
@@ -202,6 +312,300 @@ public sealed class EventNameParserIntegrationTests
     }
 
     [Theory]
+    [InlineData("Play_vo_Locke_Kill3DFirstLowHealth", "First Low Health", "KillFirstLowHealth")]
+    [InlineData("Play_vo_DianaSkin77_Kill2DFirstLowHealth", "First Low Health", "KillFirstLowHealth")]
+    [InlineData("Play_vo_Locke_Kill3DLowHealth", "Low Health", "KillLowHealth")]
+    [InlineData("Play_vo_DianaSkin77_Kill2DLowHealth", "Low Health", "KillLowHealth")]
+    public async Task KillLowHealthConditionsDoNotRequireChampionPortrait(
+        string folder, string expectedText, string nonexistentRule)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.KillLowHealth.").FullName;
+        try
+        {
+            ParsedEvent parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("generic", parsed.IconType);
+            Assert.Equal("Generic", parsed.IconLookupName);
+            Assert.False(EventIconResolutionService.RequiresIcon(parsed));
+            Assert.Contains(expectedText, parsed.DisplayText, StringComparison.OrdinalIgnoreCase);
+
+            // This recognition must not silently add a new Event Mapping rule.
+            var rules = new RuleManager(new LogService(), Path.Combine(root, "event_rules.json"));
+            Assert.DoesNotContain(rules.Rules, rule =>
+                rule.Keyword.Equals(nonexistentRule, StringComparison.OrdinalIgnoreCase));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_Locke_Kill3DFirstLowHealth")]
+    [InlineData("Play_vo_Locke_Kill3DLowHealth")]
+    public async Task PersonalizedKillIconRuleIsNotOverriddenForLowHealthConditions(string folder)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.KillLowHealthUserRule.").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "event_rules.json"),
+                System.Text.Json.JsonSerializer.Serialize(new[]
+                {
+                    new VideoGenerator.Views.Models.EventRule
+                    {
+                        Keyword = "Kill",
+                        TranslationKey = "interaction_kill_one",
+                        Section = "COMBAT",
+                        IconType = "system",
+                        IconLookup = "Danger",
+                        Type = VideoGenerator.Views.Models.RuleType.Target,
+                        ExtractsTarget = true
+                    }
+                }));
+            ParsedEvent parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("system", parsed.IconType);
+            Assert.Equal("Danger", parsed.IconLookupName);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_MissFortuneSkin69_Kill3DQ2", "Kill with Q2")]
+    [InlineData("Play_vo_MissFortuneSkin69_Kill2DW3", "Kill with W3")]
+    [InlineData("Play_vo_Ahri_Kill3DE", "Kill with E")]
+    [InlineData("Play_vo_Ahri_Kill3DR2", "Kill with R2")]
+    [InlineData("Play_vo_Ahri_Kill3DQ", "Kill with Q")]
+    public async Task KillUsingAnyAbilitySlotOrRecastIsGeneric(string folder, string expectedText)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.SkillKill.").FullName;
+        try
+        {
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("generic", parsed.IconType);
+            Assert.Equal("Generic", parsed.IconLookupName);
+            Assert.Equal(expectedText, parsed.DisplayText);
+            Assert.False(EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public async Task AbilityKillUsesLocalizedTemplate()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.LocalizedSkillKill.").FullName;
+        try
+        {
+            var parsed = await CreateParser(root).ParseFolderNameAsync(
+                "Play_vo_MissFortuneSkin69_Kill3DQ2", "ES");
+            Assert.Equal("Asesinato con Q2", parsed.DisplayText);
+            Assert.Equal("generic", parsed.IconType);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_ShyvanaSkin08_Dragon_Kill3DPenta", "Dragon: Pentakill")]
+    [InlineData("Play_vo_ShyvanaSkin08_Human_Kill2DQuadra", "Human: Quadra Kill")]
+    [InlineData("Play_vo_ShyvanaSkin08_Dragon_Kill3DDouble", "Dragon: Double Kill")]
+    [InlineData("Play_vo_ShyvanaSkin08_Dragon_Kill3DTriple", "Dragon: Triple Kill")]
+    [InlineData("Play_vo_ShyvanaSkin08_Kill3DPenta", "Pentakill")]
+    public async Task MultiKillWithOptionalFormContextKeepsItsStreakMeaning(
+        string folder, string expectedText)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.MultiKillForm.").FullName;
+        try
+        {
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("generic", parsed.IconType);
+            Assert.Equal("Generic", parsed.IconLookupName);
+            Assert.Equal(expectedText, parsed.DisplayText);
+            Assert.False(EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public async Task PrefixedMultiKillRespectsCustomizedMultiKillIcon()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.CustomMultiKillForm.").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "event_rules.json"),
+                System.Text.Json.JsonSerializer.Serialize(new[]
+                {
+                    new VideoGenerator.Views.Models.EventRule
+                    {
+                        Keyword = "KillPenta",
+                        TranslationKey = "event_penta_kill",
+                        Section = "COMBAT",
+                        IconType = "system",
+                        IconLookup = "Danger",
+                        Type = VideoGenerator.Views.Models.RuleType.Simple
+                    }
+                }));
+            var parsed = await CreateParser(root).ParseFolderNameAsync(
+                "Play_vo_ShyvanaSkin08_Dragon_Kill3DPenta", "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("Dragon: Pentakill", parsed.DisplayText);
+            Assert.Equal("system", parsed.IconType);
+            Assert.Equal("Danger", parsed.IconLookupName);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_ShyvanaSkin08_EnemyTeamKill3DEpicMonster",
+        "EN", "Enemy team kills an epic monster")]
+    [InlineData("Play_vo_ShyvanaSkin08_EnemyTeamKill3DEpicMonster",
+        "ES", "El equipo enemigo mata a un monstruo épico")]
+    [InlineData("Play_vo_ShyvanaSkin08_EnemyTeamKill3DEpicMonster",
+        "TR", "Rakip takım destansı bir canavar öldürür")]
+    [InlineData("Play_vo_ShyvanaSkin08_AllyTeamKill2DEpicMonster",
+        "EN", "Ally team kills an epic monster")]
+    [InlineData("Play_vo_ShyvanaSkin08_Kill3DEpicMonster",
+        "EN", "Kill an epic monster")]
+    public async Task EpicMonsterKillShowsTheTeamAndNeverChoosesAnArbitraryBoss(
+        string folder, string language, string expectedText)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.EpicMonsterKill.").FullName;
+        try
+        {
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, language);
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("monster", parsed.IconType);
+            Assert.True(string.IsNullOrEmpty(parsed.IconLookupName));
+            Assert.Equal(expectedText, parsed.DisplayText);
+            Assert.False(EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_ShyvanaSkin08_Kill3DEpicMonsterAheadAllyTeam", "EN",
+        "Kill an epic monster (ally team ahead)")]
+    [InlineData("Play_vo_ShyvanaSkin08_Kill3DEpicMonsterBehindAllyTeam", "EN",
+        "Kill an epic monster (ally team behind)")]
+    [InlineData("Play_vo_ShyvanaSkin08_Kill2DEpicMonsterAheadAllyTeam", "ES",
+        "Matar a un monstruo épico (equipo aliado por delante)")]
+    [InlineData("Play_vo_ShyvanaSkin08_Kill3DEpicMonsterBehindAllyTeam", "ES",
+        "Matar a un monstruo épico (equipo aliado por detrás)")]
+    [InlineData("Play_vo_Aatrox_Kill3DEpicMonsterAheadAllyTeam", "TR",
+        "Destansı canavar öldür (dost takım önde)")]
+    [InlineData("Play_vo_Aatrox_Kill2DEpicMonsterBehindAllyTeam", "TR",
+        "Destansı canavar öldür (dost takım geride)")]
+    public async Task EpicMonsterScoreConditionsUseBuiltInMonsterRulesAndLocalizedText(
+        string folder, string language, string expectedText)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.EpicScore.").FullName;
+        try
+        {
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, language);
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("monster", parsed.IconType);
+            Assert.True(string.IsNullOrEmpty(parsed.IconLookupName));
+            Assert.Equal(expectedText, parsed.DisplayText);
+            Assert.False(EventIconResolutionService.RequiresIcon(parsed));
+
+            // Event Mapping lists the two official semantic rules while the
+            // monster catalog contains only actual named creatures.
+            var rules = new RuleManager(new LogService(), Path.Combine(root, "event_rules.json"));
+            foreach (string suffix in new[] { "Ahead", "Behind" })
+            {
+                var rule = Assert.Single(rules.Rules, r =>
+                    r.Keyword == $"KillEpicMonster{suffix}AllyTeam");
+                Assert.Equal("monster", rule.IconType);
+                Assert.Equal("EpicMonster", rule.IconLookup);
+            }
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public async Task SavedEpicMonsterRuleOverrideRemainsAuthoritative()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.EpicScoreCustom.").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "event_rules.json"),
+                System.Text.Json.JsonSerializer.Serialize(new[]
+                {
+                    new VideoGenerator.Views.Models.EventRule
+                    {
+                        Keyword = "KillEpicMonsterAheadAllyTeam",
+                        TranslationKey = "event_kill_epic_monster_ahead_ally_team",
+                        Section = "COMBAT",
+                        IconType = "monster",
+                        IconLookup = "Herald",
+                        Type = VideoGenerator.Views.Models.RuleType.Simple
+                    }
+                }));
+            var parsed = await CreateParser(root).ParseFolderNameAsync(
+                "Play_vo_ShyvanaSkin08_Kill3DEpicMonsterAheadAllyTeam", "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("monster", parsed.IconType);
+            Assert.Equal("Herald", parsed.IconLookupName);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+
+            var rules = new RuleManager(new LogService(), Path.Combine(root, "event_rules.json"));
+            Assert.Single(rules.Rules, r =>
+                r.Keyword == "KillEpicMonsterAheadAllyTeam" && r.IconLookup == "Herald");
+            Assert.Contains(rules.Rules, r => r.Keyword == "KillEpicMonsterBehindAllyTeam");
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_ShyvanaSkin08_Attack2DEpicMonster")]
+    [InlineData("Play_vo_DianaSkin77_Attack3DEpicMonster")]
+    public async Task UnspecifiedEpicMonsterIsNeverGivenARealBossPortrait(string folder)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.EpicMonsterAttack.").FullName;
+        try
+        {
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("monster", parsed.IconType);
+            Assert.True(string.IsNullOrEmpty(parsed.IconLookupName));
+            Assert.False(EventIconResolutionService.RequiresIcon(parsed));
+            Assert.Equal("Attack Epic Monster", parsed.DisplayText);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_MissFortuneSkin69_Kill3DQ2")]
+    [InlineData("Play_vo_ShyvanaSkin08_EnemyTeamKill3DEpicMonster")]
+    public async Task ExplicitKillRuleIconOverrideRetainsUserChoice(string folder)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.KillSemanticOverride.").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "event_rules.json"),
+                System.Text.Json.JsonSerializer.Serialize(new[]
+                {
+                    new VideoGenerator.Views.Models.EventRule
+                    {
+                        Keyword = "Kill",
+                        TranslationKey = "interaction_kill_one",
+                        Section = "COMBAT",
+                        IconType = "system",
+                        IconLookup = "Danger",
+                        Type = VideoGenerator.Views.Models.RuleType.Target,
+                        ExtractsTarget = true
+                    }
+                }));
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("system", parsed.IconType);
+            Assert.Equal("Danger", parsed.IconLookupName);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
     [InlineData("Play_vo_DianaSkin77_FirstEncounter3DArcade", "Arcade")]
     [InlineData("Play_vo_DianaSkin77_Kill3DArcadeHeroes", "Arcade: Heroes")]
     [InlineData("Play_vo_DianaSkin77_FirstEncounter3DArcadeBattleBosses", "Arcade: Battle Bosses")]
@@ -226,6 +630,96 @@ public sealed class EventNameParserIntegrationTests
             Assert.Equal(lookup, parsed.IconLookupName);
         }
         finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_MissFortuneSkin69_FirstEncounter3DT1WorldsWinners", "World Champions: 2025")]
+    [InlineData("Play_vo_MissFortuneSkin69_FirstEncounter3DWorldsWinners", "World Champions: 2025")]
+    [InlineData("Play_vo_MissFortuneSkin69_Kill3DT1WorldsWinners", "World Champions: 2025")]
+    [InlineData("Play_vo_JayceSkin16_FirstEncounter3DT1WorldsWinners", "World Champions: 2023")]
+    [InlineData("Play_vo_AatroxSkin44_FirstEncounter3DWorldsWinners", "World Champions: 2022")]
+    public async Task WorldsWinnerVoThemesUseTheirOwnersOfficialChampionshipLine(
+        string folder, string expectedLine)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.WorldsWinners.").FullName;
+        try
+        {
+            SeedWorldChampionCatalog(root);
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("skinline", parsed.IconType);
+            Assert.Equal(expectedLine, parsed.IconLookupName);
+            Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+            Assert.DoesNotContain("champion:", parsed.IconLookupName);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_AatroxSkin44_FirstEncounter3DT1WorldsWinners")]
+    [InlineData("Play_vo_DianaSkin77_FirstEncounter3DWorldsWinners")]
+    [InlineData("Play_vo_Locke_FirstEncounter3DT1WorldsWinners")]
+    public async Task WorldsWinnerThemeWithoutOfficialMatchingMembershipDoesNotBorrowAnIcon(string folder)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.WorldsWinnersUnverified.").FullName;
+        try
+        {
+            SeedWorldChampionCatalog(root);
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("skinline", parsed.IconType);
+            Assert.True(string.IsNullOrEmpty(parsed.IconLookupName));
+            Assert.False(EventIconResolutionService.RequiresIcon(parsed));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public async Task ExplicitlyCustomizedWorldsRuleKeepsTheCustomIcon()
+    {
+        string root = Directory.CreateTempSubdirectory("VG.WorldsWinnersOverride.").FullName;
+        try
+        {
+            SeedWorldChampionCatalog(root);
+            File.WriteAllText(Path.Combine(root, "event_rules.json"),
+                System.Text.Json.JsonSerializer.Serialize(new[]
+                {
+                    new VideoGenerator.Views.Models.EventRule
+                    {
+                        Keyword = "FirstEncounter",
+                        TranslationKey = "interaction_first_encounter_one",
+                        Section = "INTERACTIONS",
+                        IconType = "system",
+                        IconLookup = "Danger",
+                        Type = VideoGenerator.Views.Models.RuleType.Interaction,
+                        ExtractsTarget = true
+                    }
+                }));
+            var parsed = await CreateParser(root).ParseFolderNameAsync(
+                "Play_vo_MissFortuneSkin69_FirstEncounter3DT1WorldsWinners", "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("system", parsed.IconType);
+            Assert.Equal("Danger", parsed.IconLookupName);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    private static void SeedWorldChampionCatalog(string root)
+    {
+        string cache = Path.Combine(root, "Cache");
+        Directory.CreateDirectory(cache);
+        File.WriteAllText(Path.Combine(cache, "skinlines_data_default.json"), """
+            [{"id":194,"name":"World Champions: 2022"},
+             {"id":207,"name":"World Champions: 2023"},
+             {"id":232,"name":"World Champions: 2025"}]
+            """);
+        File.WriteAllText(Path.Combine(cache, "skins_data_default.json"), """
+            {
+              "21069": {"name":"MVP T1 Miss Fortune","splashPath":"ASSETS/Characters/MissFortune/Skins/Skin69/Images/missfortune_splash_centered_69.jpg","skinLines":[{"id":232}]},
+              "126016":{"name":"T1 Jayce","splashPath":"ASSETS/Characters/Jayce/Skins/Skin16/Images/jayce_splash_centered_16.jpg","skinLines":[{"id":207}]},
+              "266044":{"name":"DRX Aatrox","splashPath":"ASSETS/Characters/Aatrox/Skins/Skin44/Images/aatrox_splash_centered_44.jpg","skinLines":[{"id":194}]}
+            }
+            """);
     }
 
     [Theory]
@@ -309,6 +803,48 @@ public sealed class EventNameParserIntegrationTests
         {
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    [Theory]
+    [InlineData("Play_vo_DianaSkin77_Kill3DJungleBuff")]
+    [InlineData("Play_vo_DianaSkin77_Attack2DJungleBuff")]
+    [InlineData("Play_vo_AatroxSkin33_Kill3DJungle_Buff")]
+    public async Task UnspecifiedJungleBuffIsAMonsterWithoutAnInventedRedOrBluePortrait(string folder)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.JungleBuff.").FullName;
+        try
+        {
+            var parsed = await CreateParser(root).ParseFolderNameAsync(folder, "EN");
+            Assert.True(parsed.IsMapped);
+            Assert.Equal("monster", parsed.IconType);
+            Assert.True(string.IsNullOrWhiteSpace(parsed.IconLookupName));
+            Assert.False(EventIconResolutionService.RequiresIcon(parsed));
+            Assert.Contains("Jungle Buff", parsed.DisplayText, StringComparison.OrdinalIgnoreCase);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("BlueBuff", "Blue_Sentinel")]
+    [InlineData("RedBuff", "Red_Brambleback")]
+    public async Task ExplicitJungleBuffColorRetainsItsOwnOfficialMonsterPortrait(
+        string target, string expectedLookup)
+    {
+        string root = Directory.CreateTempSubdirectory("VG.ColoredJungleBuff.").FullName;
+        try
+        {
+            var parser = CreateParser(root);
+            foreach (string action in new[] { "Kill3D", "Attack2D" })
+            {
+                var parsed = await parser.ParseFolderNameAsync(
+                    $"Play_vo_DianaSkin77_{action}{target}", "EN");
+                Assert.True(parsed.IsMapped);
+                Assert.Equal("monster", parsed.IconType);
+                Assert.Equal(expectedLookup, parsed.IconLookupName);
+                Assert.True(EventIconResolutionService.RequiresIcon(parsed));
+            }
+        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]
@@ -1064,12 +1600,33 @@ public sealed class EventNameParserIntegrationTests
                 "event_joke": "Joke",
                 "event_joke_fail": "Joke (Failed)",
                 "event_kill_general": "Kill in General",
+                "event_double_kill": "Double Kill",
+                "event_triple_kill": "Triple Kill",
+                "event_quadra_kill": "Quadra Kill",
+                "event_penta_kill": "Pentakill",
+                "event_kill_with_ability": "Kill with {0}",
+                "event_kill_epic_monster": "Kill an epic monster",
+                "event_enemy_team_kill_epic_monster": "Enemy team kills an epic monster",
+                "event_ally_team_kill_epic_monster": "Ally team kills an epic monster",
+                "event_kill_epic_monster_ahead_ally_team": "Kill an epic monster (ally team ahead)",
+                "event_kill_epic_monster_behind_ally_team": "Kill an epic monster (ally team behind)",
                 "event_move_r_ready": "Movement (Ultimate Ready)",
                 "event_joke_success": "Joke (Successful)",
                 "interaction_attack_monster": "Attack {monster}",
                 "interaction_first_encounter_one": "First Encounter with {0}",
                 "interaction_kill_one": "Kill {0}",
                 "suffix_in_general": " in General"
+              },
+              "ES": {
+                "event_enemy_team_kill_epic_monster": "El equipo enemigo mata a un monstruo épico",
+                "event_kill_with_ability": "Asesinato con {0}",
+                "event_kill_epic_monster_ahead_ally_team": "Matar a un monstruo épico (equipo aliado por delante)",
+                "event_kill_epic_monster_behind_ally_team": "Matar a un monstruo épico (equipo aliado por detrás)"
+              },
+              "TR": {
+                "event_enemy_team_kill_epic_monster": "Rakip takım destansı bir canavar öldürür",
+                "event_kill_epic_monster_ahead_ally_team": "Destansı canavar öldür (dost takım önde)",
+                "event_kill_epic_monster_behind_ally_team": "Destansı canavar öldür (dost takım geride)"
               }
             }
             """);

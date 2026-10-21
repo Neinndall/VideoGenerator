@@ -51,6 +51,14 @@ namespace VideoGenerator.Services.Parsers
             string cleanFolder = StripOwnerPrefix(folderName);
             string normalizedFolder = NormalizeFolderName(cleanFolder);
 
+            // Some VO sets put a form/stance before the kill action:
+            // ShyvanaSkin08_Dragon_Kill3DPenta. It is still a pentakill,
+            // not a champion called Penta. Match only known multi-kill
+            // suffixes and use the actual configured multi-kill rule
+            // (including a user's chosen icon or translation).
+            ParsedEvent qualifiedMultiKill = TryParseQualifiedMultiKill(folderName, cleanFolder, language);
+            if (qualifiedMultiKill != null) return qualifiedMultiKill;
+
             foreach (var rule in _ruleManager.Rules.OrderByDescending(r => r.Keyword.Length).ThenBy(r => r.Type))
             {
                 string normalizedKeyword = NormalizeFolderName(rule.Keyword);
@@ -217,8 +225,30 @@ namespace VideoGenerator.Services.Parsers
                 var matchedGroup = _groupManager.Groups.FirstOrDefault(g =>
                     DefaultChampions.Normalize(g.Name).Equals(
                         DefaultChampions.Normalize(iconTarget), StringComparison.OrdinalIgnoreCase));
-                
-                if (string.IsNullOrWhiteSpace(rule.IconLookup) &&
+
+                if (matchedGroup == null &&
+                    string.IsNullOrWhiteSpace(rule.IconLookup) &&
+                    rule.Type != RuleType.Simple &&
+                    string.Equals(rule.IconType, "champion", StringComparison.OrdinalIgnoreCase) &&
+                    IsWorldsWinnersTarget(rawTarget, out bool requireT1))
+                {
+                    // These are VO theme labels, not champions. A T1 winner
+                    // must belong to T1's official championship skinline for
+                    // this speaking skin. No verified match => no fake icon.
+                    Match owner = Regex.Match(folderName,
+                        @"^_?(?:Play_vo_|Play_|vo_)([A-Za-z0-9]+?)Skin(\d+)_",
+                        RegexOptions.IgnoreCase);
+                    string officialLine = owner.Success &&
+                        int.TryParse(owner.Groups[2].Value, out int ownerSkinId)
+                        ? await _skinlineManager.FindWorldChampionsLineForSkinAsync(
+                            owner.Groups[1].Value, ownerSkinId, requireT1)
+                        : null;
+                    iconType = "skinline";
+                    iconTarget = officialLine; // null when unverified; never Missing Icon
+                    displayText = _translationService.GetText(
+                        language, rule.TranslationKey, displayTargetName);
+                }
+                else if (string.IsNullOrWhiteSpace(rule.IconLookup) &&
                     LeagueSkinlineIdentity.TrySplitChampionQualified(
                         rawTarget, out string themeChampion, out string themeToken) &&
                     _skinlineManager.IsKnownSkinline(themeToken))
@@ -298,6 +328,19 @@ namespace VideoGenerator.Services.Parsers
                             // Totem item icon, not a fictitious Ward champion.
                             iconType = "item";
                         }
+                        else if (IsDefaultKillCondition(rule, iconTarget))
+                        {
+                            // Kill3DLowHealth and Kill3DFirstLowHealth describe
+                            // combat conditions, not champion identities.
+                            // Preserve translated text without requiring a portrait.
+                            iconType = "generic";
+                        }
+                        else if (IsDefaultKillAbility(rule, iconTarget))
+                        {
+                            // Q2 / W3 / E / R represent an ability slot or
+                            // recast, not the name of a defeated champion.
+                            iconType = "generic";
+                        }
                         else if (_aliasManager.IsValidChampion(iconTarget))
                         {
                             iconTarget = _aliasManager.GetInternalName(iconTarget);
@@ -362,8 +405,123 @@ namespace VideoGenerator.Services.Parsers
                 }
             }
 
-            return new ParsedEvent { OriginalFolder = folderName, DisplayText = displayText, IconLookupName = iconTarget, IconType = iconType };
+            // Older installs have the original built-in Shop/ShopOpen rules
+            // persisted as system:Gold. There is no verified WAD asset for
+            // that synthetic lookup, so the event would always be Missing Icon.
+            // Apply a runtime compatibility interpretation without rewriting
+            // event_rules.json or touching any actual user-custom icon choice.
+            if (IsLegacyDefaultShopGold(rule))
+            {
+                iconType = "generic";
+                iconTarget = "Generic";
+            }
+
+            // Do not route Kill3DJungleBuff to champion:JungleBuff or choose
+            // a random blue/red camp portrait: the VO target is ambiguous.
+            string resolvedIconLookup = iconTarget;
+            if (iconType.Equals("monster", StringComparison.OrdinalIgnoreCase) &&
+                MonsterEventParser.IsUnspecifiedJungleBuff(iconTarget))
+                resolvedIconLookup = null;
+            else if (iconType.Equals("monster", StringComparison.OrdinalIgnoreCase) &&
+                     MonsterEventParser.IsUnspecifiedEpicMonster(iconTarget))
+            {
+                resolvedIconLookup = null;
+                if (IsDefaultKillRule(rule))
+                {
+                    string action = Regex.Replace(rawWithoutPrefix, @"_+", "");
+                    string key = Regex.IsMatch(action,
+                        @"^EnemyTeamKill(?:2D|3D)?EpicMonster$", RegexOptions.IgnoreCase)
+                        ? "event_enemy_team_kill_epic_monster"
+                        : Regex.IsMatch(action,
+                            @"^AllyTeamKill(?:2D|3D)?EpicMonster$", RegexOptions.IgnoreCase)
+                            ? "event_ally_team_kill_epic_monster"
+                            : "event_kill_epic_monster";
+                    displayText = _translationService.GetText(language, key);
+                }
+            }
+            else if (iconType.Equals("generic", StringComparison.OrdinalIgnoreCase) &&
+                     IsDefaultKillCondition(rule, iconTarget))
+                resolvedIconLookup = "Generic";
+            else if (iconType.Equals("generic", StringComparison.OrdinalIgnoreCase) &&
+                     IsDefaultKillAbility(rule, iconTarget))
+            {
+                resolvedIconLookup = "Generic";
+                displayText = _translationService.GetText(
+                    language, "event_kill_with_ability", iconTarget.ToUpperInvariant());
+            }
+            return new ParsedEvent { OriginalFolder = folderName, DisplayText = displayText, IconLookupName = resolvedIconLookup, IconType = iconType };
         }
+
+        private ParsedEvent TryParseQualifiedMultiKill(string folderName, string cleanFolder, string language)
+        {
+            Match match = Regex.Match(cleanFolder,
+                @"^(?<context>[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*)_Kill(?:2D|3D)?(?<streak>Double|Triple|Quadra|Penta)$",
+                RegexOptions.IgnoreCase);
+            if (!match.Success) return null;
+            string streak = match.Groups["streak"].Value;
+            string expectedKey = $"event_{streak.ToLowerInvariant()}_kill";
+            string normalized = Regex.Replace(NormalizeFolderName(cleanFolder),
+                @"(2D|3D)", "", RegexOptions.IgnoreCase);
+            // A specifically authored form+streak rule takes precedence.
+            if (_ruleManager.Rules.Any(rule => rule.Type == RuleType.Simple &&
+                !string.Equals(rule.Keyword, "Kill" + streak, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(NormalizeFolderName(rule.Keyword), normalized, StringComparison.OrdinalIgnoreCase)))
+                return null;
+            EventRule matchingRule = _ruleManager.Rules.FirstOrDefault(rule =>
+                rule.Type == RuleType.Simple &&
+                string.Equals(rule.Keyword, "Kill" + streak, StringComparison.OrdinalIgnoreCase));
+            if (matchingRule == null) return null;
+
+            string context = match.Groups["context"].Value.Replace('_', ' ');
+            string multiKill = _translationService.GetText(language,
+                string.IsNullOrWhiteSpace(matchingRule.TranslationKey)
+                    ? expectedKey : matchingRule.TranslationKey);
+            string type = matchingRule.IconType;
+            return new ParsedEvent
+            {
+                OriginalFolder = folderName,
+                DisplayText = $"{context}: {multiKill}",
+                IconType = type,
+                IconLookupName = string.IsNullOrWhiteSpace(matchingRule.IconLookup)
+                    ? (string.Equals(type, "generic", StringComparison.OrdinalIgnoreCase) ? "Generic" : null)
+                    : matchingRule.IconLookup
+            };
+        }
+
+        private static bool IsDefaultKillRule(EventRule rule) =>
+            rule.Type == RuleType.Target &&
+            string.Equals(rule.Keyword, "Kill", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(rule.Section, "COMBAT", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(rule.TranslationKey, "interaction_kill_one", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(rule.IconType, "champion", StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(rule.IconLookup);
+
+        private static bool IsDefaultKillCondition(EventRule rule, string target) =>
+            IsDefaultKillRule(rule) &&
+            (string.Equals(target, "FirstLowHealth", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(target, "LowHealth", StringComparison.OrdinalIgnoreCase));
+
+        private static bool IsDefaultKillAbility(EventRule rule, string target) =>
+            IsDefaultKillRule(rule) &&
+            Regex.IsMatch(target ?? "", @"^[QWER](?:\d{1,2})?$", RegexOptions.IgnoreCase);
+
+        private static bool IsWorldsWinnersTarget(string target, out bool requireT1)
+        {
+            string normalized = LeagueSkinlineIdentity.Normalize(target);
+            requireT1 = normalized == "t1worldswinners";
+            return requireT1 || normalized == "worldswinners";
+        }
+
+        private static bool IsLegacyDefaultShopGold(EventRule rule) =>
+            rule.Type == RuleType.Simple &&
+            !rule.ExtractsTarget &&
+            string.Equals(rule.Section, "ITEMS", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(rule.IconType, "system", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(rule.IconLookup, "Gold", StringComparison.OrdinalIgnoreCase) &&
+            (string.Equals(rule.Keyword, "ShopOpen", StringComparison.OrdinalIgnoreCase) &&
+             string.Equals(rule.TranslationKey, "event_open_shop", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(rule.Keyword, "Shop", StringComparison.OrdinalIgnoreCase) &&
+             string.Equals(rule.TranslationKey, "event_shop_open", StringComparison.OrdinalIgnoreCase));
 
         // A thematic event must retain the same representative icon on every analysis.
         // Stable ordering also keeps user-defined group list reordering from changing its icon.

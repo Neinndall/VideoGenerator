@@ -68,6 +68,9 @@
     <!-- CONTENT WELL: deeply dark, immersive midnight screen shared by Pipeline,
          Preview, Console and video monitor; provides true contrast for preview content. -->
     <SolidColorBrush x:Key="WorkspaceContentWellBrush" Color="{StaticResource WorkspaceContentWellColor}"/>
+    <!-- Live Preview only: a transient, hovered icon-edit overlay. -->
+    <SolidColorBrush x:Key="DashboardIconHoverBackgroundBrush" Color="#E60B1B34"/>
+    <SolidColorBrush x:Key="DashboardIconHoverBorderBrush" Color="#A851D9F8"/>
     <!-- FILTER STRIP: subtle filter tabs directly above a content well. -->
     <SolidColorBrush x:Key="WorkspaceFilterBarBrush" Color="{StaticResource WorkspaceFilterBarColor}"/>
     <!-- CONSOLE HEADER: harmonized with shared workspace panel header gradient. -->

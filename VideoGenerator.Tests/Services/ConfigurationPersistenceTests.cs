@@ -156,6 +156,58 @@ public sealed class ConfigurationPersistenceTests
         finally { DeleteRoot(root); }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RiotVariantRecordsNeverReplaceCanonicalChampionAliases(bool reverseOrder)
+    {
+        string root = CreateRoot();
+        try
+        {
+            string config = Path.Combine(root, "Config", "champion_aliases.json");
+            string summary = Path.Combine(root, "Cache", "champion_summary_data_default.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(summary)!);
+            string[] records =
+            {
+                """{"id":103,"name":"Ahri","alias":"Ahri","roles":["mage"]}""",
+                """{"id":60103,"name":"Ahri","alias":"Jade_Ahri","roles":["mage"]}""",
+                """{"id":28,"name":"Evelynn","alias":"Evelynn"}""",
+                """{"id":60028,"name":"Evelynn","alias":"Jade_Evelynn"}""",
+                """{"id":37,"name":"Sona","alias":"Sona"}""",
+                """{"id":60037,"name":"Sona","alias":"Jade_Sona"}""",
+                """{"id":62,"name":"Wukong","alias":"MonkeyKing"}""",
+                """{"id":60062,"name":"Wukong","alias":"Jade_Wukong"}"""
+            };
+            if (reverseOrder) Array.Reverse(records);
+            File.WriteAllText(summary, "[" + string.Join(",", records) + "]");
+
+            var aliases = new AliasManager(new LogService(), config, summary);
+            Assert.Equal("Ahri", aliases.GetInternalName("Ahri"));
+            Assert.Equal("Evelynn", aliases.GetInternalName("Evelynn"));
+            Assert.Equal("Sona", aliases.GetInternalName("Sona"));
+            Assert.Equal("MonkeyKing", aliases.GetInternalName("Wukong"));
+            // A game-mode variant is a valid explicit Riot alias. It must be
+            // recognized without ever overwriting its canonical champion.
+            Assert.True(aliases.IsValidChampion("Jade_Ahri"));
+            Assert.True(aliases.IsValidChampion("Jade_Evelynn"));
+            Assert.True(aliases.IsValidChampion("Jade_Wukong"));
+            Assert.Equal("Jade_Ahri", aliases.GetInternalName("Jade_Ahri"));
+            Assert.Equal("Jade_Wukong", aliases.GetInternalName("Jade_Wukong"));
+            Assert.Equal(1, aliases.Aliases.Count(a => a.DisplayName == "Ahri"));
+            Assert.DoesNotContain(aliases.Aliases, a => a.DisplayName == "Jade_Ahri");
+
+            // Repair the official alias already persisted by older versions,
+            // preserving the existing user's JSON and custom entries.
+            var ahri = Assert.Single(aliases.Aliases, a => a.DisplayName == "Ahri");
+            ahri.InternalName = "Jade_Ahri";
+            Assert.True(aliases.SaveAliases());
+            aliases.LoadAliases();
+            Assert.Equal("Ahri", aliases.GetInternalName("Ahri"));
+            Assert.Contains("\"InternalName\": \"Ahri\"", File.ReadAllText(config));
+        }
+        finally { DeleteRoot(root); }
+    }
+
     [Fact]
     public void RiotSummaryRefreshKeepsUserAliasesAndAddsNewChampions()
     {
